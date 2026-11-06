@@ -66,7 +66,8 @@ lee el último comentario de relevo. Si la retoma la otra persona, se la reasign
 ## Reglas para no pisarse
 
 - **`main` siempre en verde**: no se integra nada con lint o build fallando, y nadie hace push
-  directo a `main`.
+  directo a `main`. GitHub Actions lo verifica en cada PR (`.github/workflows/ci.yml`):
+  formato, lint y compilación. Un PR con el check en rojo no se integra.
 - **Un módulo a la vez por persona**: los dos no trabajan en la misma pantalla o módulo al mismo
   tiempo. Repártanse por épica o siguiendo las dependencias de Jira.
 - **Los tipos de la API no se editan a mano**: se regeneran con `npm run tipos:generar` y van en
