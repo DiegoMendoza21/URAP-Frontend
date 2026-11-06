@@ -32,12 +32,14 @@ responde. El puerto 3000 es fijo: si está ocupado, `dev` se detiene en vez de p
   con el token de la sesión.
 - El token vive en la cookie `urap_sesion` (`httpOnly`, `SameSite=Lax` y, en producción,
   `Secure`). La crea `/api/auth/iniciar-sesion`, la borra `/api/auth/cerrar-sesion`, y el
-  JavaScript de la página no la puede leer.
+  JavaScript de la página no la puede leer. Esas dos rutas solo pasan por sus propios route
+  handlers: el reenvío general las rechaza con cualquier variante de mayúsculas o barras.
 - Las peticiones que cambian datos y no vienen de este mismo origen se rechazan (CSRF).
 - `src/proxy.ts` lleva al inicio de sesión a quien abre una página sin la cookie. Es solo
   presentación: la autorización la hace el backend en cada petición.
-- Para el backend, el cliente es el servidor de Next. En el despliegue, `PROXIES_CONFIABLES`
-  del backend tiene que contarlo para que la IP de cada sesión sea la del usuario.
+- Next reenvía al backend el `X-Forwarded-For` del navegador tal como llega, sin agregar su
+  propia entrada. Por eso `PROXIES_CONFIABLES` del backend cuenta solo los balanceadores que
+  haya delante de Next, sin contar a Next: en local, 0.
 
 ## Comandos
 
