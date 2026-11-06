@@ -38,7 +38,9 @@ Definido en el Producto 2 de la tesis. No cambiarlo sin actualizar también la t
 documenta esta arquitectura en el diagrama de despliegue, el de componentes y los sprints.
 
 - **Next.js** con React y **TypeScript**. No React a pelo con react-router, no JavaScript
-  plano: el enrutamiento es el de Next.js.
+  plano: el enrutamiento es el de Next.js. La documentación de la versión instalada está en
+  `node_modules/next/dist/docs/`: consúltala antes de usar una API de Next.js, porque la
+  versión 16 cambió convenciones y valores por defecto (por ejemplo, `cacheComponents`).
 - **PWA**, con diseño responsive real.
 - Consumo de la API REST del backend sobre HTTPS, con JWT en las peticiones protegidas.
 - Los tipos se generan desde la especificación OpenAPI del backend; no se escriben a mano
@@ -51,9 +53,12 @@ npm install
 npm run dev
 npm run build
 npm run lint
+npm run tipos:generar   # con el backend levantado
 ```
 
-<!-- TODO: agregar el comando de generación de tipos desde el OpenAPI del backend -->
+`npm run tipos:generar` regenera `src/api/openapi.d.ts` desde `http://localhost:3001/api/openapi.json`.
+Ese archivo no se edita a mano: cuando cambia el contrato del backend, se regenera y se hace
+commit junto con el cambio que lo usa.
 
 ## Reglas que no se negocian
 

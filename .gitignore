@@ -1,0 +1,38 @@
+# Dependencias
+/node_modules
+
+# Compilación de Next.js
+/.next/
+/out/
+/build
+*.tsbuildinfo
+# Lo regenera Next.js en cada `dev` y `build`
+next-env.d.ts
+
+# Pruebas
+/coverage
+
+# Variables de entorno: nunca al repositorio, salvo la plantilla
+.env*
+!.env.example
+
+# Registros
+*.log
+
+# Certificados locales (por ejemplo, los de `next dev --experimental-https`)
+*.pem
+/certificates
+
+# Despliegue en Vercel
+.vercel
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Configuración personal de Claude Code
+.claude/settings.local.json
