@@ -1,27 +1,27 @@
 import type { NextConfig } from 'next';
 import {
   PHASE_DEVELOPMENT_SERVER,
-  PHASE_PRODUCTION_BUILD,
+  PHASE_PRODUCTION_SERVER,
 } from 'next/constants';
 
 /**
- * Next.js incrusta la URL de la API en el código del navegador al compilar. Por eso `next dev`
- * y `next build` se detienen si falta o no es válida, en vez de producir una aplicación que no
- * puede hablar con el backend. `next start` no la revisa: usa la que quedó en la compilación.
+ * El servidor de Next reenvía al backend cada petición del navegador a /api (ver
+ * src/servidor/backend.ts), así que `next dev` y `next start` se detienen si la URL del
+ * backend falta o no es válida. `next build` no la necesita: se lee al atender cada petición.
  */
 function verificarUrlApi(): void {
-  const valor = process.env.NEXT_PUBLIC_URL_API;
+  const valor = process.env.URL_API;
   const url = valor ? URL.parse(valor) : null;
   if (!url || (url.protocol !== 'http:' && url.protocol !== 'https:')) {
     throw new Error(
-      'NEXT_PUBLIC_URL_API falta o no es una URL http(s) válida. Copie .env.example como ' +
-        '.env.local y revise su valor (en local, http://localhost:3001/api).',
+      'URL_API falta o no es una URL http(s) válida. Copie .env.example como .env.local y ' +
+        'revise su valor (en local, http://localhost:3001/api).',
     );
   }
 }
 
 export default function configuracion(fase: string): NextConfig {
-  if (fase === PHASE_DEVELOPMENT_SERVER || fase === PHASE_PRODUCTION_BUILD) {
+  if (fase === PHASE_DEVELOPMENT_SERVER || fase === PHASE_PRODUCTION_SERVER) {
     verificarUrlApi();
   }
 
