@@ -17,14 +17,27 @@ contrato entre los dos es la especificación OpenAPI que publica esa API.
 ## Puesta en marcha
 
 ```bash
-cp .env.example .env.local   # URL de la API; sin ella, dev y build se detienen
+cp .env.example .env.local   # URL del backend; sin ella, dev y start no arrancan
 npm install
 npm run dev                  # http://localhost:3000
 ```
 
-La pantalla inicial consulta `GET /api/salud` y muestra si el servidor responde. El puerto
-3000 es fijo porque es el origen que el backend autoriza por CORS: si está ocupado, `dev` se
-detiene en vez de pasarse a otro puerto.
+Sin sesión, la aplicación lleva a `/iniciar-sesion`, que además muestra si el servidor
+responde. El puerto 3000 es fijo: si está ocupado, `dev` se detiene en vez de pasarse a otro.
+
+## Cómo habla el frontend con la API
+
+- El navegador nunca llama al backend. Llama a `/api/...` en este mismo origen, con las mismas
+  rutas del backend, y `src/app/api/[...ruta]/route.ts` reenvía cada petición a `URL_API`
+  con el token de la sesión.
+- El token vive en la cookie `urap_sesion` (`httpOnly`, `SameSite=Lax` y, en producción,
+  `Secure`). La crea `/api/auth/iniciar-sesion`, la borra `/api/auth/cerrar-sesion`, y el
+  JavaScript de la página no la puede leer.
+- Las peticiones que cambian datos y no vienen de este mismo origen se rechazan (CSRF).
+- `src/proxy.ts` lleva al inicio de sesión a quien abre una página sin la cookie. Es solo
+  presentación: la autorización la hace el backend en cada petición.
+- Para el backend, el cliente es el servidor de Next. En el despliegue, `PROXIES_CONFIABLES`
+  del backend tiene que contarlo para que la IP de cada sesión sea la del usuario.
 
 ## Comandos
 

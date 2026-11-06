@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { ProveedorSesion } from '@/sesion/ProveedorSesion';
 import {
   COLOR_MARCA,
   DESCRIPCION_APLICACION,
@@ -23,7 +24,7 @@ export default function DisenoRaiz({ children }: LayoutProps<'/'>) {
   return (
     <html lang="es-CO">
       <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
-        {children}
+        <ProveedorSesion>{children}</ProveedorSesion>
       </body>
     </html>
   );

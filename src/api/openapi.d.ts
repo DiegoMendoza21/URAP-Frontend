@@ -4,6 +4,66 @@
  */
 
 export interface paths {
+    "/api/auth/iniciar-sesion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inicia sesión con correo institucional y contraseña
+         * @description Público. Devuelve un JWT con vigencia definida por NFR-003 y los datos del usuario con sus roles activos (RF-01, HU-01-01).
+         */
+        post: operations["AuthController_iniciarSesion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sesion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Devuelve el usuario de la sesión actual
+         * @description Requiere un token vigente. Permite al cliente recuperar la sesión al recargar.
+         */
+        get: operations["AuthController_obtenerSesion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/cerrar-sesion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cierra la sesión actual
+         * @description Revoca en el servidor la sesión del token enviado (RF-01, HU-01-02). Desde ese momento el token deja de servir aunque no haya vencido. El cliente debe borrarlo y volver a la pantalla de inicio de sesión.
+         */
+        post: operations["AuthController_cerrarSesion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/salud": {
         parameters: {
             query?: never;
@@ -28,14 +88,48 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        EstadoSaludDto: {
+        IniciarSesionDto: {
             /**
-             * @example disponible
-             * @enum {string}
+             * @description Correo institucional con el que está registrado el usuario
+             * @example docente@unicartagena.edu.co
              */
-            estado: "disponible";
-            /** @example 2026-11-03T21:15:00.000Z */
-            fecha: string;
+            correo: string;
+            /**
+             * Format: password
+             * @example Contraseña-Segura-2026
+             */
+            contrasena: string;
+        };
+        UsuarioAutenticadoDto: {
+            /** @example 15 */
+            id: number;
+            /** @example Ana María */
+            nombres: string | null;
+            /** @example Pérez Gómez */
+            apellidos: string | null;
+            /** @example docente@unicartagena.edu.co */
+            correo: string;
+            /**
+             * @description Roles activos del usuario. Un usuario puede tener varios a la vez.
+             * @example [
+             *       "Docente",
+             *       "Líder RAP"
+             *     ]
+             */
+            roles: string[];
+        };
+        SesionIniciadaDto: {
+            /**
+             * @description Token JWT. Se envía en cada petición protegida en el encabezado `Authorization: Bearer <token>`.
+             * @example eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            token: string;
+            /**
+             * @description Fecha y hora en que vence el token (NFR-003)
+             * @example 2026-11-06T02:15:00.000Z
+             */
+            expiraEn: string;
+            usuario: components["schemas"]["UsuarioAutenticadoDto"];
         };
         RespuestaErrorDto: {
             /**
@@ -65,6 +159,15 @@ export interface components {
             /** @example 2026-11-03T21:15:00.000Z */
             fecha: string;
         };
+        EstadoSaludDto: {
+            /**
+             * @example disponible
+             * @enum {string}
+             */
+            estado: "disponible";
+            /** @example 2026-11-03T21:15:00.000Z */
+            fecha: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -74,6 +177,113 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AuthController_iniciarSesion: {
+        parameters: {
+            query?: never;
+            header: {
+                "user-agent": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarSesionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SesionIniciadaDto"];
+                };
+            };
+            /** @description Faltan datos o el correo no tiene un formato válido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Correo o contraseña incorrectos. El mensaje no indica cuál de los dos falló. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario está inactivo o no tiene roles asignados: debe comunicarse con el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_obtenerSesion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioAutenticadoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_cerrarSesion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sesión cerrada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
     SaludController_verificar: {
         parameters: {
             query?: never;
