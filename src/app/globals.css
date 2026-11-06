@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+/* Color de marca provisional: el mismo de src/app/identidad.ts (NFR-018). */
+@theme {
+  --color-marca: #1e3a8a;
+  --color-marca-oscuro: #172554;
+}
+
+:root {
+  color-scheme: light;
+}
