@@ -66,6 +66,11 @@ commit junto con el cambio que lo usa.
 según los roles del usuario, pero eso es presentación. Nunca asumas que ocultar un botón
 protege algo, y nunca tomes una decisión de permisos que el backend no haya validado.
 
+**El token nunca llega al navegador.** El navegador solo habla con `/api` de este mismo
+servidor, y `src/app/api/[...ruta]/route.ts` reenvía al backend con el token de la cookie
+`httpOnly`. No llames al backend directamente desde el navegador ni guardes el token en
+`localStorage` o en una cookie legible por JavaScript.
+
 **Un usuario tiene varios roles.** Hay docentes que además son líderes RAP. El menú y las
 pantallas se arman a partir de una lista de roles, no de un rol único.
 

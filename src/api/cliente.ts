@@ -1,10 +1,15 @@
+import { avisarSesionInvalida } from '@/sesion/eventos';
 import type { components } from './openapi';
 
 /** Cuerpo de toda respuesta de error de la API (RespuestaErrorDto en el backend). */
 export type RespuestaError = components['schemas']['RespuestaErrorDto'];
 
-/** URL base de la API, sin barra final. Next.js la incrusta al compilar (ver .env.example). */
-const URL_API = (process.env.NEXT_PUBLIC_URL_API ?? '').replace(/\/+$/, '');
+/**
+ * El navegador llama a /api en este mismo origen, con las mismas rutas del backend: el
+ * servidor de Next reenvía cada petición con el token de la sesión, que guarda en una cookie
+ * httpOnly (ver src/servidor/backend.ts). Aquí nunca se maneja el token.
+ */
+const URL_API = '/api';
 
 /**
  * Tiempo máximo de espera antes de dar por fallida una solicitud. Deja margen sobre los 10 s
@@ -40,13 +45,27 @@ export class ErrorApi extends Error {
   }
 }
 
+export interface OpcionesSolicitud {
+  metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** Se envía como JSON. */
+  cuerpo?: unknown;
+  /** Si `senal` cancela la solicitud, se propaga su motivo en vez de un ErrorApi. */
+  senal?: AbortSignal;
+  /**
+   * La ruta no exige sesión (iniciar sesión, salud): un 401 en ella no significa que la
+   * sesión venció.
+   */
+  publica?: boolean;
+}
+
 /**
- * GET a la API. Devuelve el cuerpo JSON, que el llamador tipa con los tipos generados desde
- * el OpenAPI, o lanza ErrorApi. Si `senal` cancela la solicitud, se propaga su motivo.
+ * Solicitud a la API. Devuelve el cuerpo JSON, que el llamador tipa con los tipos generados
+ * desde el OpenAPI, o `undefined` si la respuesta no tiene cuerpo (204). Si falla, lanza
+ * ErrorApi con un mensaje en español.
  */
-export async function obtener<T>(
+export async function solicitar<T>(
   ruta: string,
-  senal?: AbortSignal,
+  { metodo = 'GET', cuerpo, senal, publica = false }: OpcionesSolicitud = {},
 ): Promise<T> {
   senal?.throwIfAborted();
   const controlador = new AbortController();
@@ -60,28 +79,38 @@ export async function obtener<T>(
 
   try {
     const respuesta = await fetch(`${URL_API}${ruta}`, {
-      headers: { Accept: 'application/json' },
+      method: metodo,
+      headers: {
+        Accept: 'application/json',
+        ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
       cache: 'no-store',
       signal: controlador.signal,
     });
-    const cuerpo: unknown = await respuesta.json().catch(() => undefined);
+    const sinCuerpo = respuesta.status === 204;
+    const datos: unknown = sinCuerpo
+      ? undefined
+      : await respuesta.json().catch(() => undefined);
     senal?.throwIfAborted();
     if (tiempoAgotado) {
       throw new ErrorApi(MENSAJES.tiempoAgotado);
     }
     if (!respuesta.ok) {
-      throw errorDeRespuesta(respuesta.status, cuerpo);
+      if (respuesta.status === 401 && !publica) {
+        avisarSesionInvalida();
+      }
+      throw errorDeRespuesta(respuesta.status, datos);
     }
-    if (cuerpo === undefined) {
+    if (datos === undefined && !sinCuerpo) {
       throw new ErrorApi(MENSAJES.inesperado, respuesta.status);
     }
-    return cuerpo as T;
+    return datos as T;
   } catch (error) {
     if (error instanceof ErrorApi || senal?.aborted) {
       throw error;
     }
-    // fetch solo falla cuando no hubo respuesta: red caída, origen rechazado por CORS o
-    // tiempo agotado.
+    // fetch solo falla cuando no hubo respuesta: red caída o tiempo agotado.
     throw new ErrorApi(
       tiempoAgotado ? MENSAJES.tiempoAgotado : MENSAJES.sinConexion,
     );
@@ -89,6 +118,23 @@ export async function obtener<T>(
     clearTimeout(temporizador);
     senal?.removeEventListener('abort', cancelar);
   }
+}
+
+/** GET a la API (ver `solicitar`). */
+export function obtener<T>(
+  ruta: string,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, opciones);
+}
+
+/** POST a la API con un cuerpo JSON opcional (ver `solicitar`). */
+export function enviar<T>(
+  ruta: string,
+  cuerpo?: unknown,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, { ...opciones, metodo: 'POST', cuerpo });
 }
 
 /** Mensaje en español para el usuario ante cualquier error, sin detalles técnicos (NFR-011). */
