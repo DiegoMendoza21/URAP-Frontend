@@ -219,6 +219,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{idProyecto}/matriculados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista de estudiantes del curso (RF-22)
+         * @description Datos personales (Ley 1581 de 2012): solo el Administrador y los docentes asignados al proyecto. `ultimaCarga` es nulo si el curso todavía no tiene lista.
+         */
+        get: operations["MatriculasController_listar"];
+        put?: never;
+        /**
+         * Carga la lista de estudiantes matriculados del curso (RF-22, HU-09-01)
+         * @description Recibe un Excel (.xlsx) con las columnas Documento, Nombres, Apellidos y, si se quiere, Correo, y reemplaza la lista del curso. Los que no aparecen quedan retirados, sin borrarse. Si una fila tiene un error no se guarda ninguna, y `detalles` dice qué fila falló y por qué. Solo el Administrador.
+         */
+        post: operations["MatriculasController_cargar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/mediciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mediciones de RAP del curso y sus precondiciones (RF-30, p1 y p2)
+         * @description Dice si el proyecto está aprobado, si el curso tiene lista de estudiantes y qué RAP tienen rúbrica vigente, y lista las mediciones registradas. El líder RAP solo ve los RAP que lidera.
+         */
+        get: operations["MedicionesController_delProyecto"];
+        put?: never;
+        /**
+         * Inicia la medición de un RAP en el curso (RF-30, HU-11-01)
+         * @description Solo el docente asignado al curso. Exige el proyecto aprobado, la lista de estudiantes y una rúbrica vigente del RAP; la medición queda asociada a esa versión de la rúbrica, en borrador.
+         */
+        post: operations["MedicionesController_iniciar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Hoja de valoración de la medición (RF-30, p3 a p6)
+         * @description Rúbrica con sus indicadores e instrumentos, escala del programa y nivel de cada estudiante en cada indicador. Datos personales (Ley 1581 de 2012): solo el docente asignado, el líder del RAP y el departamento del programa.
+         */
+        get: operations["MedicionesController_obtener"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/instrumentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra el instrumento de cada indicador (RF-30, p4; HU-11-02)
+         * @description Solo cambia los indicadores enviados. Medición en borrador.
+         */
+        put: operations["MedicionesController_registrarInstrumentos"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/valoraciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra el nivel de los estudiantes por indicador (RF-30, p6; HU-11-03)
+         * @description Guarda las celdas enviadas, todo o nada. Un valor nulo deja al estudiante sin valorar en ese indicador: queda fuera de la muestra. Medición en borrador.
+         */
+        put: operations["MedicionesController_registrarValoraciones"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -567,6 +675,362 @@ export interface components {
              * @example 42
              */
             total: number;
+        };
+        UltimaCargaDto: {
+            /** @example 2026-11-07T15:30:00.000Z */
+            fecha: string;
+            /**
+             * @description Quién la cargó
+             * @example Administrador Demo
+             */
+            cargadoPor: string;
+        };
+        ResultadoCargaMatriculadosDto: {
+            /**
+             * @description Estudiantes en el archivo
+             * @example 32
+             */
+            matriculados: number;
+            /**
+             * @description Estudiantes que no estaban en la lista del curso
+             * @example 30
+             */
+            nuevos: number;
+            /**
+             * @description Estaban retirados y vuelven a aparecer en el archivo
+             * @example 1
+             */
+            reincorporados: number;
+            /**
+             * @description Estaban en la lista y no aparecen en el archivo: quedan como retirados, sin borrarse
+             * @example 2
+             */
+            retirados: number;
+            /**
+             * @description Estudiantes ya registrados cuyos nombres o correo se actualizaron con el archivo
+             * @example 3
+             */
+            actualizados: number;
+            carga: components["schemas"]["UltimaCargaDto"];
+        };
+        MatriculadoDto: {
+            /**
+             * @description Identificador de la matrícula
+             * @example 41
+             */
+            idMatricula: number;
+            /** @example 1000000001 */
+            documento: string;
+            /** @example Estudiante Uno */
+            nombres: string;
+            /** @example Ficticio Demo */
+            apellidos: string;
+            /** @example estudiante.uno@ejemplo.edu.co */
+            correo: string | null;
+            /** @enum {string} */
+            estado: "matriculado" | "retirado";
+        };
+        PaginaMatriculadosDto: {
+            elementos: components["schemas"]["MatriculadoDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /**
+             * @description Total con el estado consultado
+             * @example 32
+             */
+            total: number;
+            /** @example 32 */
+            totalMatriculados: number;
+            /** @example 2 */
+            totalRetirados: number;
+            /** @description Nulo si el curso todavía no tiene lista cargada (RF-22, excepción de p3) */
+            ultimaCarga: components["schemas"]["UltimaCargaDto"] | null;
+        };
+        ProyectoMedicionDto: {
+            /** @example 13 */
+            id: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+        };
+        EstadoProyectoMedicionDto: {
+            /** @example aprobado */
+            codigo: string;
+            /** @example Aprobado */
+            nombre: string;
+        };
+        RequisitosMedicionDto: {
+            /**
+             * @description El departamento académico aprobó el proyecto docente
+             * @example true
+             */
+            proyectoAprobado: boolean;
+            /**
+             * @description El período académico del curso no está cerrado (RF-17)
+             * @example true
+             */
+            periodoAbierto: boolean;
+            /**
+             * @description El curso tiene la lista de estudiantes matriculados (RF-22)
+             * @example true
+             */
+            listaCargada: boolean;
+            /**
+             * @description Estudiantes matriculados hoy
+             * @example 34
+             */
+            matriculados: number;
+        };
+        PeriodoTomaSugeridoDto: {
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+        };
+        RubricaVigenteDto: {
+            /** @example 5 */
+            id: number;
+            /** @example 1 */
+            version: number | null;
+            /**
+             * @description Indicadores de desempeño que valora
+             * @example 4
+             */
+            indicadores: number;
+        };
+        RapMedibleDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            /** @example Identifica, interpreta y evalúa el entorno económico y financiero de las organizaciones… */
+            descripcion: string | null;
+            /** @description Rúbrica con la que se mediría hoy. Nula si el RAP no tiene rúbrica vigente: no se puede iniciar su medición hasta registrarla (RF-06). */
+            rubricaVigente: components["schemas"]["RubricaVigenteDto"] | null;
+        };
+        RapMedicionDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            /** @example Identifica, interpreta y evalúa el entorno económico y financiero de las organizaciones… */
+            descripcion: string | null;
+        };
+        MedicionResumenDto: {
+            /** @example 8 */
+            id: number;
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            rap: components["schemas"]["RapMedicionDto"];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @enum {string} */
+            estado: "borrador" | "cerrada";
+            /** @example 1 */
+            versionRubrica: number | null;
+            /**
+             * @description Último cambio de la medición
+             * @example 2026-11-07T15:30:00.000Z
+             */
+            actualizada: string | null;
+        };
+        MedicionesDelProyectoDto: {
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            estadoProyecto: components["schemas"]["EstadoProyectoMedicionDto"] | null;
+            requisitos: components["schemas"]["RequisitosMedicionDto"];
+            /**
+             * @description Quien consulta es docente asignado al curso: es quien inicia y registra las mediciones
+             * @example true
+             */
+            puedeRegistrar: boolean;
+            /** @description Período y año de toma deducidos del período académico del curso (2026-2 → segundo, 2026) */
+            periodoSugerido: components["schemas"]["PeriodoTomaSugeridoDto"] | null;
+            raps: components["schemas"]["RapMedibleDto"][];
+            mediciones: components["schemas"]["MedicionResumenDto"][];
+        };
+        IniciarMedicionDto: {
+            /**
+             * @description RAP a evaluar: uno de los RAP del proyecto docente
+             * @example 2
+             */
+            idRap: number;
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /**
+             * @description Período del año en que se tomaron los datos
+             * @enum {string}
+             */
+            periodoToma: "primer" | "segundo";
+            /**
+             * @description Año de toma de datos
+             * @example 2026
+             */
+            anioToma: number;
+            /**
+             * @description Tamaño de la cohorte, si el docente lo conoce. Ningún porcentaje lo usa: si no se registra, el consolidado toma el tamaño de la muestra y lo advierte (RF-31, p3).
+             * @example 34
+             */
+            tamanoCohorte?: number | null;
+        };
+        NivelEscalaDto: {
+            /** @example 3 */
+            valor: number;
+            /** @example Competente */
+            etiqueta: string;
+        };
+        EscalaMedicionDto: {
+            /** @example Escala de valoración de los RAP */
+            nombre: string | null;
+            /**
+             * @description Nivel desde el cual se considera logrado el resultado
+             * @example 3
+             */
+            umbralCumplimiento: number;
+            niveles: components["schemas"]["NivelEscalaDto"][];
+        };
+        DescriptorNivelDto: {
+            /** @example 2 */
+            valor: number;
+            /** @example Raras veces identifica las variables del entorno económico y financiero de las organizaciones */
+            descripcion: string;
+        };
+        IndicadorMedicionDto: {
+            /** @example 7 */
+            idIndicador: number;
+            /** @example 1 */
+            numero: number | null;
+            /** @example Identifica las variables del entorno económico y financiero de las organizaciones */
+            descripcion: string | null;
+            /** @example Taller de análisis financiero */
+            instrumento: string | null;
+            descripcionInstrumento: string | null;
+            /** @description Desempeño esperado en cada nivel de la escala (celdas de la rúbrica) */
+            descriptores: components["schemas"]["DescriptorNivelDto"][];
+        };
+        ValoracionRegistradaDto: {
+            /** @example 7 */
+            idIndicador: number;
+            /**
+             * @description Valor del nivel en la escala
+             * @example 3
+             */
+            valor: number;
+        };
+        EstudianteMedicionDto: {
+            /** @example 41 */
+            idMatricula: number;
+            /** @example 1000000001 */
+            documento: string;
+            /** @example Estudiante Uno */
+            nombres: string;
+            /** @example Ficticio Demo */
+            apellidos: string;
+            /**
+             * @description Salió de la lista del curso después de ser valorado: sus valoraciones se conservan
+             * @example false
+             */
+            retirado: boolean;
+            /** @description Un indicador que no aparece aquí está sin valorar */
+            valoraciones: components["schemas"]["ValoracionRegistradaDto"][];
+        };
+        MedicionDetalleDto: {
+            /** @example 8 */
+            id: number;
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            rap: components["schemas"]["RapMedicionDto"];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @enum {string} */
+            estado: "borrador" | "cerrada";
+            /** @example 1 */
+            versionRubrica: number | null;
+            /**
+             * @description Último cambio de la medición
+             * @example 2026-11-07T15:30:00.000Z
+             */
+            actualizada: string | null;
+            /**
+             * @description Tamaño de la cohorte registrado; nulo si no se registró
+             * @example null
+             */
+            tamanoCohorte: number | null;
+            /**
+             * @description Porcentaje esperado en los niveles de cumplimiento, copiado de la escala del programa al iniciar la medición. Nulo: el programa no lo ha definido.
+             * @example null
+             */
+            porcentajeEsperado: number | null;
+            escala: components["schemas"]["EscalaMedicionDto"];
+            indicadores: components["schemas"]["IndicadorMedicionDto"][];
+            estudiantes: components["schemas"]["EstudianteMedicionDto"][];
+            /** @example Docente Demo */
+            registradoPor: string | null;
+            /**
+             * @description Quien consulta puede registrar instrumentos y valoraciones: es docente asignado al curso y la medición está en borrador
+             * @example true
+             */
+            puedeEditar: boolean;
+        };
+        InstrumentoIndicadorDto: {
+            /**
+             * @description Indicador de desempeño de la rúbrica de la medición
+             * @example 7
+             */
+            idIndicador: number;
+            /** @example Taller de análisis financiero */
+            instrumento: string;
+            /** @example Caso práctico sobre el capital de trabajo de una empresa local. */
+            descripcionInstrumento?: string | null;
+        };
+        RegistrarInstrumentosDto: {
+            indicadores: components["schemas"]["InstrumentoIndicadorDto"][];
+        };
+        ValoracionDto: {
+            /**
+             * @description Matrícula del estudiante en el curso
+             * @example 41
+             */
+            idMatricula: number;
+            /**
+             * @description Indicador de desempeño
+             * @example 7
+             */
+            idIndicador: number;
+            /**
+             * @description Valor del nivel en la escala del programa (1 a 4 en Administración Industrial). Nulo deja al estudiante sin valorar en ese indicador.
+             * @example 3
+             */
+            valor: number | null;
+        };
+        RegistrarValoracionesDto: {
+            valoraciones: components["schemas"]["ValoracionDto"][];
+        };
+        ResultadoValoracionesDto: {
+            /**
+             * @description Valoraciones con un nivel registrado
+             * @example 136
+             */
+            registradas: number;
+            /**
+             * @description Valoraciones que quedaron sin nivel
+             * @example 2
+             */
+            borradas: number;
         };
     };
     responses: never;
@@ -1098,6 +1562,456 @@ export interface operations {
             };
             /** @description El proyecto no existe o el usuario no tiene acceso a él */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MatriculasController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Matriculados (por defecto) o retirados: los que estaban en una carga anterior y no en la última */
+                estado?: "matriculado" | "retirado";
+            };
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaMatriculadosDto"];
+                };
+            };
+            /** @description Paginación o estado inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador ni Docente responsable */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MatriculasController_cargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    archivo: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoCargaMatriculadosDto"];
+                };
+            };
+            /** @description Sin archivo, más de un archivo o un archivo que no es .xlsx */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el tamaño máximo de archivo del parámetro archivo_tamano_maximo_mb */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El archivo no se puede leer, le faltan columnas, no tiene estudiantes o tiene filas con errores (documento repetido o inválido, nombres o apellidos vacíos, correo inválido) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_delProyecto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionesDelProyectoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene alcance sobre él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_iniciar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarMedicionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Datos inválidos o un RAP que no es del curso */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es docente asignado al curso */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene alcance sobre él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Proyecto sin aprobar, curso sin lista de estudiantes, RAP sin rúbrica vigente, programa sin escala o medición ya existente para el RAP, el tipo y el año */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_registrarInstrumentos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarInstrumentosDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Datos inválidos o un indicador que no es de la rúbrica de la medición */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es docente asignado al curso */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición está cerrada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_registrarValoraciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarValoracionesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoValoracionesDto"];
+                };
+            };
+            /** @description Datos inválidos, una celda repetida, un indicador ajeno a la medición, un estudiante que no es del curso o un nivel que no está en la escala */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es docente asignado al curso */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición está cerrada */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
