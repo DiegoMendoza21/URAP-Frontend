@@ -20,7 +20,7 @@ const ROL_DOCENTE = 'Docente responsable';
 
 /**
  * Ficha del proyecto docente: la información base con la que lo creó el asistente (RF-08). Las
- * secciones que diligencia el docente (puntos 2 a 7 del formato) llegan con EP-06.
+ * secciones que diligencia el docente (puntos 2 a 7 del formato) están en `diligenciar/`.
  */
 export function FichaProyectoDocente() {
   const { sesion } = useSesion();
@@ -74,6 +74,12 @@ export function FichaProyectoDocente() {
               )}
               <Insignia>Período {proyecto.datos.periodo}</Insignia>
             </div>
+            <Link
+              href={`/proyectos-docentes/${proyecto.datos.id}/diligenciar`}
+              className="inline-block w-full rounded-lg bg-marca px-4 py-3 text-center font-semibold text-white hover:bg-marca-oscuro sm:w-auto sm:py-2"
+            >
+              Diligenciar el proyecto
+            </Link>
           </div>
 
           <section
