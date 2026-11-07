@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { mensajeParaUsuario } from '@/api/cliente';
 import {
   cambioRechazado,
@@ -121,7 +121,8 @@ function EditorContenidos({
   const [error, setError] = useState<string | null>(null);
   const [recienGuardado, setRecienGuardado] = useState(false);
 
-  const hayCambios = huella(filas) !== huella(aFilas(guardado));
+  const huellaGuardada = useMemo(() => huella(aFilas(guardado)), [guardado]);
+  const hayCambios = huella(filas) !== huellaGuardada;
   useEffect(() => {
     alCambiar(hayCambios);
   }, [alCambiar, hayCambios]);
@@ -220,9 +221,13 @@ function EditorContenidos({
     }
     setGuardando(true);
     try {
+      const enviadas = huella(filas);
       const respuesta = await guardarContenidos(idProyecto, semanas);
       setGuardado(respuesta);
-      setFilas(aFilas(respuesta));
+      // Lo que el docente escribió mientras se guardaba no se pisa: queda como cambio pendiente.
+      setFilas((actuales) =>
+        huella(actuales) === enviadas ? aFilas(respuesta) : actuales,
+      );
       setRecienGuardado(true);
       alGuardar();
     } catch (falla) {

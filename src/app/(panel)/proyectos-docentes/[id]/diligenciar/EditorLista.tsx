@@ -116,24 +116,39 @@ export function EditorLista({
     setError(null);
   }
 
-  function agregar(lista: string[]): number {
-    const vistas = new Set(elementos.map((e) => claveTexto(e.texto)));
+  /** Los textos de `lista` que caben en `actuales`: sin vacíos, repetidos ni pasar el máximo. */
+  function nuevosPara(actuales: Elemento[], lista: string[]): string[] {
+    const vistas = new Set(actuales.map((e) => claveTexto(e.texto)));
     const nuevos: string[] = [];
     for (const texto of lista.map((t) => t.trim())) {
       const clave = claveTexto(texto);
       if (
         texto &&
         !vistas.has(clave) &&
-        elementos.length + nuevos.length < maximoElementos
+        actuales.length + nuevos.length < maximoElementos
       ) {
         vistas.add(clave);
         nuevos.push(texto.slice(0, maximoTexto));
       }
     }
-    if (nuevos.length > 0) {
-      cambiar([...elementos, ...conClaves(nuevos)]);
+    return nuevos;
+  }
+
+  /**
+   * Suma al final los textos nuevos. Se aplica sobre el listado más reciente: la importación
+   * llama esto después de esperar al servidor, cuando el docente pudo haber cambiado algo.
+   */
+  function agregar(lista: string[]): number {
+    const cuantos = nuevosPara(elementos, lista).length;
+    setElementos((previos) => {
+      const nuevos = nuevosPara(previos, lista);
+      return nuevos.length > 0 ? [...previos, ...conClaves(nuevos)] : previos;
+    });
+    if (cuantos > 0) {
+      setRecienGuardado(false);
+      setError(null);
     }
-    return nuevos.length;
+    return cuantos;
   }
 
   function agregarNuevo(evento: React.FormEvent) {
@@ -191,9 +206,18 @@ export function EditorLista({
     setGuardando(true);
     setError(null);
     try {
-      const respuesta = await guardar(textos);
+      const enviados = textos;
+      const respuesta = await guardar(enviados);
       setGuardado(respuesta);
-      setElementos(conClaves(respuesta));
+      // Lo que el docente cambió mientras se guardaba no se pisa: queda como cambio pendiente.
+      setElementos((actuales) =>
+        textosDistintos(
+          actuales.map((elemento) => elemento.texto),
+          enviados,
+        )
+          ? actuales
+          : conClaves(respuesta),
+      );
       setRecienGuardado(true);
       alGuardar();
     } catch (falla) {
