@@ -18,7 +18,7 @@ const URL_API = '/api';
  */
 const TIEMPO_LIMITE_MS = 15_000;
 
-const MENSAJES = {
+export const MENSAJES = {
   sinConexion:
     'No fue posible conectar con el servidor de URAP. Revise su conexión e intente de nuevo.',
   tiempoAgotado:
@@ -51,6 +51,11 @@ export interface OpcionesSolicitud {
   metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** Se envía como JSON. */
   cuerpo?: unknown;
+  /**
+   * Se envía como multipart/form-data, para cargar archivos. El navegador pone el
+   * Content-Type con su separador; no se debe fijar a mano.
+   */
+  formulario?: FormData;
   /** Si `senal` cancela la solicitud, se propaga su motivo en vez de un ErrorApi. */
   senal?: AbortSignal;
   /**
@@ -67,7 +72,13 @@ export interface OpcionesSolicitud {
  */
 export async function solicitar<T>(
   ruta: string,
-  { metodo = 'GET', cuerpo, senal, publica = false }: OpcionesSolicitud = {},
+  {
+    metodo = 'GET',
+    cuerpo,
+    formulario,
+    senal,
+    publica = false,
+  }: OpcionesSolicitud = {},
 ): Promise<T> {
   senal?.throwIfAborted();
   const controlador = new AbortController();
@@ -86,7 +97,9 @@ export async function solicitar<T>(
         Accept: 'application/json',
         ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      body:
+        formulario ??
+        (cuerpo === undefined ? undefined : JSON.stringify(cuerpo)),
       cache: 'no-store',
       signal: controlador.signal,
     });
@@ -139,6 +152,24 @@ export function enviar<T>(
   return solicitar<T>(ruta, { ...opciones, metodo: 'POST', cuerpo });
 }
 
+/** PUT a la API con un cuerpo JSON: reemplaza lo enviado (ver `solicitar`). */
+export function reemplazar<T>(
+  ruta: string,
+  cuerpo: unknown,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, { ...opciones, metodo: 'PUT', cuerpo });
+}
+
+/** POST a la API con un formulario multipart, para cargar archivos (ver `solicitar`). */
+export function enviarFormulario<T>(
+  ruta: string,
+  formulario: FormData,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo' | 'formulario'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, { ...opciones, metodo: 'POST', formulario });
+}
+
 /** Mensaje en español para el usuario ante cualquier error, sin detalles técnicos (NFR-011). */
 export function mensajeParaUsuario(error: unknown): string {
   return error instanceof ErrorApi ? error.message : MENSAJES.inesperado;
@@ -150,7 +181,7 @@ export function mensajeParaUsuario(error: unknown): string {
  * un proxy) se usa un mensaje genérico. Un 429 sin ese cuerpo viene de algo delante del
  * backend (un balanceador o un firewall), y su mensaje dice que hay que esperar.
  */
-function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
+export function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
   if (esRespuestaError(cuerpo)) {
     const detalles = Array.isArray(cuerpo.detalles)
       ? cuerpo.detalles.filter((detalle) => typeof detalle === 'string')
