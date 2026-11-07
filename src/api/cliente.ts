@@ -18,7 +18,7 @@ const URL_API = '/api';
  */
 const TIEMPO_LIMITE_MS = 15_000;
 
-const MENSAJES = {
+export const MENSAJES = {
   sinConexion:
     'No fue posible conectar con el servidor de URAP. Revise su conexión e intente de nuevo.',
   tiempoAgotado:
@@ -150,7 +150,7 @@ export function mensajeParaUsuario(error: unknown): string {
  * un proxy) se usa un mensaje genérico. Un 429 sin ese cuerpo viene de algo delante del
  * backend (un balanceador o un firewall), y su mensaje dice que hay que esperar.
  */
-function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
+export function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
   if (esRespuestaError(cuerpo)) {
     const detalles = Array.isArray(cuerpo.detalles)
       ? cuerpo.detalles.filter((detalle) => typeof detalle === 'string')

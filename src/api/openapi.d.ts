@@ -219,6 +219,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{id}/evidencias/opciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * RAP, sesiones y límites para cargar y consultar evidencias (RF-24, p1 y p2)
+         * @description RAP del proyecto cuyas evidencias puede ver el usuario, con cuántas tiene cada uno; si puede cargar; las sesiones del calendario; y el tamaño y los tipos de archivo permitidos, de `parametro_sistema`. El Docente ve las de sus proyectos; el Líder RAP, las de los RAP que lidera; el Departamento, la Dirección y el Administrador, las de su programa. Responde 404 si el usuario no ve el proyecto y 403 si lo ve pero no puede consultar ninguna de sus evidencias.
+         */
+        get: operations["EvidenciasController_opciones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/evidencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Galería de evidencias del proyecto, por RAP (RF-24, p6)
+         * @description Paginada, las más recientes primero. El Docente ve las de sus proyectos; el Líder RAP, las de los RAP que lidera; el Departamento, la Dirección y el Administrador, las de su programa. Responde 404 si el usuario no ve el proyecto y 403 si lo ve pero no puede consultar ninguna de sus evidencias.
+         */
+        get: operations["EvidenciasController_listar"];
+        put?: never;
+        /**
+         * Carga evidencias fotográficas de un RAP del proyecto (RF-24, p3 a p5)
+         * @description Uno o varios archivos con la misma descripción, fecha y, si corresponde, sesión. Solo los docentes del proyecto (`proyecto_docente_docente`). Es todo o nada: si un archivo no pasa la validación, no se guarda ninguno. El archivo va al almacenamiento documental y la base guarda solo su referencia.
+         */
+        post: operations["EvidenciasController_cargar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/evidencias/{idEvidencia}/archivo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descarga el archivo de una evidencia (NFR-007)
+         * @description Los archivos nunca son públicos: se entregan solo por aquí, con la sesión iniciada y el mismo alcance de la galería. Cada descarga queda en la auditoría. El Docente ve las de sus proyectos; el Líder RAP, las de los RAP que lidera; el Departamento, la Dirección y el Administrador, las de su programa. Responde 404 si el usuario no ve el proyecto y 403 si lo ve pero no puede consultar ninguna de sus evidencias.
+         */
+        get: operations["EvidenciasController_descargar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -567,6 +631,145 @@ export interface components {
              * @example 42
              */
             total: number;
+        };
+        RapEvidenciasDto: {
+            /** @example 2 */
+            id: number;
+            /** @example 2 */
+            numero: number | null;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example Diseña sistemas productivos… */
+            descripcion: string | null;
+            /**
+             * @description Evidencias del RAP en este proyecto que el usuario puede ver
+             * @example 3
+             */
+            totalEvidencias: number;
+        };
+        SesionEvidenciaDto: {
+            /** @example 31 */
+            id: number;
+            /**
+             * Format: date
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /** @example 6 */
+            semana: number | null;
+        };
+        OpcionesEvidenciasDto: {
+            /** @example 12 */
+            idProyectoDocente: number;
+            /** @description Si el usuario puede cargar evidencias en este proyecto: es uno de sus docentes, el período no está cerrado y el proyecto tiene RAP */
+            puedeCargar: boolean;
+            /**
+             * @description Por qué no puede cargar, cuando es un docente del proyecto
+             * @example El período académico del proyecto ya está cerrado.
+             */
+            motivoSinCarga: string | null;
+            /** @description RAP del proyecto cuyas evidencias puede consultar el usuario */
+            raps: components["schemas"]["RapEvidenciasDto"][];
+            /** @description Sesiones del calendario que se pueden relacionar con una evidencia. Vacía si el usuario no puede cargar o si el calendario no se ha generado. */
+            sesiones: components["schemas"]["SesionEvidenciaDto"][];
+            /**
+             * @description Tamaño máximo de cada archivo, en MB (`archivo_tamano_maximo_mb`)
+             * @example 10
+             */
+            tamanoMaximoMb: number;
+            /**
+             * @description Extensiones permitidas (`evidencia_tipos_permitidos`)
+             * @example [
+             *       "jpg",
+             *       "jpeg",
+             *       "png",
+             *       "pdf"
+             *     ]
+             */
+            extensionesPermitidas: string[];
+            /**
+             * @example [
+             *       "image/jpeg",
+             *       "image/png",
+             *       "application/pdf"
+             *     ]
+             */
+            tiposMimePermitidos: string[];
+            /**
+             * @description Archivos por cada carga
+             * @example 5
+             */
+            maximoArchivosPorCarga: number;
+        };
+        UsuarioEvidenciaDto: {
+            /** @example 7 */
+            id: number;
+            /** @example Docente */
+            nombres: string | null;
+            /** @example Demostración */
+            apellidos: string | null;
+        };
+        EvidenciaDto: {
+            /** @example 40 */
+            id: number;
+            /** @example 12 */
+            idProyectoDocente: number;
+            /** @example 2 */
+            idRap: number;
+            sesion: components["schemas"]["SesionEvidenciaDto"] | null;
+            /** @example Exposición de los grupos. */
+            descripcion: string;
+            /**
+             * Format: date
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /** @example IMG_20260914_101500.jpg */
+            nombreOriginal: string;
+            /** @example image/jpeg */
+            tipo: string;
+            /** @example 2481337 */
+            tamanoBytes: number;
+            /**
+             * Format: date-time
+             * @example 2026-09-14T15:20:00.000Z
+             */
+            fechaSubida: string;
+            subidoPor: components["schemas"]["UsuarioEvidenciaDto"] | null;
+        };
+        PaginaEvidenciasDto: {
+            elementos: components["schemas"]["EvidenciaDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 3 */
+            total: number;
+        };
+        FormularioCargaEvidenciasDto: {
+            /**
+             * @description RAP del proyecto al que corresponde (p2)
+             * @example 2
+             */
+            idRap: number;
+            /** @example Exposición de los grupos sobre el estudio de métodos. */
+            descripcion: string;
+            /**
+             * Format: date
+             * @description Día en que se tomó la evidencia (AAAA-MM-DD)
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /**
+             * @description Sesión de clase relacionada, si corresponde
+             * @example 31
+             */
+            idSesion?: number;
+            /** @description Uno o varios archivos (JPG, PNG o PDF según `evidencia_tipos_permitidos`), cada uno hasta el tamaño de `archivo_tamano_maximo_mb`. */
+            archivos: string[];
+        };
+        CargaEvidenciasDto: {
+            evidencias: components["schemas"]["EvidenciaDto"][];
         };
     };
     responses: never;
@@ -1103,6 +1306,285 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_opciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpcionesEvidenciasDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Solo las evidencias de este RAP. Sin él, todas las que el usuario puede ver. */
+                idRap?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaEvidenciasDto"];
+                };
+            };
+            /** @description Paginación o RAP inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_cargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["FormularioCargaEvidenciasDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CargaEvidenciasDto"];
+                };
+            };
+            /** @description Sin archivos o con más de los permitidos por carga, sin descripción, fecha inválida o futura, RAP que no es del proyecto o sesión de otro calendario */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente, o no es uno de los docentes del proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período del proyecto está cerrado, o el proyecto no tiene RAP */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Un archivo supera el tamaño máximo; el mensaje dice el límite (p4) */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Un archivo no es de un tipo permitido (p4) */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Falló el almacenamiento documental; no quedó nada guardado y se puede reintentar (p5) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_descargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                idEvidencia: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El archivo, con su tipo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "application/pdf": string;
+                };
+            };
+            /** @description El navegador ya tiene esta versión (If-None-Match) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": components["schemas"]["RespuestaErrorDto"];
+                    "image/png": components["schemas"]["RespuestaErrorDto"];
+                    "application/pdf": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No se pudo leer el almacenamiento documental */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": components["schemas"]["RespuestaErrorDto"];
+                    "image/png": components["schemas"]["RespuestaErrorDto"];
+                    "application/pdf": components["schemas"]["RespuestaErrorDto"];
                 };
             };
         };
