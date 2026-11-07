@@ -219,6 +219,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{id}/diligenciamiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado de las secciones del proyecto docente (HU-06-08)
+         * @description Indica qué secciones están completas, qué les falta y si el usuario puede editar.
+         */
+        get: operations["DiligenciamientoController_resumen"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/descripcion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Punto 2 «Descripción» (RF-11) */
+        get: operations["DiligenciamientoController_descripcion"];
+        /**
+         * Guarda el punto 2 «Descripción» (RF-11, HU-06-01)
+         * @description Guarda el texto y la fecha de última modificación. Admite un texto vacío para dejar la sección pendiente (HU-06-08).
+         */
+        put: operations["DiligenciamientoController_guardarDescripcion"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/rac": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Punto 3: RAC del curso agrupados por RAP (RF-12)
+         * @description Un grupo por cada RAP del proyecto, con su enunciado completo, y la lista de RAP que todavía no tienen RAC (p5).
+         */
+        get: operations["DiligenciamientoController_seccionRac"];
+        put?: never;
+        /**
+         * Registra un RAC asociado a uno o varios RAP (HU-06-02, HU-06-03)
+         * @description Devuelve la sección completa ya actualizada.
+         */
+        post: operations["DiligenciamientoController_crearRac"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/rac/{idRac}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Actualiza un RAC y reemplaza sus RAP asociados
+         * @description Devuelve la sección completa ya actualizada.
+         */
+        put: operations["DiligenciamientoController_actualizarRac"];
+        post?: never;
+        /**
+         * Elimina un RAC del proyecto en diligenciamiento
+         * @description Devuelve la sección completa ya actualizada.
+         */
+        delete: operations["DiligenciamientoController_eliminarRac"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -567,6 +656,134 @@ export interface components {
              * @example 42
              */
             total: number;
+        };
+        SeccionResumenDto: {
+            /**
+             * @description Número del punto en el formato FO-DO/PC-001
+             * @example 2
+             */
+            numero: number;
+            /** @example descripcion */
+            clave: string;
+            /** @example Descripción */
+            titulo: string;
+            /** @example false */
+            completa: boolean;
+            /**
+             * @description Lo que le falta a la sección. Vacío si está completa.
+             * @example [
+             *       "Redacte la descripción del curso."
+             *     ]
+             */
+            pendientes: string[];
+        };
+        DiligenciamientoDto: {
+            /** @example 7 */
+            idProyecto: number;
+            estado: components["schemas"]["EstadoProyectoDto"] | null;
+            /**
+             * @description Si el usuario puede editar ahora: es docente asignado al proyecto y el estado lo permite (`estado_proyecto.permite_edicion`).
+             * @example true
+             */
+            puedeEditar: boolean;
+            /**
+             * @description Por qué no puede editar, en lenguaje del usuario (RF-11, p4)
+             * @example null
+             */
+            motivoNoEditable: string | null;
+            /**
+             * Format: date-time
+             * @description Última modificación del proyecto
+             * @example 2026-11-07T15:20:00.000Z
+             */
+            fechaActualizacion: string | null;
+            /** @description Secciones en el orden del formato */
+            secciones: components["schemas"]["SeccionResumenDto"][];
+        };
+        DescripcionDto: {
+            texto: string | null;
+            /**
+             * @description Caracteres máximos permitidos (parámetro del sistema)
+             * @example 4000
+             */
+            longitudMaxima: number;
+            /**
+             * Format: date-time
+             * @description Última modificación del proyecto
+             * @example 2026-11-07T15:20:00.000Z
+             */
+            fechaActualizacion: string | null;
+        };
+        GuardarDescripcionDto: {
+            /**
+             * @description Texto del punto 2. Conserva los saltos de línea. Una cadena vacía borra la descripción (el progreso parcial se permite, HU-06-08). La longitud máxima la define el parámetro `descripcion_curso_longitud_maxima`.
+             * @example El curso presenta las herramientas de planeación financiera de corto plazo…
+             */
+            texto: string;
+        };
+        RapDelRacDto: {
+            /** @example 2 */
+            idRap: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            descripcionContribucion: string | null;
+        };
+        RacDto: {
+            /** @example 15 */
+            id: number;
+            /** @example RAC 1 */
+            codigo: string;
+            /** @example Analiza la liquidez de una empresa… */
+            enunciado: string;
+            /** @example 1 */
+            orden: number | null;
+            /** @description RAP a los que contribuye */
+            raps: components["schemas"]["RapDelRacDto"][];
+        };
+        GrupoRacDto: {
+            /** @description RAP con su enunciado completo */
+            rap: components["schemas"]["RapDto"];
+            /** @description RAC que contribuyen a este RAP. Un RAC asociado a varios RAP aparece en cada grupo. */
+            racs: components["schemas"]["RacDto"][];
+        };
+        SeccionRacDto: {
+            /** @description Un grupo por RAP del proyecto, en orden */
+            grupos: components["schemas"]["GrupoRacDto"][];
+            /**
+             * @description RAP que todavía no tienen RAC (RF-12, p5)
+             * @example [
+             *       3
+             *     ]
+             */
+            rapsSinRac: number[];
+        };
+        RapDelRacEntradaDto: {
+            /**
+             * @description RAP seleccionado para el proyecto al que contribuye el RAC
+             * @example 2
+             */
+            idRap: number;
+            /**
+             * @description Cómo contribuye el RAC a este RAP (HU-06-03). Opcional.
+             * @example Aporta el análisis de liquidez que pide el RAP.
+             */
+            descripcionContribucion?: string;
+        };
+        GuardarRacDto: {
+            /**
+             * @description Código del RAC en el curso
+             * @example RAC 1
+             */
+            codigo: string;
+            /**
+             * @description Enunciado del RAC
+             * @example Analiza la liquidez de una empresa a partir de sus estados financieros.
+             */
+            enunciado: string;
+            /** @description RAP del proyecto a los que contribuye. Al menos uno (RF-12, p3) y sin repetir (HU-06-03). */
+            raps: components["schemas"]["RapDelRacEntradaDto"][];
         };
     };
     responses: never;
@@ -1098,6 +1315,419 @@ export interface operations {
             };
             /** @description El proyecto no existe o el usuario no tiene acceso a él */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    DiligenciamientoController_resumen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiligenciamientoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    DiligenciamientoController_descripcion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DescripcionDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    DiligenciamientoController_guardarDescripcion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarDescripcionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DescripcionDto"];
+                };
+            };
+            /** @description El texto supera la longitud máxima (RF-11, p3) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    DiligenciamientoController_seccionRac: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionRacDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    DiligenciamientoController_crearRac: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarRacDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionRacDto"];
+                };
+            };
+            /** @description Sin RAP (RF-12, p3), RAP repetido, RAP que no es del proyecto, o código o enunciado vacíos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. También si el código ya existe en el proyecto. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    DiligenciamientoController_actualizarRac: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                idRac: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarRacDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionRacDto"];
+                };
+            };
+            /** @description Sin RAP (RF-12, p3), RAP repetido o que no es del proyecto */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto o el RAC no existen, o no tiene acceso */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. También si el código ya existe en el proyecto. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    DiligenciamientoController_eliminarRac: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                idRac: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionRacDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto o el RAC no existen, o no tiene acceso */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. También si el RAC ya tiene evaluaciones. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
