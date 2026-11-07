@@ -36,12 +36,16 @@ const formatoFecha = new Intl.DateTimeFormat('es-CO', {
  */
 export function ReporteLogroRap() {
   const filtros = useConsulta('filtros-logro-rap', consultarFiltrosLogroRap);
-  const [consulta, setConsulta] = useState<ConsultaLogroRap | null>(null);
+  // `numero` cambia con cada clic en «Generar reporte»: con los mismos filtros también se
+  // vuelve a pedir, para traer las mediciones cerradas desde la última vez.
+  const [solicitud, setSolicitud] = useState<{
+    consulta: ConsultaLogroRap;
+    numero: number;
+  } | null>(null);
+  const consulta = solicitud?.consulta ?? null;
   const reporte = useConsulta(
-    consulta === null
-      ? null
-      : `logro-rap-${consulta.idPrograma}-${consulta.idPeriodo}-${consulta.idRap ?? ''}`,
-    (senal) => consultarLogroRap(consulta!, senal),
+    solicitud === null ? null : `logro-rap-${solicitud.numero}`,
+    (senal) => consultarLogroRap(solicitud!.consulta, senal),
   );
 
   return (
@@ -73,7 +77,15 @@ export function ReporteLogroRap() {
         />
       )}
       {filtros.estado === 'lista' && (
-        <Filtros opciones={filtros.datos} alConsultar={setConsulta} />
+        <Filtros
+          opciones={filtros.datos}
+          alConsultar={(nueva) =>
+            setSolicitud((anterior) => ({
+              consulta: nueva,
+              numero: (anterior?.numero ?? 0) + 1,
+            }))
+          }
+        />
       )}
 
       {reporte.estado === 'cargando' && (

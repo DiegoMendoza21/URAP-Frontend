@@ -1,3 +1,4 @@
+import { avisarSesionInvalida } from '@/sesion/eventos';
 import { ErrorApi, obtener } from './cliente';
 import type { components } from './openapi';
 
@@ -44,6 +45,9 @@ export function consultarLogroRap(
   );
 }
 
+/** Mismo límite que las demás solicitudes a la API (src/api/cliente.ts). */
+const TIEMPO_LIMITE_MS = 15_000;
+
 /**
  * Descarga el reporte en Excel (RF-32, p5). Pasa por /api como todo lo demás: el token sigue
  * en la cookie httpOnly. Devuelve el archivo y el nombre que propone el backend.
@@ -55,14 +59,20 @@ export async function descargarLogroRapExcel(
   try {
     respuesta = await fetch(
       `/api/reportes/logro-rap/excel?${parametros(consulta)}`,
-      { cache: 'no-store' },
+      { cache: 'no-store', signal: AbortSignal.timeout(TIEMPO_LIMITE_MS) },
     );
-  } catch {
+  } catch (error) {
     throw new ErrorApi(
-      'No fue posible conectar con el servidor de URAP. Revise su conexión e intente de nuevo.',
+      error instanceof DOMException && error.name === 'TimeoutError'
+        ? 'El servidor de URAP tardó demasiado en responder. Intente de nuevo en unos minutos.'
+        : 'No fue posible conectar con el servidor de URAP. Revise su conexión e intente de nuevo.',
     );
   }
   if (!respuesta.ok) {
+    // Igual que el resto de solicitudes: con la sesión vencida, se vuelve al inicio de sesión.
+    if (respuesta.status === 401) {
+      avisarSesionInvalida();
+    }
     const cuerpo: unknown = await respuesta.json().catch(() => undefined);
     const mensaje =
       typeof cuerpo === 'object' &&
