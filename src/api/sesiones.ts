@@ -9,6 +9,10 @@ export type DatosGuardarHorario = Esquemas['GuardarHorarioDto'];
 export type SesionCalendario = Esquemas['SesionCalendarioDto'];
 export type CalendarioSesiones = Esquemas['CalendarioSesionesDto'];
 export type ResultadoGeneracion = Esquemas['ResultadoGeneracionDto'];
+export type TipoAlertaSesion = Esquemas['TipoAlertaSesion'];
+export type ResumenAlertas = Esquemas['ResumenAlertasDto'];
+export type PendientesDocente = Esquemas['PendientesDocenteDto'];
+export type ProyectoConPendientes = Esquemas['ProyectoConPendientesDto'];
 
 /** Días en que puede haber clase (RF-19): 1 = lunes … 6 = sábado, como en el backend. */
 export const DIAS_SEMANA = [
@@ -50,6 +54,29 @@ export function consultarCalendario(idProyecto: number, senal?: AbortSignal) {
     `/proyectos-docentes/${idProyecto}/calendario?tamano=${TAMANO_CALENDARIO}`,
     { senal },
   );
+}
+
+/**
+ * RF-23, p5: vencidas y por vencer de los proyectos del docente que consulta, para su panel.
+ * El backend decide qué está vencido y con qué umbral; aquí solo se muestra.
+ */
+export function consultarPendientes(senal?: AbortSignal) {
+  return obtener<PendientesDocente>('/sesiones/pendientes?pagina=1&tamano=20', {
+    senal,
+  });
+}
+
+/** Días de atraso de una sesión vencida, en palabras (RF-23, p3). */
+export function textoAtraso(dias: number): string {
+  return dias === 1 ? '1 día de atraso' : `${dias} días de atraso`;
+}
+
+/** Cuánto falta para una sesión por vencer: 0 es hoy. */
+export function textoRestante(dias: number): string {
+  if (dias === 0) {
+    return 'hoy';
+  }
+  return dias === 1 ? 'mañana' : `en ${dias} días`;
 }
 
 /** Genera el calendario o, si ya existe, recalcula las sesiones sin diligenciar. */

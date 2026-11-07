@@ -16,6 +16,8 @@ import {
   nombreDia,
   type ResultadoGeneracion,
   type SesionCalendario,
+  textoAtraso,
+  textoRestante,
 } from '@/api/sesiones';
 import {
   Advertencia,
@@ -58,18 +60,12 @@ function fechaCorta(fecha: string): string {
   return formatoFechaCorta.format(new Date(`${fecha}T00:00:00Z`));
 }
 
-/** Fecha de hoy en la hora del teléfono o del equipo, como `YYYY-MM-DD`. */
-function hoy(): string {
-  const ahora = new Date();
-  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-  const dia = String(ahora.getDate()).padStart(2, '0');
-  return `${ahora.getFullYear()}-${mes}-${dia}`;
-}
-
 /**
  * Calendario de sesiones del curso (RF-19). El docente define los días y horas de clase
- * (HU-08-02) y genera el calendario (HU-08-03). Se diseña primero para el teléfono: el docente
- * lo consulta al salir del salón.
+ * (HU-08-02) y genera el calendario (HU-08-03). Las sesiones vencidas sin diligenciar salen en
+ * rojo con sus días de atraso y las por vencer en color de advertencia (RF-23): el backend
+ * decide cuáles son y con qué umbral. Se diseña primero para el teléfono: el docente lo
+ * consulta al salir del salón.
  */
 export function CalendarioSesionesCurso() {
   const { id } = useParams<{ id: string }>();
@@ -242,6 +238,7 @@ export function CalendarioSesionesCurso() {
           {fallo && !editando && (
             <AvisoError mensaje={fallo.mensaje} detalles={fallo.detalles} />
           )}
+          <ResumenAlertasCalendario calendario={calendario.datos} />
           {resultado && <ResumenGeneracion resultado={resultado} />}
           {!resultado &&
             calendario.datos.advertencias.map((advertencia) => (
@@ -514,7 +511,7 @@ function ListaSesiones({ calendario }: { calendario: CalendarioSesiones }) {
       </p>
     );
   }
-  const fechaHoy = hoy();
+  const fechaHoy = calendario.hoy;
   const semanas = new Map<number, SesionCalendario[]>();
   for (const sesion of calendario.elementos) {
     semanas.set(sesion.semana, [...(semanas.get(sesion.semana) ?? []), sesion]);
@@ -572,6 +569,20 @@ function ListaSesiones({ calendario }: { calendario: CalendarioSesiones }) {
   );
 }
 
+/** Estilo de la tarjeta según la alerta del backend (RF-23) o, sin alerta, el tipo y el día. */
+function estiloTarjeta(sesion: SesionCalendario, esHoy: boolean): string {
+  if (sesion.alerta === 'vencida' || sesion.alerta === 'incumplida') {
+    return 'border-red-300 bg-red-50';
+  }
+  if (sesion.alerta === 'por_vencer') {
+    return 'border-amber-300 bg-amber-50';
+  }
+  if (sesion.tipo?.codigo === 'festivo') {
+    return 'border-sky-200 bg-sky-50';
+  }
+  return esHoy ? 'border-marca bg-marca/5' : 'border-slate-200 bg-white';
+}
+
 function TarjetaSesion({
   sesion,
   esHoy,
@@ -580,13 +591,11 @@ function TarjetaSesion({
   esHoy: boolean;
 }) {
   const esFestivo = sesion.tipo?.codigo === 'festivo';
-  const borde = esFestivo
-    ? 'border-amber-300 bg-amber-50'
-    : esHoy
-      ? 'border-marca bg-marca/5'
-      : 'border-slate-200 bg-white';
   return (
-    <li className={`rounded-xl border p-3 ${borde}`}>
+    <li
+      id={`sesion-${sesion.id}`}
+      className={`scroll-mt-4 rounded-xl border p-3 ${estiloTarjeta(sesion, esHoy)}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="font-semibold first-letter:uppercase">
           {fechaLarga(sesion.fecha)}
@@ -598,9 +607,26 @@ function TarjetaSesion({
         )}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {sesion.alerta === 'vencida' && (
+          <Insignia tono="peligro">
+            Vencida
+            {sesion.diasAtraso ? ` · ${textoAtraso(sesion.diasAtraso)}` : ''}
+          </Insignia>
+        )}
+        {sesion.alerta === 'incumplida' && (
+          <Insignia tono="peligro">
+            Incumplida
+            {sesion.diasAtraso ? ` · ${textoAtraso(sesion.diasAtraso)}` : ''}
+          </Insignia>
+        )}
+        {sesion.alerta === 'por_vencer' && sesion.diasRestantes !== null && (
+          <Insignia tono="advertencia">
+            Por vencer · {textoRestante(sesion.diasRestantes)}
+          </Insignia>
+        )}
         {esHoy && <Insignia tono="marca">Hoy</Insignia>}
         {sesion.festivo && (
-          <Insignia tono="advertencia">Festivo · {sesion.festivo}</Insignia>
+          <Insignia tono="informativo">Festivo · {sesion.festivo}</Insignia>
         )}
         {sesion.tipo && !esFestivo && sesion.tipo.codigo !== 'clase' && (
           <Insignia>{sesion.tipo.nombre}</Insignia>
@@ -608,5 +634,101 @@ function TarjetaSesion({
         {sesion.diligenciada && <Insignia>Diligenciada</Insignia>}
       </div>
     </li>
+  );
+}
+
+/**
+ * RF-23: cuántas sesiones vencidas y por vencer tiene el calendario completo, con un enlace a
+ * la vencida más antigua. El umbral lo da el backend (parámetro del sistema).
+ */
+function ResumenAlertasCalendario({
+  calendario,
+}: {
+  calendario: CalendarioSesiones;
+}) {
+  const { resumen, umbralDias, total } = calendario;
+  if (total === 0) {
+    return null;
+  }
+  const primeraVencida = calendario.elementos.find(
+    (sesion) => sesion.alerta === 'vencida' || sesion.alerta === 'incumplida',
+  );
+  const pendientes = resumen.vencidas + resumen.porVencer + resumen.incumplidas;
+
+  return (
+    <section
+      aria-labelledby="titulo-alertas"
+      className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+    >
+      <h2 id="titulo-alertas" className="text-lg font-semibold">
+        Sesiones por diligenciar
+      </h2>
+      {pendientes === 0 ? (
+        <p className="text-sm text-slate-700">
+          Al día: no hay sesiones vencidas ni por vencer.
+        </p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {resumen.vencidas > 0 && (
+            <li className="rounded-lg bg-red-50 px-3 py-2 text-red-800">
+              <span className="block text-2xl font-bold tabular-nums">
+                {resumen.vencidas}
+              </span>
+              <span className="text-sm font-medium">
+                {resumen.vencidas === 1 ? 'vencida' : 'vencidas'}
+              </span>
+            </li>
+          )}
+          {resumen.porVencer > 0 && (
+            <li className="rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
+              <span className="block text-2xl font-bold tabular-nums">
+                {resumen.porVencer}
+              </span>
+              <span className="text-sm font-medium">por vencer</span>
+            </li>
+          )}
+          {resumen.incumplidas > 0 && (
+            <li className="rounded-lg bg-red-50 px-3 py-2 text-red-800">
+              <span className="block text-2xl font-bold tabular-nums">
+                {resumen.incumplidas}
+              </span>
+              <span className="text-sm font-medium">
+                {resumen.incumplidas === 1 ? 'incumplida' : 'incumplidas'}
+              </span>
+            </li>
+          )}
+        </ul>
+      )}
+      {resumen.incumplidas > 0 && (
+        <p className="text-sm text-slate-700">
+          El período está cerrado: las sesiones vencidas quedan como incumplidas
+          y ya no suman días de atraso.
+        </p>
+      )}
+      {resumen.mayorAtraso !== null && (
+        <p className="text-sm text-slate-700">
+          La más antigua lleva {textoAtraso(resumen.mayorAtraso)}.
+        </p>
+      )}
+      {umbralDias !== null && !calendario.periodo.cerrado && (
+        <p className="text-sm text-slate-600">
+          «Por vencer» son las de hoy
+          {umbralDias > 0
+            ? ` y las de los próximos ${umbralDias === 1 ? 'día' : `${umbralDias} días`}`
+            : ''}
+          .
+        </p>
+      )}
+      {primeraVencida && (
+        <a
+          href={`#sesion-${primeraVencida.id}`}
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-red-800 hover:underline"
+        >
+          {primeraVencida.alerta === 'incumplida'
+            ? 'Ir a la incumplida más antigua'
+            : 'Ir a la vencida más antigua'}
+        </a>
+      )}
+    </section>
   );
 }

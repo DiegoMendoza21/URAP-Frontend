@@ -267,6 +267,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sesiones/pendientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sesiones vencidas y por vencer del docente, para su panel (RF-23, p5)
+         * @description Cuenta las sesiones vencidas sin diligenciar y las por vencer de los proyectos en los que el docente que consulta está asignado, con el período abierto. Lista los proyectos con pendientes, los más atrasados primero. Las de tipo festivo no cuentan.
+         */
+        get: operations["PendientesController_pendientes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -667,6 +687,11 @@ export interface components {
             /** @example Clase */
             nombre: string;
         };
+        /**
+         * @description RF-23. vencida: la fecha pasó sin registro (rojo). por_vencer: es hoy o cae dentro del umbral del parámetro alerta_dias_anticipacion (advertencia). incumplida: vencida de un período cerrado. Nulo: diligenciada, festivo o todavía lejos.
+         * @enum {string}
+         */
+        TipoAlertaSesion: "vencida" | "por_vencer" | "incumplida";
         SesionCalendarioDto: {
             /** @example 120 */
             id: number;
@@ -708,6 +733,21 @@ export interface components {
              * @example false
              */
             diligenciada: boolean;
+            /**
+             * @description RF-23. vencida: la fecha pasó sin registro (rojo). por_vencer: es hoy o cae dentro del umbral del parámetro alerta_dias_anticipacion (advertencia). incumplida: vencida de un período cerrado. Nulo: diligenciada, festivo o todavía lejos.
+             * @example vencida
+             */
+            alerta: components["schemas"]["TipoAlertaSesion"] | null;
+            /**
+             * @description Días de atraso de una vencida o incumplida (RF-23, p3)
+             * @example 3
+             */
+            diasAtraso: number | null;
+            /**
+             * @description Días que faltan para una sesión por vencer: 0 es hoy
+             * @example null
+             */
+            diasRestantes: number | null;
         };
         PeriodoCalendarioDto: {
             /** @example 2026-2 */
@@ -727,6 +767,28 @@ export interface components {
             /** @example false */
             cerrado: boolean;
         };
+        ResumenAlertasDto: {
+            /**
+             * @description Sesiones vencidas sin diligenciar
+             * @example 3
+             */
+            vencidas: number;
+            /**
+             * @description Sesiones por vencer
+             * @example 1
+             */
+            porVencer: number;
+            /**
+             * @description Vencidas de un período cerrado (RF-23, excepción p4)
+             * @example 0
+             */
+            incumplidas: number;
+            /**
+             * @description Días de atraso de la vencida más antigua
+             * @example 12
+             */
+            mayorAtraso: number | null;
+        };
         CalendarioSesionesDto: {
             elementos: components["schemas"]["SesionCalendarioDto"][];
             /** @example 1 */
@@ -743,6 +805,19 @@ export interface components {
              * @example []
              */
             advertencias: string[];
+            /**
+             * Format: date
+             * @description La fecha de hoy en la zona horaria de la institución (America/Bogota)
+             * @example 2026-11-07
+             */
+            hoy: string;
+            /**
+             * @description Umbral de «Por vencer» en días, del parámetro alerta_dias_anticipacion. Nulo si falta.
+             * @example 2
+             */
+            umbralDias: number | null;
+            /** @description Alertas de todo el calendario, no solo de la página (RF-23) */
+            resumen: components["schemas"]["ResumenAlertasDto"];
         };
         ResultadoGeneracionDto: {
             /**
@@ -777,6 +852,51 @@ export interface components {
             total: number;
             /** @example [] */
             advertencias: string[];
+        };
+        ProyectoConPendientesDto: {
+            /** @example 4 */
+            idProyectoDocente: number;
+            /** @example Investigación de operaciones */
+            asignatura: string;
+            /** @example DEMO-03 */
+            codigoAsignatura: string | null;
+            /** @example A */
+            grupo: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+            /** @example 3 */
+            vencidas: number;
+            /** @example 1 */
+            porVencer: number;
+            /** @example 12 */
+            mayorAtraso: number | null;
+        };
+        PendientesDocenteDto: {
+            /**
+             * Format: date
+             * @example 2026-11-07
+             */
+            hoy: string;
+            /** @example 2 */
+            umbralDias: number | null;
+            /**
+             * @description Vencidas de todos sus proyectos con el período abierto (RF-23, p5)
+             * @example 5
+             */
+            vencidas: number;
+            /** @example 1 */
+            porVencer: number;
+            /** @description Proyectos con vencidas o por vencer, los más atrasados primero */
+            elementos: components["schemas"]["ProyectoConPendientesDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /**
+             * @description Proyectos con pendientes
+             * @example 2
+             */
+            total: number;
         };
     };
     responses: never;
@@ -1543,6 +1663,55 @@ export interface operations {
             };
             /** @description El curso no tiene horario, el período no tiene fechas o el período está cerrado */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PendientesController_pendientes: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendientesDocenteDto"];
+                };
+            };
+            /** @description Paginación inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el rol Docente responsable */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
