@@ -27,17 +27,23 @@ export function BotonSecundario({
   children,
   peligro = false,
   disabled = false,
+  etiqueta,
+  tipo = 'button',
 }: {
-  onClick: () => void;
+  onClick?: () => void;
   children: ReactNode;
   peligro?: boolean;
   disabled?: boolean;
+  /** Nombre accesible cuando el texto visible no basta («Subir referencia 3»). */
+  etiqueta?: string;
+  tipo?: 'button' | 'submit';
 }) {
   return (
     <button
-      type="button"
+      type={tipo}
       onClick={onClick}
       disabled={disabled}
+      aria-label={etiqueta}
       className={`rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50 ${
         peligro
           ? 'border-red-300 text-red-800 hover:bg-red-50'

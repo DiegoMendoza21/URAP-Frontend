@@ -308,6 +308,135 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{id}/estrategias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Punto 4 «Estrategias metodológicas» (RF-13)
+         * @description El listado en orden y el catálogo sugerido, sin las estrategias que ya están.
+         */
+        get: operations["PlaneacionController_seccionEstrategias"];
+        /**
+         * Guarda el listado de estrategias metodológicas (HU-06-04)
+         * @description Reemplaza el listado completo: así se agregan, reordenan y eliminan. Devuelve la sección actualizada.
+         */
+        put: operations["PlaneacionController_guardarEstrategias"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/evaluacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Punto 5 «Evaluación de los resultados de aprendizaje» (RF-14)
+         * @description Los RAC del proyecto con sus actividades e instrumentos de evaluación, y los que todavía no tienen (p4).
+         */
+        get: operations["PlaneacionController_seccionEvaluacion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/evaluacion/{idRac}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Guarda la evaluación de un RAC (HU-06-05)
+         * @description Reemplaza las actividades de evaluación del RAC. Devuelve la sección completa.
+         */
+        put: operations["PlaneacionController_guardarEvaluacion"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/contenidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Punto 6 «Contenidos del curso» (RF-15)
+         * @description Una fila por semana del período, las semanas sin tema y el total de horas frente al de la asignatura. Si la asignatura no tiene horas, lo indica en vez de suponerlas.
+         */
+        get: operations["PlaneacionController_seccionContenidos"];
+        /**
+         * Guarda los contenidos por semana (HU-06-06)
+         * @description Guarda la tabla completa. Si el total de horas no coincide con el de la asignatura, guarda igual, lo advierte en la respuesta y deja constancia en la auditoría (p4).
+         */
+        put: operations["PlaneacionController_guardarContenidos"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/bibliografia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Punto 7 «Bibliografía» (RF-16) */
+        get: operations["PlaneacionController_seccionBibliografia"];
+        /**
+         * Guarda la bibliografía (HU-06-07)
+         * @description Reemplaza el listado numerado completo: así se agregan, editan, reordenan y eliminan referencias. Devuelve la sección actualizada.
+         */
+        put: operations["PlaneacionController_guardarBibliografia"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/bibliografia/proyectos-para-importar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Proyectos de los que se puede importar la bibliografía (RF-16, p2)
+         * @description Otros proyectos docentes con bibliografía que el usuario puede consultar, primero los de la misma asignatura. Sus referencias se leen con `GET …/bibliografia`.
+         */
+        get: operations["PlaneacionController_proyectosParaImportar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -784,6 +913,230 @@ export interface components {
             enunciado: string;
             /** @description RAP del proyecto a los que contribuye. Al menos uno (RF-12, p3) y sin repetir (HU-06-03). */
             raps: components["schemas"]["RapDelRacEntradaDto"][];
+        };
+        EstrategiaDto: {
+            /** @example 31 */
+            id: number;
+            /**
+             * @description Posición en el listado, desde 1
+             * @example 1
+             */
+            numero: number;
+            /** @example Aprendizaje basado en problemas */
+            descripcion: string;
+        };
+        SeccionEstrategiasDto: {
+            /** @description En orden */
+            estrategias: components["schemas"]["EstrategiaDto"][];
+            /** @description Catálogo sugerido (RF-13, p2): estrategias que se pueden agregar con un toque. No incluye las que ya están en el proyecto. */
+            sugeridas: string[];
+        };
+        GuardarEstrategiasDto: {
+            /**
+             * @description Listado completo de estrategias, en el orden en que se presentan. Reemplaza el anterior: así se agregan, reordenan y eliminan (RF-13, p2 y p3). Un listado vacío deja la sección pendiente (HU-06-08).
+             * @example [
+             *       "Aprendizaje basado en problemas",
+             *       "Estudio de caso"
+             *     ]
+             */
+            estrategias: string[];
+        };
+        ActividadEvaluacionDto: {
+            /** @example 12 */
+            id: number;
+            /** @example Taller grupal sobre el flujo de caja */
+            actividad: string;
+            /** @example Rúbrica */
+            instrumento: string;
+            /** @example 30 */
+            porcentaje: number | null;
+        };
+        RacEvaluacionDto: {
+            /** @example 15 */
+            id: number;
+            /** @example RAC 1 */
+            codigo: string;
+            /** @example Analiza la liquidez de una empresa… */
+            enunciado: string;
+            /**
+             * @description RAP a los que contribuye el RAC
+             * @example [
+             *       "RAP 2"
+             *     ]
+             */
+            raps: string[];
+            actividades: components["schemas"]["ActividadEvaluacionDto"][];
+            /**
+             * @description Suma de los pesos de las actividades que lo tienen. Nulo si ninguna tiene peso.
+             * @example 100
+             */
+            pesoTotal: number | null;
+        };
+        SeccionEvaluacionDto: {
+            /** @description Los RAC del proyecto, en orden (RF-14, p2) */
+            racs: components["schemas"]["RacEvaluacionDto"][];
+            /**
+             * @description RAC que todavía no tienen actividades de evaluación (p4)
+             * @example [
+             *       16
+             *     ]
+             */
+            racsSinEvaluacion: number[];
+        };
+        ActividadEvaluacionEntradaDto: {
+            /**
+             * @description Actividad de evaluación prevista
+             * @example Taller grupal sobre el flujo de caja de una empresa
+             */
+            actividad: string;
+            /**
+             * @description Instrumento con el que se evalúa: rúbrica, lista de chequeo…
+             * @example Rúbrica
+             */
+            instrumento: string;
+            /**
+             * @description Peso de la actividad dentro del RAC, de 0,01 a 100, con dos decimales. Opcional.
+             * @example 30
+             */
+            porcentaje?: number | null;
+        };
+        GuardarEvaluacionRacDto: {
+            /** @description Todas las actividades de evaluación del RAC, en orden. Reemplazan las anteriores. Un listado vacío deja el RAC sin evaluación (RF-14, p4). */
+            actividades: components["schemas"]["ActividadEvaluacionEntradaDto"][];
+        };
+        SemanaContenidoDto: {
+            /** @example 1 */
+            semana: number;
+            /**
+             * @description Fila de `contenido_programatico`. Nulo si la semana nunca se ha guardado. El registro de clase (RF-20) enlaza los temas dictados con esta fila.
+             * @example 40
+             */
+            id: number | null;
+            tema: string | null;
+            horasTde: number | null;
+            horasTdp: number | null;
+            horasTi: number | null;
+        };
+        ComparacionHorasDto: {
+            /**
+             * @example TDE
+             * @enum {string}
+             */
+            tipo: "TDE" | "TDP" | "TI" | "Total";
+            /**
+             * @description Suma de las semanas
+             * @example 30
+             */
+            contenidos: number;
+            /**
+             * @description Horas de la asignatura. Nulo si el plan de estudios no las trae.
+             * @example 32
+             */
+            asignatura: number | null;
+            /**
+             * @description Contenidos menos asignatura. Nulo si no se puede comparar.
+             * @example -2
+             */
+            diferencia: number | null;
+        };
+        SeccionContenidosDto: {
+            /**
+             * @description Semanas del período académico. Nulo si el período no lo define.
+             * @example 16
+             */
+            numeroSemanas: number | null;
+            /** @description Una fila por semana del período, de la 1 a la última (RF-15, p2) */
+            semanas: components["schemas"]["SemanaContenidoDto"][];
+            /**
+             * @description Semanas sin tema (p5)
+             * @example [
+             *       15,
+             *       16
+             *     ]
+             */
+            semanasSinTema: number[];
+            /** @description TDE, TDP, TI y total: lo registrado frente a la asignatura (p4) */
+            comparacion: components["schemas"]["ComparacionHorasDto"][];
+            /**
+             * @description Si todas las horas comparables coinciden. Nulo si la asignatura no tiene horas registradas y no hay con qué comparar.
+             * @example false
+             */
+            horasCoinciden: boolean | null;
+            /**
+             * @description Datos que le faltan a la asignatura en el plan de estudios (información incompleta, RF-08, p7). Vacío si los tiene todos.
+             * @example [
+             *       "créditos",
+             *       "horas TDE"
+             *     ]
+             */
+            datosAsignaturaFaltantes: string[];
+        };
+        SemanaContenidoEntradaDto: {
+            /**
+             * @description Semana del período, desde 1
+             * @example 1
+             */
+            semana: number;
+            /**
+             * @description Tema previsto. Vacío o nulo: la semana queda pendiente (p5).
+             * @example Presentación del curso y conceptos básicos
+             */
+            tema?: string | null;
+            /** @example 2 */
+            horasTde?: number | null;
+            /** @example 0 */
+            horasTdp?: number | null;
+            /** @example 4 */
+            horasTi?: number | null;
+        };
+        GuardarContenidosDto: {
+            /** @description La tabla completa del punto 6, una fila por semana y sin repetir semanas. Las semanas que no se envían quedan vacías. */
+            semanas: components["schemas"]["SemanaContenidoEntradaDto"][];
+        };
+        ReferenciaDto: {
+            /** @example 8 */
+            id: number;
+            /**
+             * @description Número de la referencia, desde 1
+             * @example 1
+             */
+            numero: number;
+            /** @example Autor, A. (2020). Título del libro. Editorial. */
+            referencia: string;
+        };
+        SeccionBibliografiaDto: {
+            /** @description Listado numerado, en orden */
+            referencias: components["schemas"]["ReferenciaDto"][];
+        };
+        GuardarBibliografiaDto: {
+            /**
+             * @description Listado completo de referencias, en orden: la posición es su número. Reemplaza el anterior. Texto libre, sin imponer una norma de citación (RF-16).
+             * @example [
+             *       "Autor, A. (2020). Título del libro. Editorial.",
+             *       "Autora, B. (2022). Título del artículo. Revista, 10(2), 1-20."
+             *     ]
+             */
+            referencias: string[];
+        };
+        ProyectoConBibliografiaDto: {
+            /** @example 4 */
+            id: number;
+            /** @example Gestión ambiental */
+            asignatura: string;
+            /** @example 2026-1 */
+            periodo: string | null;
+            /** @example A */
+            grupo: string | null;
+            /**
+             * @description Cuántas referencias tiene
+             * @example 12
+             */
+            referencias: number;
+            /**
+             * @description Es de la misma asignatura que el proyecto que se diligencia
+             * @example true
+             */
+            mismaAsignatura: boolean;
         };
     };
     responses: never;
@@ -1728,6 +2081,527 @@ export interface operations {
             };
             /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. También si el RAC ya tiene evaluaciones. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_seccionEstrategias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionEstrategiasDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_guardarEstrategias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarEstrategiasDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionEstrategiasDto"];
+                };
+            };
+            /** @description Una estrategia vacía, repetida o demasiado larga */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_seccionEvaluacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionEvaluacionDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_guardarEvaluacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                idRac: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarEvaluacionRacDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionEvaluacionDto"];
+                };
+            };
+            /** @description Actividad o instrumento vacíos, peso fuera de 0,01 a 100 o demasiadas actividades */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto o el RAC no existen, o no tiene acceso */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_seccionContenidos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionContenidosDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_guardarContenidos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarContenidosDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionContenidosDto"];
+                };
+            };
+            /** @description Semana repetida o fuera del período, tema demasiado largo u horas no válidas */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. También si el período no tiene número de semanas. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_seccionBibliografia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionBibliografiaDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_guardarBibliografia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarBibliografiaDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeccionBibliografiaDto"];
+                };
+            };
+            /** @description Una referencia vacía, repetida o demasiado larga */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable o no está asignado a este proyecto (alcance «propios») */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El estado del proyecto no admite cambios: enviado a revisión, aprobado, en ejecución o cerrado (RF-11, p4). En los tres últimos sugiere solicitar la reapertura. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PlaneacionController_proyectosParaImportar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProyectoConBibliografiaDto"][];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

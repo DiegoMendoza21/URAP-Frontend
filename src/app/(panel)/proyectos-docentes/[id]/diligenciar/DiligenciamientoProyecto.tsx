@@ -15,7 +15,11 @@ import {
   Insignia,
 } from '../../_componentes/Estados';
 import { useConsulta } from '../../_componentes/useConsulta';
+import { SeccionBibliografia } from './SeccionBibliografia';
+import { SeccionContenidos } from './SeccionContenidos';
 import { SeccionDescripcion } from './SeccionDescripcion';
+import { SeccionEstrategias } from './SeccionEstrategias';
+import { SeccionEvaluacion } from './SeccionEvaluacion';
 import { SeccionRac } from './SeccionRac';
 import { useAvisoSalida } from './useAvisoSalida';
 
@@ -31,13 +35,14 @@ export interface PropiedadesSeccion {
   alCambiar: (hayCambios: boolean) => void;
 }
 
-/**
- * Pantalla de cada sección, por la clave que le da el backend. Los puntos 4 a 7 (RF-13 a
- * RF-16) se agregan aquí cuando el backend los publique en el resumen.
- */
+/** Pantalla de cada sección (puntos 2 a 7), por la clave que le da el backend. */
 const PANTALLAS: Record<string, ComponentType<PropiedadesSeccion>> = {
   descripcion: SeccionDescripcion,
   rac: SeccionRac,
+  estrategias: SeccionEstrategias,
+  evaluacion: SeccionEvaluacion,
+  contenidos: SeccionContenidos,
+  bibliografia: SeccionBibliografia,
 };
 
 /**
