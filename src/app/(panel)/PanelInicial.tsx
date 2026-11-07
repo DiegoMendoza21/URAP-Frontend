@@ -22,14 +22,14 @@ const ROLES_MEDICION = [
   'Departamento académico',
 ];
 
-/** Roles del tablero de seguimiento del diligenciamiento (RF-25, precondición). */
+/** Roles del tablero de seguimiento (RF-25) y del reporte de cumplimiento (RF-28). */
 const ROLES_SEGUIMIENTO = [
   'Administrador',
   'Departamento académico',
   'Dirección del programa',
 ];
 
-/** Roles que consultan el reporte de logro de los RAP (RF-32, matriz de permisos). */
+/** Roles que consultan el reporte de logro de los RAP (RF-32) y el de contribución RAC-RAP (RF-28). */
 const ROLES_REPORTE_LOGRO = [
   'Administrador',
   'Departamento académico',
@@ -109,6 +109,30 @@ export function PanelInicial() {
               <span className="block text-sm text-slate-600">
                 Porcentaje alcanzado por RAP frente al esperado, con exportación
                 a Excel y PDF.
+              </span>
+            </Link>
+          )}
+          {roles.some((rol) => ROLES_SEGUIMIENTO.includes(rol)) && (
+            <Link href="/reportes/cumplimiento" className={CLASE_ACCESO}>
+              <span className="block font-semibold text-marca">
+                Reporte de cumplimiento
+              </span>
+              <span className="block text-sm text-slate-600">
+                Proyectos docentes del período, su estado y su avance, con
+                exportación a Excel y PDF.
+              </span>
+            </Link>
+          )}
+          {roles.some((rol) => ROLES_REPORTE_LOGRO.includes(rol)) && (
+            <Link
+              href="/reportes/contribucion-rac-rap"
+              className={CLASE_ACCESO}
+            >
+              <span className="block font-semibold text-marca">
+                Contribución de los RAC a los RAP
+              </span>
+              <span className="block text-sm text-slate-600">
+                Asignaturas, docentes, RAC y evidencias que aportan a cada RAP.
               </span>
             </Link>
           )}

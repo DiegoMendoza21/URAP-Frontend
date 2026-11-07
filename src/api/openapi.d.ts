@@ -702,6 +702,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reportes/cumplimiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de cumplimiento por período (RF-28, HU-12-03)
+         * @description Proyectos docentes, su estado y su diligenciamiento (secciones y sesiones), con filtros por período, programa, asignatura, docente y estado. Queda registrado en reporte_academico con el usuario y la fecha.
+         */
+        get: operations["ReportesAcademicosController_cumplimiento"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/cumplimiento/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporta el reporte de cumplimiento a Excel (RF-28, p5) */
+        get: operations["ReportesAcademicosController_cumplimientoExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/contribucion-rac-rap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de contribución de los RAC a los RAP (RF-28, HU-12-05)
+         * @description Por RAP: las asignaturas del período que contribuyen, sus docentes, los RAC asociados y las evidencias cargadas. El Líder RAP solo ve los RAP que lidera.
+         */
+        get: operations["ReportesAcademicosController_contribucion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/contribucion-rac-rap/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporta el reporte de contribución RAC-RAP a Excel (RF-28, p5) */
+        get: operations["ReportesAcademicosController_contribucionExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/seguimiento/filtros": {
         parameters: {
             query?: never;
@@ -2320,57 +2394,42 @@ export interface components {
             metaDefinida: boolean;
             raps: components["schemas"]["RapReporteDto"][];
         };
-        OpcionDto: {
-            /** @example 1 */
-            id: number;
-            /** @example Administración Industrial */
-            nombre: string;
-        };
-        PeriodoOpcionSeguimientoDto: {
-            /** @example 1 */
-            id: number;
-            /** @example 2026-2 */
-            codigo: string;
-            /**
-             * @description Período activo y sin cerrar
-             * @example true
-             */
-            vigente: boolean;
-        };
-        AsignaturaOpcionSeguimientoDto: {
-            /** @example 1 */
-            id: number;
-            /** @example Administración Industrial */
-            nombre: string;
-            /** @example 1 */
-            idPrograma: number | null;
-        };
-        FiltrosSeguimientoDto: {
-            programas: components["schemas"]["OpcionDto"][];
-            /** @description Del más reciente al más antiguo */
-            periodos: components["schemas"]["PeriodoOpcionSeguimientoDto"][];
-            /** @description Asignaturas con proyectos docentes en los programas del usuario */
-            asignaturas: components["schemas"]["AsignaturaOpcionSeguimientoDto"][];
-            /** @description Docentes asignados a proyectos de los programas del usuario */
-            docentes: components["schemas"]["OpcionDto"][];
-        };
         PeriodoSeguimientoDto: {
             /** @example 1 */
             id: number;
             /** @example 2026-2 */
             codigo: string;
         };
-        ResumenSeguimientoDto: {
+        CantidadPorEstadoDto: {
+            /** @example en_diligenciamiento */
+            codigo: string;
+            /** @example En diligenciamiento */
+            nombre: string;
+            /** @example 12 */
+            cantidad: number;
+        };
+        ResumenCumplimientoDto: {
             /** @example 24 */
             proyectos: number;
-            /** @example 3 */
-            rojo: number;
-            /** @example 12 */
-            amarillo: number;
-            /** @example 9 */
-            verde: number;
+            /** @description Proyectos por estado, en el orden del ciclo del proyecto */
+            porEstado: components["schemas"]["CantidadPorEstadoDto"][];
             /**
-             * @description Proyectos con pendientes (HU-12-02)
+             * @description Secciones completas, sumando todos los proyectos
+             * @example 98
+             */
+            seccionesCompletas: number;
+            /** @example 144 */
+            seccionesTotales: number;
+            /** @example 68.06 */
+            porcentajeSecciones: number | null;
+            /** @example 180 */
+            sesionesRegistradas: number;
+            /** @example 420 */
+            sesionesProgramadas: number;
+            /** @example 42.86 */
+            porcentajeSesiones: number | null;
+            /**
+             * @description Proyectos con secciones o sesiones pendientes
              * @example 15
              */
             conPendientes: number;
@@ -2469,6 +2528,117 @@ export interface components {
             color: "rojo" | "amarillo" | "verde";
             /** @example 3 sesiones vencidas sin registrar. */
             motivoColor: string;
+        };
+        ReporteCumplimientoDto: {
+            periodo: components["schemas"]["PeriodoSeguimientoDto"] | null;
+            /** @example 2026-11-07T15:30:00.000Z */
+            generado: string;
+            resumen: components["schemas"]["ResumenCumplimientoDto"];
+            /** @description Vacío si no hay proyectos para los filtros (RF-28, excepción de p3) */
+            proyectos: components["schemas"]["ProyectoSeguimientoDto"][];
+        };
+        RacContribucionDto: {
+            /** @example RAC 1 */
+            codigo: string | null;
+            descripcion: string | null;
+            /** @description Cómo contribuye el RAC al RAP (`rac_rap.descripcion_contribucion`) */
+            contribucion: string | null;
+        };
+        AsignaturaContribucionDto: {
+            /** @example 13 */
+            idProyecto: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /**
+             * @example [
+             *       "Docente Demo"
+             *     ]
+             */
+            docentes: string[];
+            estado: components["schemas"]["EstadoProyectoSeguimientoDto"] | null;
+            /** @description RAC del curso asociados al RAP; vacío si todavía no tiene */
+            racs: components["schemas"]["RacContribucionDto"][];
+            /**
+             * @description Evidencias del curso cargadas para el RAP
+             * @example 3
+             */
+            evidencias: number;
+            /**
+             * @description Fecha de la evidencia más reciente
+             * @example 2026-10-12T15:30:00.000Z
+             */
+            ultimaEvidencia: string | null;
+        };
+        RapContribucionDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            descripcion: string | null;
+            /** @description Cursos del período que contribuyen al RAP; vacío si ninguno */
+            asignaturas: components["schemas"]["AsignaturaContribucionDto"][];
+        };
+        ReporteContribucionDto: {
+            periodo: components["schemas"]["PeriodoSeguimientoDto"] | null;
+            /** @example 2026-11-07T15:30:00.000Z */
+            generado: string;
+            /** @description Solo los RAP que el usuario puede consultar: el líder RAP, los que lidera en el período */
+            raps: components["schemas"]["RapContribucionDto"][];
+        };
+        OpcionDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+        };
+        PeriodoOpcionSeguimientoDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string;
+            /**
+             * @description Período activo y sin cerrar
+             * @example true
+             */
+            vigente: boolean;
+        };
+        AsignaturaOpcionSeguimientoDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+            /** @example 1 */
+            idPrograma: number | null;
+        };
+        FiltrosSeguimientoDto: {
+            programas: components["schemas"]["OpcionDto"][];
+            /** @description Del más reciente al más antiguo */
+            periodos: components["schemas"]["PeriodoOpcionSeguimientoDto"][];
+            /** @description Asignaturas con proyectos docentes en los programas del usuario */
+            asignaturas: components["schemas"]["AsignaturaOpcionSeguimientoDto"][];
+            /** @description Docentes asignados a proyectos de los programas del usuario */
+            docentes: components["schemas"]["OpcionDto"][];
+            /** @description Estados del proyecto docente, en el orden del ciclo (RF-28) */
+            estados: components["schemas"]["EstadoProyectoSeguimientoDto"][];
+        };
+        ResumenSeguimientoDto: {
+            /** @example 24 */
+            proyectos: number;
+            /** @example 3 */
+            rojo: number;
+            /** @example 12 */
+            amarillo: number;
+            /** @example 9 */
+            verde: number;
+            /**
+             * @description Proyectos con pendientes (HU-12-02)
+             * @example 15
+             */
+            conPendientes: number;
         };
         PaginaSeguimientoDto: {
             /** @description Período consultado; nulo si no hay ninguno registrado */
@@ -5258,6 +5428,259 @@ export interface operations {
                 };
             };
             /** @description El programa, el período o el RAP no existen o el usuario no tiene alcance sobre ellos */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_cumplimiento: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+                /** @description Código del estado del proyecto docente */
+                estado?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteCumplimientoDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_cumplimientoExcel: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+                /** @description Código del estado del proyecto docente */
+                estado?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el máximo de filas exportables: hay que restringir los filtros */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_contribucion: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteContribucionDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe, o el RAP no existe o no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_contribucionExcel: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe, o el RAP no existe o no tiene acceso a él */
             404: {
                 headers: {
                     [name: string]: unknown;
