@@ -112,9 +112,9 @@ function Filtros({
   alConsultar: (consulta: ConsultaContribucion) => void;
 }) {
   const ids = { periodo: useId(), rap: useId() };
-  const [idPeriodo, setIdPeriodo] = useState(
-    opciones.periodos[0] ? String(opciones.periodos[0].id) : '',
-  );
+  // Vacío: el período vigente, que elige el backend. El primero de la lista puede ser uno
+  // creado por adelantado que todavía no empieza.
+  const [idPeriodo, setIdPeriodo] = useState('');
   const [idRap, setIdRap] = useState('');
   const programas = opciones.programas.filter(
     (programa) => programa.raps.length > 0,
@@ -161,6 +161,7 @@ function Filtros({
             onChange={(evento) => setIdPeriodo(evento.target.value)}
             className={claseCampo}
           >
+            <option value="">El vigente</option>
             {opciones.periodos.map((periodo) => (
               <option key={periodo.id} value={periodo.id}>
                 {periodo.codigo}

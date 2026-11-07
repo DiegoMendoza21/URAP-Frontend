@@ -118,8 +118,8 @@ export function PanelInicial() {
                 Reporte de cumplimiento
               </span>
               <span className="block text-sm text-slate-600">
-                Proyectos docentes del período, su estado y su avance, con
-                exportación a Excel y PDF.
+                Proyectos docentes del período, su estado y su diligenciamiento,
+                con exportación a Excel y PDF.
               </span>
             </Link>
           )}
