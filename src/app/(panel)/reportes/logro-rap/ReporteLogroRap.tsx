@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import { useId, useState, type FormEvent } from 'react';
-import { mensajeParaUsuario } from '@/api/cliente';
-import { guardarArchivo } from '@/api/descargas';
 import { etiquetaTipo, nombreRap } from '@/api/mediciones';
 import {
   type ConsultaLogroRap,
@@ -27,6 +25,7 @@ import {
   Insignia,
 } from '../../proyectos-docentes/_componentes/Estados';
 import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
+import { Exportar } from '../_componentes/Exportar';
 
 const formatoFecha = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'long',
@@ -238,51 +237,10 @@ function Resultado({
   datos: DatosReporte;
   consulta: ConsultaLogroRap;
 }) {
-  const [descarga, setDescarga] = useState<
-    | { estado: 'inactiva' }
-    | { estado: 'descargando' }
-    | { estado: 'fallida'; mensaje: string }
-  >({ estado: 'inactiva' });
-
-  const exportarExcel = async () => {
-    setDescarga({ estado: 'descargando' });
-    try {
-      guardarArchivo(await descargarLogroRapExcel(consulta));
-      setDescarga({ estado: 'inactiva' });
-    } catch (error) {
-      setDescarga({ estado: 'fallida', mensaje: mensajeParaUsuario(error) });
-    }
-  };
-
   const evaluados = datos.raps.filter((rap) => rap.evaluado).length;
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row print:hidden">
-        <button
-          type="button"
-          onClick={() => void exportarExcel()}
-          disabled={descarga.estado === 'descargando'}
-          className="rounded-lg border border-marca px-4 py-3 font-semibold text-marca hover:bg-marca/5 disabled:opacity-60"
-        >
-          {descarga.estado === 'descargando'
-            ? 'Preparando el Excel…'
-            : 'Exportar a Excel'}
-        </button>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="rounded-lg border border-marca px-4 py-3 font-semibold text-marca hover:bg-marca/5"
-        >
-          Exportar a PDF
-        </button>
-      </div>
-      <p className="text-sm text-slate-600 print:hidden">
-        Para el PDF, elija «Guardar como PDF» en la ventana de impresión.
-      </p>
-      {descarga.estado === 'fallida' && (
-        <AvisoError mensaje={descarga.mensaje} />
-      )}
-
+      <Exportar descargar={() => descargarLogroRapExcel(consulta)} />
       <p className="text-sm text-slate-700">
         {evaluados} de {datos.raps.length}{' '}
         {datos.raps.length === 1 ? 'RAP evaluado' : 'RAP evaluados'} con

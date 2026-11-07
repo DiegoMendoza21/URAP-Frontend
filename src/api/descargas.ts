@@ -59,5 +59,7 @@ export function guardarArchivo({
   enlace.href = url;
   enlace.download = nombre;
   enlace.click();
-  URL.revokeObjectURL(url);
+  // Se libera después: si se revoca enseguida, algunos navegadores (Safari en el teléfono)
+  // cancelan la descarga antes de empezar a leer el archivo.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

@@ -52,3 +52,68 @@ export function descargarLogroRapExcel(consulta: ConsultaLogroRap) {
     'logro-rap.xlsx',
   );
 }
+
+/* Reportes académicos (RF-28). Cada consulta queda registrada en el backend (p6). */
+
+export type ReporteCumplimiento = Esquemas['ReporteCumplimientoDto'];
+export type ReporteContribucion = Esquemas['ReporteContribucionDto'];
+export type RapContribucion = Esquemas['RapContribucionDto'];
+
+export interface ConsultaCumplimiento {
+  idPeriodo?: number;
+  idPrograma?: number;
+  idAsignatura?: number;
+  idDocente?: number;
+  estado?: string;
+}
+
+export interface ConsultaContribucion {
+  idPeriodo?: number;
+  idRap?: number;
+}
+
+function filtrosComoParametros(
+  filtros: Record<string, string | number | undefined>,
+): URLSearchParams {
+  const consulta = new URLSearchParams();
+  for (const [clave, valor] of Object.entries(filtros)) {
+    if (valor !== undefined && valor !== '') {
+      consulta.set(clave, String(valor));
+    }
+  }
+  return consulta;
+}
+
+export function consultarCumplimiento(
+  filtros: ConsultaCumplimiento,
+  senal?: AbortSignal,
+) {
+  return obtener<ReporteCumplimiento>(
+    `/reportes/cumplimiento?${filtrosComoParametros({ ...filtros })}`,
+    { senal },
+  );
+}
+
+export function descargarCumplimientoExcel(filtros: ConsultaCumplimiento) {
+  return descargarArchivo(
+    `/reportes/cumplimiento/excel?${filtrosComoParametros({ ...filtros })}`,
+    'cumplimiento.xlsx',
+  );
+}
+
+export function consultarContribucion(
+  filtros: ConsultaContribucion,
+  senal?: AbortSignal,
+) {
+  return obtener<ReporteContribucion>(
+    `/reportes/contribucion-rac-rap?${filtrosComoParametros({ ...filtros })}`,
+    { senal },
+  );
+}
+
+export function descargarContribucionExcel(filtros: ConsultaContribucion) {
+  return descargarArchivo(
+    `/reportes/contribucion-rac-rap/excel?${filtrosComoParametros({ ...filtros })}`,
+    'contribucion-rac-rap.xlsx',
+  );
+}
