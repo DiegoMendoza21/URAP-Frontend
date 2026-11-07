@@ -17,7 +17,6 @@ import {
   type ResultadoGeneracion,
   type SesionCalendario,
   textoAtraso,
-  textoRestante,
 } from '@/api/sesiones';
 import {
   Advertencia,
@@ -25,6 +24,11 @@ import {
   Cargando,
   Insignia,
 } from '../../_componentes/Estados';
+import { fechaCorta, fechaLarga } from '../../_componentes/fechas';
+import {
+  InsigniasSesion,
+  resumenRegistro,
+} from '../../_componentes/InsigniasSesion';
 import { useConsulta } from '../../_componentes/useConsulta';
 
 interface Fallo {
@@ -37,27 +41,6 @@ function falloDe(error: unknown): Fallo {
     mensaje: mensajeParaUsuario(error),
     detalles: error instanceof ErrorApi ? error.detalles : undefined,
   };
-}
-
-/** Las fechas llegan como `YYYY-MM-DD`: se leen en UTC para que no cambien de día. */
-const formatoFecha = new Intl.DateTimeFormat('es-CO', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  timeZone: 'UTC',
-});
-const formatoFechaCorta = new Intl.DateTimeFormat('es-CO', {
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'UTC',
-});
-
-function fechaLarga(fecha: string): string {
-  return formatoFecha.format(new Date(`${fecha}T00:00:00Z`));
-}
-
-function fechaCorta(fecha: string): string {
-  return formatoFechaCorta.format(new Date(`${fecha}T00:00:00Z`));
 }
 
 /**
@@ -245,7 +228,10 @@ export function CalendarioSesionesCurso() {
               <Advertencia key={advertencia} titulo={advertencia} />
             ))}
 
-          <ListaSesiones calendario={calendario.datos} />
+          <ListaSesiones
+            calendario={calendario.datos}
+            idProyecto={idProyecto!}
+          />
         </>
       )}
     </section>
@@ -522,7 +508,13 @@ function AvisoReceso({ receso }: { receso: SemanaReceso }) {
   );
 }
 
-function ListaSesiones({ calendario }: { calendario: CalendarioSesiones }) {
+function ListaSesiones({
+  calendario,
+  idProyecto,
+}: {
+  calendario: CalendarioSesiones;
+  idProyecto: number;
+}) {
   if (calendario.total === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-600">
@@ -598,6 +590,7 @@ function ListaSesiones({ calendario }: { calendario: CalendarioSesiones }) {
                   key={sesion.id}
                   sesion={sesion}
                   esHoy={sesion.fecha === fechaHoy}
+                  href={`/proyectos-docentes/${idProyecto}/sesiones/${sesion.id}`}
                 />
               ))}
             </ul>
@@ -625,56 +618,41 @@ function estiloTarjeta(sesion: SesionCalendario, esHoy: boolean): string {
   return esHoy ? 'border-marca bg-marca/5' : 'border-slate-200 bg-white';
 }
 
+/** Cada sesión abre su registro de clase (RF-20, p2): ahí se registra o se consulta. */
 function TarjetaSesion({
   sesion,
   esHoy,
+  href,
 }: {
   sesion: SesionCalendario;
   esHoy: boolean;
+  href: string;
 }) {
-  const esFestivo = sesion.tipo?.codigo === 'festivo';
   return (
-    <li
-      id={`sesion-${sesion.id}`}
-      className={`scroll-mt-4 rounded-xl border p-3 ${estiloTarjeta(sesion, esHoy)}`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold first-letter:uppercase">
-          {fechaLarga(sesion.fecha)}
-        </p>
-        {sesion.horaInicio && sesion.horaFin && (
-          <span className="shrink-0 text-sm tabular-nums text-slate-700">
-            {sesion.horaInicio} – {sesion.horaFin}
-          </span>
+    <li id={`sesion-${sesion.id}`} className="scroll-mt-4">
+      <Link
+        href={href}
+        className={`block rounded-xl border p-3 hover:border-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca ${estiloTarjeta(sesion, esHoy)}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <p className="font-semibold first-letter:uppercase">
+            {fechaLarga(sesion.fecha)}
+          </p>
+          {sesion.horaInicio && sesion.horaFin && (
+            <span className="shrink-0 text-sm tabular-nums text-slate-700">
+              {sesion.horaInicio} – {sesion.horaFin}
+            </span>
+          )}
+        </div>
+        <div className="mt-1.5">
+          <InsigniasSesion sesion={sesion} esHoy={esHoy} />
+        </div>
+        {sesion.diligenciada && (
+          <p className="mt-1.5 text-sm text-slate-600">
+            {resumenRegistro(sesion)}
+          </p>
         )}
-      </div>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {sesion.alerta === 'vencida' && (
-          <Insignia tono="peligro">
-            Vencida
-            {sesion.diasAtraso ? ` · ${textoAtraso(sesion.diasAtraso)}` : ''}
-          </Insignia>
-        )}
-        {sesion.alerta === 'incumplida' && (
-          <Insignia tono="peligro">
-            Incumplida
-            {sesion.diasAtraso ? ` · ${textoAtraso(sesion.diasAtraso)}` : ''}
-          </Insignia>
-        )}
-        {sesion.alerta === 'por_vencer' && sesion.diasRestantes !== null && (
-          <Insignia tono="advertencia">
-            Por vencer · {textoRestante(sesion.diasRestantes)}
-          </Insignia>
-        )}
-        {esHoy && <Insignia tono="marca">Hoy</Insignia>}
-        {sesion.festivo && (
-          <Insignia tono="informativo">Festivo · {sesion.festivo}</Insignia>
-        )}
-        {sesion.tipo && !esFestivo && sesion.tipo.codigo !== 'clase' && (
-          <Insignia>{sesion.tipo.nombre}</Insignia>
-        )}
-        {sesion.diligenciada && <Insignia>Diligenciada</Insignia>}
-      </div>
+      </Link>
     </li>
   );
 }

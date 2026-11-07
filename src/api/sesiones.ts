@@ -13,6 +13,10 @@ export type TipoAlertaSesion = Esquemas['TipoAlertaSesion'];
 export type ResumenAlertas = Esquemas['ResumenAlertasDto'];
 export type PendientesDocente = Esquemas['PendientesDocenteDto'];
 export type ProyectoConPendientes = Esquemas['ProyectoConPendientesDto'];
+export type DetalleSesion = Esquemas['DetalleSesionDto'];
+export type TemaContenido = Esquemas['TemaContenidoDto'];
+export type EstudianteSesion = Esquemas['EstudianteSesionDto'];
+export type DatosRegistrarSesion = Esquemas['RegistrarSesionDto'];
 
 /** Días en que puede haber clase (RF-19): 1 = lunes … 6 = sábado, como en el backend. */
 export const DIAS_SEMANA = [
@@ -77,6 +81,35 @@ export function textoRestante(dias: number): string {
     return 'hoy';
   }
   return dias === 1 ? 'mañana' : `en ${dias} días`;
+}
+
+/* Registro de la clase (RF-20, HU-08-04) y de los ausentes (RF-22, HU-09-02). */
+
+/**
+ * La sesión con los temas del contenido programático y lo ya registrado. La lista del curso y
+ * las observaciones solo llegan a quien puede registrar: el backend decide.
+ */
+export function consultarSesion(
+  idProyecto: number,
+  idSesion: number,
+  senal?: AbortSignal,
+) {
+  return obtener<DetalleSesion>(
+    `/proyectos-docentes/${idProyecto}/sesiones/${idSesion}`,
+    { senal },
+  );
+}
+
+/** Guarda temas, ausentes y observaciones, y marca la sesión como diligenciada. */
+export function registrarSesion(
+  idProyecto: number,
+  idSesion: number,
+  datos: DatosRegistrarSesion,
+) {
+  return solicitar<DetalleSesion>(
+    `/proyectos-docentes/${idProyecto}/sesiones/${idSesion}/registro`,
+    { metodo: 'PUT', cuerpo: datos },
+  );
 }
 
 /** Genera el calendario o, si ya existe, recalcula las sesiones sin diligenciar. */
