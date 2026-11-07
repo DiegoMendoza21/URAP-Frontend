@@ -17,7 +17,15 @@ interface ErroresCampos {
 interface Falla {
   mensaje: string;
   detalles?: string[];
+  /**
+   * 429: el acceso está bloqueado por un tiempo, por intentos fallidos de la cuenta o desde la
+   * conexión (HU-01-04). No es un error en los datos, así que se muestra como aviso.
+   */
+  esBloqueo: boolean;
 }
+
+/** Respuestas que significan que la contraseña escrita no sirvió y conviene borrarla. */
+const ESTADOS_CONTRASENA_DESCARTADA = new Set([401, 429]);
 
 /** Las mismas reglas del backend, para avisar antes de enviar (NFR-011). */
 function validar(correo: string, contrasena: string): ErroresCampos {
@@ -38,7 +46,8 @@ function validar(correo: string, contrasena: string): ErroresCampos {
 /**
  * Inicio de sesión con correo institucional y contraseña (HU-01-01). Los errores del servidor
  * se muestran con su propio mensaje: el genérico de credenciales, que no dice cuál de los dos
- * datos falló, y el del usuario inactivo, que lo remite al administrador.
+ * datos falló, y el del usuario inactivo, que lo remite al administrador. El bloqueo temporal
+ * (HU-01-04) se muestra como aviso, con los minutos que indica el backend.
  */
 export function FormularioInicioSesion() {
   const { sesion, iniciar } = useSesion();
@@ -74,11 +83,20 @@ export function FormularioInicioSesion() {
       await iniciar({ correo: correo.trim(), contrasena });
       router.replace('/');
     } catch (error) {
+      const estado = error instanceof ErrorApi ? error.estado : undefined;
       setFalla({
         mensaje: mensajeParaUsuario(error),
         detalles: error instanceof ErrorApi ? error.detalles : undefined,
+        esBloqueo: estado === 429,
       });
       setEnviando(false);
+      // Sin respuesta del servidor la contraseña no se probó: se conserva para reintentar.
+      if (estado !== undefined && ESTADOS_CONTRASENA_DESCARTADA.has(estado)) {
+        setContrasena('');
+        if (estado === 401) {
+          refContrasena.current?.focus();
+        }
+      }
     }
   }
 
@@ -108,7 +126,11 @@ export function FormularioInicioSesion() {
       {falla && (
         <div
           role="alert"
-          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+          className={`rounded-lg px-3 py-2 text-sm ${
+            falla.esBloqueo
+              ? 'bg-amber-50 text-amber-900'
+              : 'bg-red-50 text-red-800'
+          }`}
         >
           <p>{falla.mensaje}</p>
           {falla.detalles && falla.detalles.length > 0 && (
