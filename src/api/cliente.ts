@@ -152,6 +152,15 @@ export function enviar<T>(
   return solicitar<T>(ruta, { ...opciones, metodo: 'POST', cuerpo });
 }
 
+/** PUT a la API con un cuerpo JSON: reemplaza lo enviado (ver `solicitar`). */
+export function reemplazar<T>(
+  ruta: string,
+  cuerpo: unknown,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, { ...opciones, metodo: 'PUT', cuerpo });
+}
+
 /** POST a la API con un formulario multipart, para cargar archivos (ver `solicitar`). */
 export function enviarFormulario<T>(
   ruta: string,
