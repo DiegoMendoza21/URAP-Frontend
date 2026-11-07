@@ -70,7 +70,7 @@ export function ConfirmacionGuardado({
       ) : null}
       {!pendiente && ultimaModificacion && (
         <span className="block sm:ml-1 sm:inline">
-          Última modificación del proyecto: {ultimaModificacion}.
+          Última modificación del proyecto: {ultimaModificacion}
         </span>
       )}
     </p>

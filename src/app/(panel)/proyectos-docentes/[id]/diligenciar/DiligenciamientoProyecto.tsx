@@ -138,11 +138,14 @@ export function DiligenciamientoProyecto() {
                         {seccion.numero}. {seccion.titulo}
                       </span>
                       <span
-                        aria-label={seccion.completa ? 'completa' : 'pendiente'}
+                        aria-hidden="true"
                         className={`inline-block size-2.5 rounded-full ${
                           seccion.completa ? 'bg-emerald-500' : 'bg-amber-400'
                         }`}
                       />
+                      <span className="sr-only">
+                        {seccion.completa ? '(completa)' : '(pendiente)'}
+                      </span>
                     </button>
                   </li>
                 );
