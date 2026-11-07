@@ -110,7 +110,10 @@ export function RegistroSesion() {
                 setVersion((valor) => valor + 1);
               }}
             />
-          ) : (
+          ) : detalle.datos.motivoNoRegistrable &&
+            !detalle.datos.sesion.diligenciada ? null : (
+            // Si todavía no se puede registrar (proyecto sin aprobar, sesión futura…) y no hay
+            // nada registrado, basta el aviso del encabezado, en lugar del formulario.
             <ConsultaRegistro detalle={detalle.datos} />
           )}
         </>
