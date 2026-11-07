@@ -35,13 +35,17 @@ export function HojaMedicion() {
     idMedicion === null ? null : `medicion-${idMedicion}`,
     (senal) => consultarMedicion(idMedicion!, senal),
   );
-  // Guardar los instrumentos devuelve la medición actualizada: reemplaza a la consultada.
-  const [actualizada, setActualizada] = useState<MedicionDetalle | null>(null);
+  // Guardar los instrumentos devuelve la medición actualizada. Vale mientras no llegue una
+  // consulta nueva: si se vuelve a consultar, manda lo consultado.
+  const [actualizada, setActualizada] = useState<{
+    base: MedicionDetalle;
+    medicion: MedicionDetalle;
+  } | null>(null);
   const medicion =
     consulta.estado !== 'lista'
       ? null
-      : actualizada?.id === consulta.datos.id
-        ? actualizada
+      : actualizada?.base === consulta.datos
+        ? actualizada.medicion
         : consulta.datos;
 
   return (
@@ -59,7 +63,14 @@ export function HojaMedicion() {
       {medicion && (
         <>
           <Cabecera medicion={medicion} />
-          <Instrumentos medicion={medicion} alGuardar={setActualizada} />
+          <Instrumentos
+            medicion={medicion}
+            alGuardar={(nueva) => {
+              if (consulta.estado === 'lista') {
+                setActualizada({ base: consulta.datos, medicion: nueva });
+              }
+            }}
+          />
           <Valoracion key={medicion.id} medicion={medicion} />
         </>
       )}

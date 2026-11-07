@@ -771,6 +771,11 @@ export interface components {
              */
             proyectoAprobado: boolean;
             /**
+             * @description El período académico del curso no está cerrado (RF-17)
+             * @example true
+             */
+            periodoAbierto: boolean;
+            /**
              * @description El curso tiene la lista de estudiantes matriculados (RF-22)
              * @example true
              */

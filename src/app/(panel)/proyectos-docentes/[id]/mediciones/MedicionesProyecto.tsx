@@ -101,6 +101,7 @@ function Requisitos({
   const sinRubrica = raps.filter((rap) => rap.rubricaVigente === null);
   if (
     requisitos.proyectoAprobado &&
+    requisitos.periodoAbierto &&
     requisitos.listaCargada &&
     sinRubrica.length === 0
   ) {
@@ -115,6 +116,11 @@ function Requisitos({
             aprueba el proyecto
             {estadoProyecto ? ` (hoy está «${estadoProyecto.nombre}»)` : ''}.
           </p>
+        </Advertencia>
+      )}
+      {!requisitos.periodoAbierto && (
+        <Advertencia titulo="El período académico del curso está cerrado.">
+          <p>Ya no se pueden iniciar mediciones en este curso.</p>
         </Advertencia>
       )}
       {!requisitos.listaCargada && (
@@ -190,6 +196,7 @@ function FormularioInicio({
 
   const bloqueado =
     !datos.requisitos.proyectoAprobado ||
+    !datos.requisitos.periodoAbierto ||
     !datos.requisitos.listaCargada ||
     medibles.length === 0;
 

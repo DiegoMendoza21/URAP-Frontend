@@ -60,13 +60,20 @@ export function Instrumentos({
     const sinNombre = campos.find(
       (fila) => !fila.instrumento.trim() && fila.descripcion.trim(),
     );
-    if (sinNombre || conInstrumento.length === 0) {
-      setEnvio({
-        estado: 'fallido',
-        mensaje: sinNombre
-          ? 'Escriba el nombre del instrumento de cada indicador que tenga descripción.'
-          : 'Escriba al menos un instrumento de evaluación.',
-      });
+    // Un instrumento ya registrado no se puede dejar vacío: el backend lo exige.
+    const vaciado = campos.find(
+      (fila, i) =>
+        !fila.instrumento.trim() && medicion.indicadores[i]?.instrumento,
+    );
+    const problema = vaciado
+      ? 'Un instrumento ya registrado no se puede dejar vacío: escriba el que usó o déjelo como estaba.'
+      : sinNombre
+        ? 'Escriba el nombre del instrumento de cada indicador que tenga descripción.'
+        : conInstrumento.length === 0
+          ? 'Escriba al menos un instrumento de evaluación.'
+          : null;
+    if (problema) {
+      setEnvio({ estado: 'fallido', mensaje: problema });
       return;
     }
     setEnvio({ estado: 'enviando' });
