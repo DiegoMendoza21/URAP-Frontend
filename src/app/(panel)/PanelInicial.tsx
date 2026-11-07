@@ -1,10 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import { useSesion } from '@/sesion/ProveedorSesion';
 
 /**
- * Panel inicial después de iniciar sesión (RF-01, p4). El menú según los roles llega con
- * HU-01-03.
+ * Roles que consultan proyectos docentes; el backend filtra cuáles ve cada uno. El Estudiante
+ * solo verá los publicados, con RF-27.
+ */
+const ROLES_PROYECTOS = [
+  'Administrador',
+  'Departamento académico',
+  'Docente responsable',
+  'Líder RAP',
+  'Dirección del programa',
+];
+
+/**
+ * Panel inicial después de iniciar sesión (RF-01, p4). El menú completo según los roles llega
+ * con HU-01-03; por ahora, el acceso a los proyectos docentes.
  */
 export function PanelInicial() {
   const { sesion } = useSesion();
@@ -31,6 +44,23 @@ export function PanelInicial() {
           ))}
         </ul>
       </div>
+      {roles.some((rol) => ROLES_PROYECTOS.includes(rol)) && (
+        <nav aria-label="Accesos" className="grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/proyectos-docentes"
+            className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+          >
+            <span className="block font-semibold text-marca">
+              Proyectos docentes
+            </span>
+            <span className="block text-sm text-slate-600">
+              {roles.includes('Departamento académico')
+                ? 'Cree los proyectos del período y asigne los docentes.'
+                : 'Consulte los proyectos docentes a su cargo.'}
+            </span>
+          </Link>
+        </nav>
+      )}
     </section>
   );
 }
