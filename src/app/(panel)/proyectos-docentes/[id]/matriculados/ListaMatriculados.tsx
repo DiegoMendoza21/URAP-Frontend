@@ -139,7 +139,11 @@ export function ListaMatriculados() {
       {/* Fuera del bloque de la lista: al recargarla no se pierde el resumen de la carga. */}
       {esAdministrador &&
         idProyecto !== null &&
-        (huboCarga || lista.estado === 'lista') && (
+        // También si la consulta falló por un error pasajero (5xx o sin conexión); no si
+        // el backend respondió que el proyecto no existe o no es accesible.
+        (huboCarga ||
+          lista.estado === 'lista' ||
+          (lista.estado === 'fallida' && lista.reintentable)) && (
           <CargaLista
             idProyecto={idProyecto}
             hayLista={

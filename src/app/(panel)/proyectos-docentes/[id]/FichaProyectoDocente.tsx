@@ -15,7 +15,8 @@ import { useConsulta } from '../_componentes/useConsulta';
  * Roles que ven la lista de estudiantes del curso (RF-22). Es presentación: el backend solo la
  * entrega al Administrador y a los docentes asignados al proyecto.
  */
-const ROLES_LISTA_ESTUDIANTES = ['Administrador', 'Docente responsable'];
+const ROL_ADMINISTRADOR = 'Administrador';
+const ROL_DOCENTE = 'Docente responsable';
 
 /**
  * Ficha del proyecto docente: la información base con la que lo creó el asistente (RF-08). Las
@@ -29,9 +30,15 @@ export function FichaProyectoDocente() {
     idProyecto === null ? null : `proyecto-${idProyecto}`,
     (senal) => consultarProyectoDocente(idProyecto!, senal),
   );
+  // El Administrador la ve siempre; el docente, solo si dicta el curso (como en el backend).
   const veEstudiantes =
     sesion.estado === 'autenticado' &&
-    sesion.usuario.roles.some((rol) => ROLES_LISTA_ESTUDIANTES.includes(rol));
+    proyecto.estado === 'lista' &&
+    (sesion.usuario.roles.includes(ROL_ADMINISTRADOR) ||
+      (sesion.usuario.roles.includes(ROL_DOCENTE) &&
+        proyecto.datos.docentes.some(
+          (docente) => docente.id === sesion.usuario.id,
+        )));
 
   return (
     <section className="space-y-6">
