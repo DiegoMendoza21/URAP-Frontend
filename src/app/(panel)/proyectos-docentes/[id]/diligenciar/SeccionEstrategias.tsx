@@ -16,7 +16,8 @@ const ESTRATEGIAS_MAXIMO = 50;
 
 /**
  * Punto 4 «Estrategias metodológicas» (RF-13, HU-06-04): listado que el docente redacta o
- * arma con el catálogo sugerido, y que puede reordenar y depurar antes de guardarlo.
+ * arma con sugerencias tomadas de otros proyectos del programa (no es un catálogo oficial:
+ * solo el texto, sin el proyecto ni el docente de origen), y que puede reordenar y depurar.
  */
 export function SeccionEstrategias({
   idProyecto,
@@ -60,7 +61,8 @@ export function SeccionEstrategias({
           guardar: 'Guardar estrategias',
           vacio:
             'El docente todavía no ha registrado estrategias metodológicas.',
-          ayuda: 'Redáctela con sus palabras o elíjala del catálogo sugerido.',
+          ayuda:
+            'Redáctela con sus palabras o, si las hay, tome una de las sugerencias de abajo.',
         }}
         guardar={async (textos) => {
           const respuesta = await guardarEstrategias(idProyecto, textos);
@@ -76,12 +78,15 @@ export function SeccionEstrategias({
           );
           return (
             <div className="space-y-2">
-              <p className="text-sm font-medium">Catálogo sugerido</p>
+              <p className="text-sm font-medium">
+                Sugerencias de otros proyectos del programa
+              </p>
               {disponibles.length > 0 ? (
                 <>
                   <p className="text-sm text-slate-600">
-                    Estrategias que usan otros proyectos docentes del programa.
-                    Toque una para agregarla al listado.
+                    No es un catálogo oficial: son estrategias que ya
+                    registraron otros proyectos docentes del programa. Toque una
+                    para agregarla al listado.
                   </p>
                   <ul className="flex flex-wrap gap-2">
                     {disponibles.map((texto) => (
@@ -100,8 +105,8 @@ export function SeccionEstrategias({
               ) : (
                 <p className="text-sm text-slate-600">
                   {catalogo.length > 0
-                    ? 'Ya agregó todas las estrategias del catálogo.'
-                    : 'Todavía no hay estrategias sugeridas: el catálogo se arma con las que registran los proyectos docentes del programa.'}
+                    ? 'Ya agregó todas las sugerencias.'
+                    : 'Todavía no hay sugerencias: aparecerán cuando otros proyectos docentes del programa registren sus estrategias. Mientras tanto, redáctelas en el campo de arriba.'}
                 </p>
               )}
             </div>
