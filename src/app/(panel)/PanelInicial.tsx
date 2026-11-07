@@ -23,6 +23,13 @@ const ROLES_MEDICION = [
   'Departamento académico',
 ];
 
+/** Roles del tablero de seguimiento del diligenciamiento (RF-25, precondición). */
+const ROLES_SEGUIMIENTO = [
+  'Administrador',
+  'Departamento académico',
+  'Dirección del programa',
+];
+
 /** Roles que consultan el reporte de logro de los RAP (RF-32, matriz de permisos). */
 const ROLES_REPORTE_LOGRO = [
   'Administrador',
@@ -77,6 +84,16 @@ export function PanelInicial() {
                 : 'Consulte los proyectos docentes a su cargo.'}
             </span>
           </Link>
+          {roles.some((rol) => ROLES_SEGUIMIENTO.includes(rol)) && (
+            <Link href="/seguimiento" className={CLASE_ACCESO}>
+              <span className="block font-semibold text-marca">
+                Seguimiento del diligenciamiento
+              </span>
+              <span className="block text-sm text-slate-600">
+                Qué proyectos van al día y cuáles tienen pendientes.
+              </span>
+            </Link>
+          )}
           {roles.some((rol) => ROLES_MEDICION.includes(rol)) && (
             <Link href="/mediciones" className={CLASE_ACCESO}>
               <span className="block font-semibold text-marca">

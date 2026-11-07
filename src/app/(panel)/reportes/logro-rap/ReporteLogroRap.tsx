@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useId, useState, type FormEvent } from 'react';
 import { mensajeParaUsuario } from '@/api/cliente';
+import { guardarArchivo } from '@/api/descargas';
 import { etiquetaTipo, nombreRap } from '@/api/mediciones';
 import {
   type ConsultaLogroRap,
@@ -246,13 +247,7 @@ function Resultado({
   const exportarExcel = async () => {
     setDescarga({ estado: 'descargando' });
     try {
-      const { archivo, nombre } = await descargarLogroRapExcel(consulta);
-      const url = URL.createObjectURL(archivo);
-      const enlace = document.createElement('a');
-      enlace.href = url;
-      enlace.download = nombre;
-      enlace.click();
-      URL.revokeObjectURL(url);
+      guardarArchivo(await descargarLogroRapExcel(consulta));
       setDescarga({ estado: 'inactiva' });
     } catch (error) {
       setDescarga({ estado: 'fallida', mensaje: mensajeParaUsuario(error) });
