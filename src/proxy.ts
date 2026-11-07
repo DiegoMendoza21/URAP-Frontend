@@ -16,7 +16,9 @@ export function proxy(peticion: NextRequest) {
     return NextResponse.redirect(new URL('/iniciar-sesion', peticion.url));
   }
   if (conSesion && publica) {
-    return NextResponse.redirect(new URL('/', peticion.url));
+    // 303 y no 307: si llega un POST del formulario enviado antes de cargar JavaScript, el
+    // navegador sigue con un GET y no reenvía el correo y la contraseña a otra ruta.
+    return NextResponse.redirect(new URL('/', peticion.url), 303);
   }
   return NextResponse.next();
 }
