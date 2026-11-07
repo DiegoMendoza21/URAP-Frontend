@@ -26,6 +26,8 @@ export const MENSAJES = {
   servidorNoDisponible:
     'El servidor de URAP no está disponible en este momento. Intente de nuevo más tarde.',
   solicitudRechazada: 'No fue posible completar la solicitud.',
+  demasiadosIntentos:
+    'Se hicieron demasiados intentos. Espere un momento e intente de nuevo.',
   inesperado: 'Ocurrió un error inesperado. Intente de nuevo más tarde.',
 } as const;
 
@@ -49,6 +51,11 @@ export interface OpcionesSolicitud {
   metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** Se envía como JSON. */
   cuerpo?: unknown;
+  /**
+   * Se envía como multipart/form-data, para cargar archivos. El navegador pone el
+   * Content-Type con su separador; no se debe fijar a mano.
+   */
+  formulario?: FormData;
   /** Si `senal` cancela la solicitud, se propaga su motivo en vez de un ErrorApi. */
   senal?: AbortSignal;
   /**
@@ -65,7 +72,13 @@ export interface OpcionesSolicitud {
  */
 export async function solicitar<T>(
   ruta: string,
-  { metodo = 'GET', cuerpo, senal, publica = false }: OpcionesSolicitud = {},
+  {
+    metodo = 'GET',
+    cuerpo,
+    formulario,
+    senal,
+    publica = false,
+  }: OpcionesSolicitud = {},
 ): Promise<T> {
   senal?.throwIfAborted();
   const controlador = new AbortController();
@@ -84,7 +97,9 @@ export async function solicitar<T>(
         Accept: 'application/json',
         ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      body:
+        formulario ??
+        (cuerpo === undefined ? undefined : JSON.stringify(cuerpo)),
       cache: 'no-store',
       signal: controlador.signal,
     });
@@ -137,6 +152,15 @@ export function enviar<T>(
   return solicitar<T>(ruta, { ...opciones, metodo: 'POST', cuerpo });
 }
 
+/** POST a la API con un formulario multipart, para cargar archivos (ver `solicitar`). */
+export function enviarFormulario<T>(
+  ruta: string,
+  formulario: FormData,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo' | 'formulario'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, { ...opciones, metodo: 'POST', formulario });
+}
+
 /** Mensaje en español para el usuario ante cualquier error, sin detalles técnicos (NFR-011). */
 export function mensajeParaUsuario(error: unknown): string {
   return error instanceof ErrorApi ? error.message : MENSAJES.inesperado;
@@ -145,7 +169,8 @@ export function mensajeParaUsuario(error: unknown): string {
 /**
  * Con un cuerpo de la forma de RespuestaErrorDto se usa el mensaje del backend, que ya viene
  * en español y apto para el usuario. Con cualquier otro (por ejemplo, la página de error de
- * un proxy) se usa un mensaje genérico.
+ * un proxy) se usa un mensaje genérico. Un 429 sin ese cuerpo viene de algo delante del
+ * backend (un balanceador o un firewall), y su mensaje dice que hay que esperar.
  */
 export function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
   if (esRespuestaError(cuerpo)) {
@@ -153,6 +178,9 @@ export function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
       ? cuerpo.detalles.filter((detalle) => typeof detalle === 'string')
       : undefined;
     return new ErrorApi(cuerpo.mensaje, estado, detalles);
+  }
+  if (estado === 429) {
+    return new ErrorApi(MENSAJES.demasiadosIntentos, estado);
   }
   return new ErrorApi(
     estado >= 500 ? MENSAJES.servidorNoDisponible : MENSAJES.solicitudRechazada,

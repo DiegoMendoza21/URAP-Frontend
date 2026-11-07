@@ -39,7 +39,12 @@ responde. El puerto 3000 es fijo: si está ocupado, `dev` se detiene en vez de p
   presentación: la autorización la hace el backend en cada petición.
 - Next reenvía al backend el `X-Forwarded-For` del navegador tal como llega, sin agregar su
   propia entrada. Por eso `PROXIES_CONFIABLES` del backend cuenta solo los balanceadores que
-  haya delante de Next, sin contar a Next: en local, 0.
+  haya delante de Next, sin contar a Next: en local, 0. De esa IP dependen el límite de
+  intentos de inicio de sesión por IP y la IP que guarda la auditoría.
+- En el despliegue, Next va detrás de un balanceador y el backend no se expone a internet.
+  Con `PROXIES_CONFIABLES=0`, todos los usuarios llegarían al backend con la IP de Next:
+  compartirían el límite de intentos y la auditoría guardaría esa IP. Sin balanceador delante
+  de Next, el usuario podría falsificar su IP con ese encabezado.
 
 ## Comandos
 
