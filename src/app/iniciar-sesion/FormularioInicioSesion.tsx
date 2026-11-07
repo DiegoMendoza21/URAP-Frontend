@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import {
+  useEffect,
   useId,
   useRef,
   useState,
@@ -36,6 +37,9 @@ function normalizarCorreo(correo: string): string {
 }
 
 const sinSuscripcion = () => () => {};
+
+/** Campos del formulario que nunca deben quedar en la URL. */
+const PARAMETROS_SENSIBLES = ['correo', 'contrasena'];
 
 /**
  * Falso en el HTML del servidor y mientras React no ha tomado la página; verdadero después.
@@ -98,8 +102,28 @@ export function FormularioInicioSesion() {
   const aviso = sesion.estado === 'anonimo' ? sesion.aviso : undefined;
   const hidratado = useHidratado();
 
+  // Una URL que ya trae credenciales (un marcador o el historial de antes de este arreglo) se
+  // limpia al cargar: la contraseña no debe seguir a la vista en la barra de direcciones.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (
+      PARAMETROS_SENSIBLES.some((parametro) => url.searchParams.has(parametro))
+    ) {
+      PARAMETROS_SENSIBLES.forEach((parametro) =>
+        url.searchParams.delete(parametro),
+      );
+      window.history.replaceState(window.history.state, '', url);
+    }
+  }, []);
+
   async function alEnviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
+    // Se lee lo que muestran los campos: lo escrito antes de que React tomara la página está
+    // en el DOM, no en el estado.
+    const correo = refCorreo.current?.value ?? '';
+    const contrasena = refContrasena.current?.value ?? '';
+    setCorreo(correo);
+    setContrasena(contrasena);
     const nuevos = validar(correo, contrasena);
     setErrores(nuevos);
     if (nuevos.correo) {
@@ -152,6 +176,7 @@ export function FormularioInicioSesion() {
     //   no en la URL, el historial ni los registros del servidor.
     <form
       method="post"
+      action="/iniciar-sesion"
       noValidate
       onSubmit={alEnviar}
       aria-labelledby={`${id}-titulo`}
@@ -269,7 +294,7 @@ export function FormularioInicioSesion() {
         disabled={!hidratado || enviando || bloqueado}
         className="w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {enviando ? 'Ingresando…' : 'Ingresar'}
+        {!hidratado ? 'Cargando…' : enviando ? 'Ingresando…' : 'Ingresar'}
       </button>
     </form>
   );
