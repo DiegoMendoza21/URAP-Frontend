@@ -72,6 +72,24 @@ export function FichaProyectoDocente() {
             />
           </section>
 
+          <Link
+            href={`/proyectos-docentes/${idProyecto}/calendario`}
+            className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca sm:p-6"
+          >
+            <span>
+              <span className="block text-lg font-semibold">
+                Calendario de sesiones
+              </span>
+              <span className="block text-sm text-slate-600">
+                Días y horas de clase, y las sesiones del período con sus
+                festivos.
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-xl text-marca">
+              →
+            </span>
+          </Link>
+
           <section
             aria-labelledby="titulo-docentes"
             className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
