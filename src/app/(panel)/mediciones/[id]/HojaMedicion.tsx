@@ -37,19 +37,25 @@ export function HojaMedicion() {
     idMedicion === null ? null : `medicion-${idMedicion}`,
     (senal) => consultarMedicion(idMedicion!, senal),
   );
-  // Guardar los instrumentos devuelve la medición actualizada: reemplaza a la consultada.
-  const [actualizada, setActualizada] = useState<MedicionDetalle | null>(null);
+  // Guardar devuelve la medición actualizada. Vale mientras no llegue una consulta nueva: si
+  // se vuelve a consultar, manda lo consultado.
+  const [actualizada, setActualizada] = useState<{
+    base: MedicionDetalle;
+    medicion: MedicionDetalle;
+  } | null>(null);
   // Cambia con cada guardado de valoraciones o del estado: el consolidado se vuelve a pedir.
   const [version, setVersion] = useState(0);
-  const alCambiar = (medicion: MedicionDetalle) => {
-    setActualizada(medicion);
+  const alCambiar = (nueva: MedicionDetalle) => {
+    if (consulta.estado === 'lista') {
+      setActualizada({ base: consulta.datos, medicion: nueva });
+    }
     setVersion((valor) => valor + 1);
   };
   const medicion =
     consulta.estado !== 'lista'
       ? null
-      : actualizada?.id === consulta.datos.id
-        ? actualizada
+      : actualizada?.base === consulta.datos
+        ? actualizada.medicion
         : consulta.datos;
 
   return (
