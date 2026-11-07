@@ -18,7 +18,7 @@ const URL_API = '/api';
  */
 const TIEMPO_LIMITE_MS = 15_000;
 
-const MENSAJES = {
+export const MENSAJES = {
   sinConexion:
     'No fue posible conectar con el servidor de URAP. Revise su conexión e intente de nuevo.',
   tiempoAgotado:
@@ -147,7 +147,7 @@ export function mensajeParaUsuario(error: unknown): string {
  * en español y apto para el usuario. Con cualquier otro (por ejemplo, la página de error de
  * un proxy) se usa un mensaje genérico.
  */
-function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
+export function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
   if (esRespuestaError(cuerpo)) {
     const detalles = Array.isArray(cuerpo.detalles)
       ? cuerpo.detalles.filter((detalle) => typeof detalle === 'string')

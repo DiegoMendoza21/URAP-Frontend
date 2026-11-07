@@ -114,6 +114,25 @@ export function FichaProyectoDocente() {
               ))}
             </ul>
           </section>
+
+          {/* RF-24: el backend decide quién carga y quién ve cada evidencia. */}
+          <Link
+            href={`/proyectos-docentes/${idProyecto}/evidencias`}
+            className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca sm:p-6"
+          >
+            <span>
+              <span className="block text-lg font-semibold">
+                Evidencias de los RAP
+              </span>
+              <span className="block text-sm text-slate-600">
+                Fotos y documentos que respaldan el desarrollo de cada RAP en el
+                curso.
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-xl text-marca">
+              →
+            </span>
+          </Link>
         </>
       )}
     </section>
