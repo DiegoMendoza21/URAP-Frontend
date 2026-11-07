@@ -1,4 +1,4 @@
-import { enviar, obtener, solicitar } from './cliente';
+import { enviar, ErrorApi, obtener, solicitar } from './cliente';
 import type { components } from './openapi';
 
 type Esquemas = components['schemas'];
@@ -63,6 +63,17 @@ export function eliminarRac(idProyecto: number, idRac: number) {
   return solicitar<SeccionRac>(`${base(idProyecto)}/rac/${idRac}`, {
     metodo: 'DELETE',
   });
+}
+
+/**
+ * El servidor rechazó el cambio por permisos o por el estado del proyecto (403, 404, 409): el
+ * resumen de la pantalla puede estar desactualizado y conviene volver a pedirlo.
+ */
+export function cambioRechazado(error: unknown): boolean {
+  return (
+    error instanceof ErrorApi &&
+    (error.estado === 403 || error.estado === 404 || error.estado === 409)
+  );
 }
 
 /** Nombre corto de un RAP: su código o, si no tiene, «RAP n». */

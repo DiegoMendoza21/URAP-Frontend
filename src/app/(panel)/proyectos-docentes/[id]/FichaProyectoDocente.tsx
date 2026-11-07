@@ -60,7 +60,7 @@ export function FichaProyectoDocente() {
               href={`/proyectos-docentes/${proyecto.datos.id}/diligenciar`}
               className="inline-block w-full rounded-lg bg-marca px-4 py-3 text-center font-semibold text-white hover:bg-marca-oscuro sm:w-auto sm:py-2"
             >
-              Secciones del formato (puntos 2 y 3)
+              Diligenciar el proyecto
             </Link>
           </div>
 

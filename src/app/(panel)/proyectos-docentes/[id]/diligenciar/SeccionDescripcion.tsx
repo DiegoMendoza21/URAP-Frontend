@@ -1,8 +1,9 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { mensajeParaUsuario } from '@/api/cliente';
 import {
+  cambioRechazado,
   consultarDescripcion,
   type Descripcion,
   fechaHora,
@@ -11,7 +12,6 @@ import {
 import { AvisoError, Cargando } from '../../_componentes/Estados';
 import { useConsulta } from '../../_componentes/useConsulta';
 import { BotonGuardar, ConfirmacionGuardado } from './Controles';
-import { useAvisoSalida } from './useAvisoSalida';
 
 /**
  * Punto 2 «Descripción» (RF-11, HU-06-01): texto extenso con el propósito y el enfoque del
@@ -22,10 +22,12 @@ export function SeccionDescripcion({
   idProyecto,
   puedeEditar,
   alGuardar,
+  alCambiar,
 }: {
   idProyecto: number;
   puedeEditar: boolean;
   alGuardar: () => void;
+  alCambiar: (hayCambios: boolean) => void;
 }) {
   const consulta = useConsulta(`descripcion-${idProyecto}`, (senal) =>
     consultarDescripcion(idProyecto, senal),
@@ -48,6 +50,7 @@ export function SeccionDescripcion({
       inicial={consulta.datos}
       puedeEditar={puedeEditar}
       alGuardar={alGuardar}
+      alCambiar={alCambiar}
     />
   );
 }
@@ -57,11 +60,13 @@ function EditorDescripcion({
   inicial,
   puedeEditar,
   alGuardar,
+  alCambiar,
 }: {
   idProyecto: number;
   inicial: Descripcion;
   puedeEditar: boolean;
   alGuardar: () => void;
+  alCambiar: (hayCambios: boolean) => void;
 }) {
   const idCampo = useId();
   const idAyuda = useId();
@@ -74,7 +79,9 @@ function EditorDescripcion({
   const maximo = guardado.longitudMaxima;
   const excedido = texto.length > maximo;
   const hayCambios = texto !== (guardado.texto ?? '');
-  useAvisoSalida(hayCambios);
+  useEffect(() => {
+    alCambiar(hayCambios);
+  }, [alCambiar, hayCambios]);
 
   async function guardar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -91,6 +98,9 @@ function EditorDescripcion({
       alGuardar();
     } catch (falla) {
       setError(mensajeParaUsuario(falla));
+      if (cambioRechazado(falla)) {
+        alGuardar();
+      }
     } finally {
       setGuardando(false);
     }

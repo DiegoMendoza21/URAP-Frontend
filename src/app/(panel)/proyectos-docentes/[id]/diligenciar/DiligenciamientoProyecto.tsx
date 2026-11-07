@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { type ComponentType, useCallback, useState } from 'react';
+import { type ComponentType, useCallback, useRef, useState } from 'react';
 import {
   consultarDiligenciamiento,
   type Diligenciamiento,
@@ -17,11 +17,18 @@ import {
 import { useConsulta } from '../../_componentes/useConsulta';
 import { SeccionDescripcion } from './SeccionDescripcion';
 import { SeccionRac } from './SeccionRac';
+import { useAvisoSalida } from './useAvisoSalida';
 
-interface PropiedadesSeccion {
+const MENSAJE_SALIDA =
+  'Tiene cambios sin guardar. Si sale ahora, se perderán. ¿Desea salir?';
+
+export interface PropiedadesSeccion {
   idProyecto: number;
   puedeEditar: boolean;
+  /** Pide el resumen otra vez: tras guardar, o si el servidor rechazó el cambio. */
   alGuardar: () => void;
+  /** Avisa si la sección tiene cambios sin guardar. */
+  alCambiar: (hayCambios: boolean) => void;
 }
 
 /**
@@ -52,16 +59,45 @@ export function DiligenciamientoProyecto() {
   );
   const [refrescado, setRefrescado] = useState<Diligenciamiento | null>(null);
   const [activa, setActiva] = useState<string | null>(null);
+  const [conCambios, setConCambios] = useState<ReadonlySet<string>>(new Set());
+  const ultimaConsulta = useRef(0);
+  useAvisoSalida(conCambios.size > 0);
 
-  // Tras guardar una sección se actualiza el resumen sin volver a mostrar «Cargando…».
+  // Tras guardar una sección se actualiza el resumen sin volver a mostrar «Cargando…». Si
+  // dos guardados seguidos responden en otro orden, solo cuenta la última consulta.
   const alGuardar = useCallback(() => {
     if (idProyecto === null) {
       return;
     }
-    consultarDiligenciamiento(idProyecto).then(setRefrescado, () => {
-      // Si falla, el resumen anterior sigue en pantalla; lo guardado no se pierde.
-    });
+    const numero = ++ultimaConsulta.current;
+    consultarDiligenciamiento(idProyecto).then(
+      (datos) => {
+        if (numero === ultimaConsulta.current) {
+          setRefrescado(datos);
+        }
+      },
+      () => {
+        // Si falla, el resumen anterior sigue en pantalla; lo guardado no se pierde.
+      },
+    );
   }, [idProyecto]);
+
+  const cambiosDe = useCallback(
+    (clave: string) => (hayCambios: boolean) =>
+      setConCambios((previas) => {
+        if (previas.has(clave) === hayCambios) {
+          return previas;
+        }
+        const siguientes = new Set(previas);
+        if (hayCambios) {
+          siguientes.add(clave);
+        } else {
+          siguientes.delete(clave);
+        }
+        return siguientes;
+      }),
+    [],
+  );
 
   const resumen =
     refrescado ?? (consulta.estado === 'lista' ? consulta.datos : null);
@@ -75,6 +111,11 @@ export function DiligenciamientoProyecto() {
             ? '/proyectos-docentes'
             : `/proyectos-docentes/${idProyecto}`
         }
+        onClick={(evento) => {
+          if (conCambios.size > 0 && !window.confirm(MENSAJE_SALIDA)) {
+            evento.preventDefault();
+          }
+        }}
         className="text-sm font-medium text-marca hover:underline"
       >
         ← Ficha del proyecto
@@ -186,6 +227,7 @@ export function DiligenciamientoProyecto() {
                     idProyecto={idProyecto}
                     puedeEditar={resumen.puedeEditar}
                     alGuardar={alGuardar}
+                    alCambiar={cambiosDe(seccion.clave)}
                   />
                 ) : (
                   <p className="text-sm text-slate-600">

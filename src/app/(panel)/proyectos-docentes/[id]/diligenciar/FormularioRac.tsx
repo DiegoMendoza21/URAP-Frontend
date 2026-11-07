@@ -1,11 +1,10 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { DatosGuardarRac, GrupoRac, Rac } from '@/api/diligenciamiento';
 import { nombreRap } from '@/api/diligenciamiento';
 import { AvisoError } from '../../_componentes/Estados';
 import { BotonGuardar, BotonSecundario } from './Controles';
-import { useAvisoSalida } from './useAvisoSalida';
 
 /** Mismos límites que valida el backend (GuardarRacDto). */
 const CODIGO_MAXIMO = 30;
@@ -28,6 +27,7 @@ export function FormularioRac({
   idRapInicial,
   guardar,
   cancelar,
+  alCambiar,
 }: {
   grupos: GrupoRac[];
   /** El RAC que se edita; sin él, se registra uno nuevo. */
@@ -36,6 +36,8 @@ export function FormularioRac({
   idRapInicial?: number;
   guardar: (datos: DatosGuardarRac) => Promise<string | null>;
   cancelar: () => void;
+  /** Avisa si el formulario difiere de lo guardado. */
+  alCambiar: (hayCambios: boolean) => void;
 }) {
   const id = useId();
   const [codigo, setCodigo] = useState(rac?.codigo ?? '');
@@ -57,9 +59,38 @@ export function FormularioRac({
   const [errores, setErrores] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
-  useAvisoSalida(true);
-
   const marcados = grupos.filter(({ rap }) => seleccion[rap.id]?.marcado);
+
+  // Hay cambios si algo difiere del RAC como estaba (o de un formulario vacío, si es nuevo).
+  const firma = (
+    c: string,
+    e: string,
+    raps: { idRap: number; contribucion: string }[],
+  ) => JSON.stringify([c.trim(), e.trim(), raps]);
+  const [firmaInicial] = useState(() =>
+    firma(
+      codigo,
+      enunciado,
+      grupos
+        .filter(({ rap }) => seleccion[rap.id]?.marcado)
+        .map(({ rap }) => ({
+          idRap: rap.id,
+          contribucion: seleccion[rap.id].contribucion.trim(),
+        })),
+    ),
+  );
+  const hayCambios =
+    firma(
+      codigo,
+      enunciado,
+      marcados.map(({ rap }) => ({
+        idRap: rap.id,
+        contribucion: seleccion[rap.id].contribucion.trim(),
+      })),
+    ) !== firmaInicial;
+  useEffect(() => {
+    alCambiar(hayCambios);
+  }, [alCambiar, hayCambios]);
 
   function validar(): string[] {
     const faltas: string[] = [];

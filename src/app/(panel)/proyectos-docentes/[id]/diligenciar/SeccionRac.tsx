@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { mensajeParaUsuario } from '@/api/cliente';
 import {
   actualizarRac,
+  cambioRechazado,
   consultarRac,
   crearRac,
   type DatosGuardarRac,
@@ -32,10 +33,12 @@ export function SeccionRac({
   idProyecto,
   puedeEditar,
   alGuardar,
+  alCambiar,
 }: {
   idProyecto: number;
   puedeEditar: boolean;
   alGuardar: () => void;
+  alCambiar: (hayCambios: boolean) => void;
 }) {
   const consulta = useConsulta(`rac-${idProyecto}`, (senal) =>
     consultarRac(idProyecto, senal),
@@ -45,6 +48,12 @@ export function SeccionRac({
   const [porEliminar, setPorEliminar] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Un formulario cerrado no deja cambios pendientes.
+  useEffect(() => {
+    if (edicion === null) {
+      alCambiar(false);
+    }
+  }, [alCambiar, edicion]);
 
   if (consulta.estado === 'cargando' || consulta.estado === 'inactiva') {
     return <Cargando />;
@@ -72,6 +81,9 @@ export function SeccionRac({
       alGuardar();
       return null;
     } catch (falla) {
+      if (cambioRechazado(falla)) {
+        alGuardar();
+      }
       return mensajeParaUsuario(falla);
     }
   }
@@ -85,6 +97,9 @@ export function SeccionRac({
       alGuardar();
     } catch (falla) {
       setError(mensajeParaUsuario(falla));
+      if (cambioRechazado(falla)) {
+        alGuardar();
+      }
     }
   }
 
@@ -97,6 +112,7 @@ export function SeccionRac({
         idRapInicial={idRap}
         guardar={guardar}
         cancelar={() => setEdicion(null)}
+        alCambiar={alCambiar}
       />
     ) : null;
 
