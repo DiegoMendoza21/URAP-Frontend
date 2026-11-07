@@ -16,7 +16,7 @@ import {
   Insignia,
 } from '../proyectos-docentes/_componentes/Estados';
 import { useConsulta } from '../proyectos-docentes/_componentes/useConsulta';
-import { Juicio, META_NO_DEFINIDA } from './[id]/Consolidado';
+import { base, Juicio, META_NO_DEFINIDA } from './[id]/Consolidado';
 
 const TAMANO_PAGINA = 20;
 
@@ -138,10 +138,12 @@ export function ListaMediciones() {
                   </div>
                   <p className="flex flex-wrap items-center gap-2 text-sm">
                     <span>
-                      Resultado:{' '}
+                      Logro del RAP:{' '}
                       <strong>
                         {porcentaje(medicion.porcentajeCumplimiento)}
                       </strong>
+                      {medicion.valoracionesTotales > 0 &&
+                        ` (${base(medicion.valoracionesEnCumplimiento, medicion.valoracionesTotales)})`}
                     </span>
                     <span className="text-slate-600">
                       · Esperado:{' '}
@@ -149,8 +151,8 @@ export function ListaMediciones() {
                         ? META_NO_DEFINIDA.toLowerCase()
                         : porcentaje(medicion.porcentajeEsperado)}
                     </span>
-                    {medicion.alcanzado !== null && (
-                      <Juicio alcanzado={medicion.alcanzado} />
+                    {medicion.porcentajeEsperado !== null && (
+                      <Juicio alcanzado={medicion.alcanzado} metaDefinida />
                     )}
                   </p>
                 </Link>

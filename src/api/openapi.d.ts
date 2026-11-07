@@ -947,6 +947,10 @@ export interface components {
             actualizada: string | null;
             /** @example 63.97 */
             porcentajeCumplimiento: number | null;
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
             /** @example null */
             porcentajeEsperado: number | null;
             /** @example null */
@@ -1170,6 +1174,11 @@ export interface components {
              */
             muestra: number;
             /**
+             * @description Estudiantes del indicador en los niveles de cumplimiento
+             * @example 29
+             */
+            enCumplimiento: number;
+            /**
              * @description Estudiantes de la hoja sin valorar en el indicador: fuera de la muestra
              * @example 0
              */
@@ -1209,10 +1218,20 @@ export interface components {
             /** @example false */
             cohorteRegistrada: boolean;
             /**
-             * @description Resultado de la medición: promedio de los porcentajes de cumplimiento de sus indicadores con muestra
+             * @description Logro del RAP en la medición: valoraciones en los niveles de cumplimiento entre el total de valoraciones (estudiante × indicador). Regla provisional, pendiente de confirmar con el programa.
              * @example 63.97
              */
             porcentajeCumplimiento: number | null;
+            /**
+             * @description Base del logro: valoraciones en los niveles de cumplimiento
+             * @example 87
+             */
+            valoracionesEnCumplimiento: number;
+            /**
+             * @description Base del logro: total de valoraciones
+             * @example 136
+             */
+            valoracionesTotales: number;
             /** @example null */
             porcentajeEsperado: number | null;
             /**
@@ -1376,10 +1395,21 @@ export interface components {
             instrumento: string | null;
             /** @example 34 */
             muestra: number;
+            /** @example 29 */
+            enCumplimiento: number;
             /** @example 85.29 */
             porcentajeCumplimiento: number | null;
+            /**
+             * @description Falso: el indicador quedó por debajo de la meta, aunque el RAP la alcance. Nulo sin meta.
+             * @example null
+             */
+            alcanzado: boolean | null;
         };
         AsignaturaEvaluadaDto: {
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
             /** @example 8 */
             idMedicion: number;
             /** @example Finanzas a corto plazo */
@@ -1400,8 +1430,10 @@ export interface components {
             anioToma: number;
             /** @example 34 */
             tamanoMuestra: number;
+            /** @example 1 */
+            versionRubrica: number | null;
             /**
-             * @description Porcentaje en los niveles de cumplimiento (promedio de los indicadores)
+             * @description Logro del RAP en la medición: valoraciones en cumplimiento entre el total de valoraciones
              * @example 63.97
              */
             porcentajeCumplimiento: number | null;
@@ -1415,6 +1447,10 @@ export interface components {
             accionesPropuestas: string | null;
         };
         ComparacionPeriodoDto: {
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
             /** @example 2026-1 */
             periodo: string;
             /** @example 70.5 */
@@ -1424,8 +1460,24 @@ export interface components {
              * @example 2
              */
             mediciones: number;
+            /**
+             * @example [
+             *       1
+             *     ]
+             */
+            versionesRubrica: number[];
+            /**
+             * @description Falso: se midió con otra versión de la rúbrica y el número no es comparable (RF-32, p4)
+             * @example true
+             */
+            comparable: boolean;
+            nota: string | null;
         };
         RapReporteDto: {
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
             /** @example 2 */
             id: number;
             /** @example RAP 2 */
@@ -1440,7 +1492,14 @@ export interface components {
             evaluado: boolean;
             asignaturas: components["schemas"]["AsignaturaEvaluadaDto"][];
             /**
-             * @description Promedio de las asignaturas que lo evaluaron en el período
+             * @description Versiones de la rúbrica con que se midió en el período
+             * @example [
+             *       1
+             *     ]
+             */
+            versionesRubrica: number[];
+            /**
+             * @description Logro del RAP en el período: se suman las valoraciones de todas sus mediciones cerradas (no se promedian porcentajes). Regla provisional, pendiente de confirmar con el programa.
              * @example 63.97
              */
             porcentajeCumplimiento: number | null;

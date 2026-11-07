@@ -14,7 +14,12 @@ import {
   type ReporteLogroRap as DatosReporte,
 } from '@/api/reportes';
 import { porcentaje } from '@/componentes/formato';
-import { Juicio, META_NO_DEFINIDA } from '../../mediciones/[id]/Consolidado';
+import {
+  base,
+  COMO_SE_CALCULA,
+  Juicio,
+  META_NO_DEFINIDA,
+} from '../../mediciones/[id]/Consolidado';
 import {
   AvisoError,
   Cargando,
@@ -299,6 +304,7 @@ function Resultado({
 }
 
 function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
+  const metaDelRap = rap.porcentajeEsperado !== null;
   return (
     <article
       aria-labelledby={`rap-${rap.id}`}
@@ -309,28 +315,10 @@ function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
           <h2 id={`rap-${rap.id}`} className="text-lg font-semibold">
             {nombreRap(rap)}
           </h2>
-          {rap.evaluado ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold">
-                {porcentaje(rap.porcentajeCumplimiento)}
-              </span>
-              {rap.alcanzado !== null && <Juicio alcanzado={rap.alcanzado} />}
-            </div>
-          ) : (
-            <Insignia tono="advertencia">No evaluado</Insignia>
-          )}
+          {!rap.evaluado && <Insignia tono="advertencia">No evaluado</Insignia>}
         </div>
         {rap.descripcion && (
           <p className="text-sm text-slate-700">{rap.descripcion}</p>
-        )}
-        {rap.evaluado && (
-          <p className="text-sm text-slate-600">
-            Promedio de las asignaturas en los niveles de cumplimiento ·
-            Esperado:{' '}
-            {rap.porcentajeEsperado === null
-              ? META_NO_DEFINIDA.toLowerCase()
-              : porcentaje(rap.porcentajeEsperado)}
-          </p>
         )}
       </header>
 
@@ -339,35 +327,70 @@ function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
           <h3 className="mb-2 font-semibold">Asignaturas que lo evaluaron</h3>
           <ul className="divide-y divide-slate-100">
             {rap.asignaturas.map((asignatura) => (
-              <li key={asignatura.idMedicion} className="space-y-1 py-3">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <li key={asignatura.idMedicion} className="space-y-2 py-3">
+                <div>
                   <p className="font-medium">
                     {asignatura.asignatura}
                     {asignatura.grupo ? ` · Grupo ${asignatura.grupo}` : ''}
                   </p>
-                  <p className="flex items-center gap-2">
-                    <span className="font-bold">
-                      {porcentaje(asignatura.porcentajeCumplimiento)}
-                    </span>
-                    {asignatura.alcanzado !== null && (
-                      <Juicio alcanzado={asignatura.alcanzado} />
-                    )}
+                  <p className="text-sm text-slate-600">
+                    {asignatura.docentes.join(', ') || 'Sin docente'} ·
+                    Valoración{' '}
+                    {etiquetaTipo(asignatura.tipoValoracion).toLowerCase()} ·
+                    Muestra de {asignatura.tamanoMuestra}
+                    {asignatura.versionRubrica !== null &&
+                      ` · Rúbrica versión ${asignatura.versionRubrica}`}
                   </p>
                 </div>
-                <p className="text-sm text-slate-600">
-                  {asignatura.docentes.join(', ') || 'Sin docente'} · Valoración{' '}
-                  {etiquetaTipo(asignatura.tipoValoracion).toLowerCase()} ·
-                  Muestra de {asignatura.tamanoMuestra}
-                </p>
-                <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+                {/* Primero, el juicio de cada indicador. */}
+                <ul className="space-y-1 text-sm">
                   {asignatura.indicadores.map((indicador) => (
-                    <li key={indicador.numero ?? indicador.instrumento}>
-                      Ind. {indicador.numero}:{' '}
-                      {porcentaje(indicador.porcentajeCumplimiento)}
-                      {indicador.instrumento && ` (${indicador.instrumento})`}
+                    <li
+                      key={indicador.numero ?? indicador.instrumento}
+                      className={`flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1 ${
+                        indicador.alcanzado === false ? 'bg-amber-50' : ''
+                      }`}
+                    >
+                      <span>
+                        Indicador {indicador.numero}
+                        {indicador.instrumento && (
+                          <span className="text-slate-600">
+                            {' '}
+                            · {indicador.instrumento}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium whitespace-nowrap">
+                          {porcentaje(indicador.porcentajeCumplimiento)} (
+                          {indicador.enCumplimiento} de {indicador.muestra})
+                        </span>
+                        <Juicio
+                          alcanzado={indicador.alcanzado}
+                          metaDefinida={asignatura.porcentajeEsperado !== null}
+                        />
+                      </span>
                     </li>
                   ))}
                 </ul>
+                <p className="flex flex-wrap items-center gap-2 text-sm">
+                  <span>
+                    Logro en la asignatura:{' '}
+                    <strong>
+                      {porcentaje(asignatura.porcentajeCumplimiento)}
+                    </strong>{' '}
+                    (
+                    {base(
+                      asignatura.valoracionesEnCumplimiento,
+                      asignatura.valoracionesTotales,
+                    )}
+                    )
+                  </span>
+                  <Juicio
+                    alcanzado={asignatura.alcanzado}
+                    metaDefinida={asignatura.porcentajeEsperado !== null}
+                  />
+                </p>
                 {asignatura.accionesPropuestas && (
                   <p className="text-sm">
                     <span className="font-semibold">Acciones propuestas: </span>
@@ -377,6 +400,30 @@ function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
               </li>
             ))}
           </ul>
+
+          <div className="mt-2 space-y-1 rounded-xl bg-slate-50 p-3">
+            <p className="text-sm text-slate-600">
+              Logro del {nombreRap(rap)} en el período
+            </p>
+            <p className="flex flex-wrap items-center gap-2">
+              <span className="text-2xl font-bold">
+                {porcentaje(rap.porcentajeCumplimiento)}
+              </span>
+              <span className="font-medium">
+                {base(rap.valoracionesEnCumplimiento, rap.valoracionesTotales)}
+              </span>
+              <Juicio alcanzado={rap.alcanzado} metaDefinida={metaDelRap} />
+            </p>
+            <p className="text-sm text-slate-600">
+              Esperado:{' '}
+              {metaDelRap
+                ? porcentaje(rap.porcentajeEsperado)
+                : META_NO_DEFINIDA.toLowerCase()}
+              . Se suman las valoraciones de todas las asignaturas; no se
+              promedian porcentajes.
+            </p>
+            <p className="text-xs text-slate-600">{COMO_SE_CALCULA}</p>
+          </div>
         </section>
       ) : (
         <p className="text-sm text-slate-700">
@@ -391,25 +438,49 @@ function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
         {rap.comparacion.length === 0 ? (
           <p className="text-sm text-slate-600">{rap.motivoSinComparacion}</p>
         ) : (
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-2 text-sm">
             {rap.comparacion.map((fila) => (
-              <li key={fila.periodo} className="flex justify-between gap-3">
-                <span>
-                  {fila.periodo}{' '}
-                  <span className="text-slate-600">
-                    ({fila.mediciones}{' '}
-                    {fila.mediciones === 1 ? 'medición' : 'mediciones'})
+              <li key={fila.periodo} className="space-y-0.5">
+                <div className="flex flex-wrap justify-between gap-x-3">
+                  <span>
+                    {fila.periodo}{' '}
+                    <span className="text-slate-600">
+                      ({fila.mediciones}{' '}
+                      {fila.mediciones === 1 ? 'medición' : 'mediciones'} ·
+                      rúbrica {fila.versionesRubrica.join(', ') || '—'})
+                    </span>
                   </span>
-                </span>
-                <span className="font-medium">
-                  {porcentaje(fila.porcentajeCumplimiento)}
-                </span>
+                  <span className="font-medium">
+                    {porcentaje(fila.porcentajeCumplimiento)} (
+                    {base(
+                      fila.valoracionesEnCumplimiento,
+                      fila.valoracionesTotales,
+                    )}
+                    )
+                  </span>
+                </div>
+                {!fila.comparable && fila.nota && (
+                  <p className="rounded-md bg-amber-50 px-2 py-1 text-amber-950">
+                    {fila.nota}
+                  </p>
+                )}
               </li>
             ))}
             {rap.porcentajeCumplimiento !== null && (
-              <li className="flex justify-between gap-3 font-semibold">
-                <span>{periodo} (consultado)</span>
-                <span>{porcentaje(rap.porcentajeCumplimiento)}</span>
+              <li className="flex flex-wrap justify-between gap-x-3 font-semibold">
+                <span>
+                  {periodo} (consultado)
+                  {rap.versionesRubrica.length > 0 &&
+                    ` · rúbrica ${rap.versionesRubrica.join(', ')}`}
+                </span>
+                <span>
+                  {porcentaje(rap.porcentajeCumplimiento)} (
+                  {base(
+                    rap.valoracionesEnCumplimiento,
+                    rap.valoracionesTotales,
+                  )}
+                  )
+                </span>
               </li>
             )}
           </ul>

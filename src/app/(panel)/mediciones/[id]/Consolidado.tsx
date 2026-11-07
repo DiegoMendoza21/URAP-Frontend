@@ -69,49 +69,20 @@ export function Consolidado({
   );
 }
 
+/** Cómo se calcula el logro del RAP: se dice siempre junto al número. */
+export const COMO_SE_CALCULA =
+  'Proporción sobre todas las valoraciones (estudiante × indicador). Regla provisional, pendiente de confirmar con el programa.';
+
+/** «87 de 136 valoraciones»: la base va siempre junto al porcentaje. */
+export function base(enCumplimiento: number, total: number): string {
+  return `${enCumplimiento} de ${total} ${total === 1 ? 'valoración' : 'valoraciones'}`;
+}
+
 function Resultado({ datos }: { datos: DatosConsolidado }) {
   const niveles = datos.indicadores[0]?.conteos ?? [];
-  const cumplimiento = datos.nivelesCumplimiento.join(' y ');
+  const cumplimiento = datos.nivelesCumplimiento.join(' o ');
   return (
     <div className="space-y-4">
-      <dl className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl bg-slate-50 p-3">
-          <dt className="text-sm text-slate-600">
-            Resultado en {cumplimiento || 'los niveles de cumplimiento'}
-          </dt>
-          <dd className="text-2xl font-bold">
-            {porcentaje(datos.porcentajeCumplimiento)}
-          </dd>
-          <dd className="text-xs text-slate-600">
-            Promedio de los indicadores
-          </dd>
-        </div>
-        <div className="rounded-xl bg-slate-50 p-3">
-          <dt className="text-sm text-slate-600">Porcentaje esperado</dt>
-          <dd className="text-lg font-bold">
-            {datos.metaDefinida
-              ? porcentaje(datos.porcentajeEsperado)
-              : META_NO_DEFINIDA}
-          </dd>
-          {datos.alcanzado !== null && (
-            <dd className="mt-1">
-              <Juicio alcanzado={datos.alcanzado} />
-            </dd>
-          )}
-        </div>
-        <div className="rounded-xl bg-slate-50 p-3">
-          <dt className="text-sm text-slate-600">Muestra y cohorte</dt>
-          <dd className="text-lg font-bold">
-            {datos.tamanoMuestra}{' '}
-            {datos.tamanoMuestra === 1 ? 'estudiante' : 'estudiantes'}
-          </dd>
-          <dd className="text-xs text-slate-600">
-            Cohorte: {datos.tamanoCohorte}
-            {datos.cohorteRegistrada ? '' : ' (no registrada: la muestra)'}
-          </dd>
-        </div>
-      </dl>
-
       {datos.advertencias.length > 0 && (
         <ul
           role="status"
@@ -123,12 +94,17 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
         </ul>
       )}
 
-      {/* Teléfono: una tarjeta por indicador. */}
+      {/* Primero, el juicio de cada indicador. Teléfono: una tarjeta por indicador. */}
+      <h3 className="font-semibold">Por indicador</h3>
       <ul className="space-y-3 sm:hidden">
         {datos.indicadores.map((indicador) => (
           <li
             key={indicador.idIndicador}
-            className="space-y-2 rounded-xl border border-slate-200 p-3"
+            className={`space-y-2 rounded-xl border p-3 ${
+              indicador.alcanzado === false
+                ? 'border-amber-400 bg-amber-50/40'
+                : 'border-slate-200'
+            }`}
           >
             <div className="flex items-baseline justify-between gap-2">
               <p className="font-semibold">Indicador {indicador.numero}</p>
@@ -137,6 +113,16 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
               </p>
             </div>
             <Barra indicador={indicador} />
+            <p className="text-sm text-slate-700">
+              {indicador.enCumplimiento} de {indicador.muestra} estudiantes en{' '}
+              {cumplimiento}
+              {indicador.sinValorar > 0 &&
+                ` · ${indicador.sinValorar} sin valorar`}
+            </p>
+            <Juicio
+              alcanzado={indicador.alcanzado}
+              metaDefinida={datos.metaDefinida}
+            />
             {indicador.instrumento && (
               <p className="text-sm text-slate-700">
                 Instrumento: {indicador.instrumento}
@@ -154,14 +140,6 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
                 </div>
               ))}
             </dl>
-            <p className="text-xs text-slate-600">
-              Muestra: {indicador.muestra}
-              {indicador.sinValorar > 0 &&
-                ` · ${indicador.sinValorar} sin valorar`}
-            </p>
-            {indicador.alcanzado !== null && (
-              <Juicio alcanzado={indicador.alcanzado} />
-            )}
           </li>
         ))}
       </ul>
@@ -170,7 +148,7 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
       <div className="hidden overflow-x-auto sm:block">
         <table className="min-w-full text-sm">
           <caption className="sr-only">
-            Estudiantes y porcentaje por nivel en cada indicador
+            Estudiantes y porcentaje por nivel en cada indicador, con su juicio
           </caption>
           <thead className="bg-slate-50">
             <tr>
@@ -196,7 +174,12 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {datos.indicadores.map((indicador) => (
-              <tr key={indicador.idIndicador}>
+              <tr
+                key={indicador.idIndicador}
+                className={
+                  indicador.alcanzado === false ? 'bg-amber-50/60' : undefined
+                }
+              >
                 <th scope="row" className="px-3 py-2 text-left align-top">
                   <span className="block font-semibold">
                     Indicador {indicador.numero}
@@ -226,19 +209,65 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right align-top whitespace-nowrap">
-                  <span className="block font-bold">
+                <td className="px-3 py-2 text-right align-top">
+                  <span className="block font-bold whitespace-nowrap">
                     {porcentaje(indicador.porcentajeCumplimiento)}
                   </span>
-                  {indicador.alcanzado !== null && (
-                    <Juicio alcanzado={indicador.alcanzado} />
-                  )}
+                  <span className="block text-xs whitespace-nowrap text-slate-600">
+                    {indicador.enCumplimiento} de {indicador.muestra}
+                  </span>
+                  <Juicio
+                    alcanzado={indicador.alcanzado}
+                    metaDefinida={datos.metaDefinida}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Después, el logro del RAP en la medición, con su base y cómo se calcula. */}
+      <h3 className="font-semibold">Logro del RAP en la medición</h3>
+      <dl className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl bg-slate-50 p-3">
+          <dt className="text-sm text-slate-600">
+            Logro en {cumplimiento || 'los niveles de cumplimiento'}
+          </dt>
+          <dd className="text-2xl font-bold">
+            {porcentaje(datos.porcentajeCumplimiento)}
+          </dd>
+          <dd className="text-sm font-medium">
+            {base(datos.valoracionesEnCumplimiento, datos.valoracionesTotales)}
+          </dd>
+          <dd className="mt-1 text-xs text-slate-600">{COMO_SE_CALCULA}</dd>
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <dt className="text-sm text-slate-600">Porcentaje esperado</dt>
+          <dd className="text-lg font-bold">
+            {datos.metaDefinida
+              ? porcentaje(datos.porcentajeEsperado)
+              : META_NO_DEFINIDA}
+          </dd>
+          <dd className="mt-1">
+            <Juicio
+              alcanzado={datos.alcanzado}
+              metaDefinida={datos.metaDefinida}
+            />
+          </dd>
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <dt className="text-sm text-slate-600">Muestra y cohorte</dt>
+          <dd className="text-lg font-bold">
+            {datos.tamanoMuestra}{' '}
+            {datos.tamanoMuestra === 1 ? 'estudiante' : 'estudiantes'}
+          </dd>
+          <dd className="text-xs text-slate-600">
+            Cohorte: {datos.tamanoCohorte}
+            {datos.cohorteRegistrada ? '' : ' (no registrada: la muestra)'}
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 }
@@ -255,10 +284,26 @@ function Barra({ indicador }: { indicador: IndicadorConsolidado }) {
   );
 }
 
-export function Juicio({ alcanzado }: { alcanzado: boolean }) {
+/**
+ * Juicio frente a la meta. Sin porcentaje esperado dice «Meta no definida por el programa»,
+ * en cada indicador y en el logro del RAP; sin valoraciones no dice nada.
+ */
+export function Juicio({
+  alcanzado,
+  metaDefinida,
+}: {
+  alcanzado: boolean | null;
+  metaDefinida: boolean;
+}) {
+  if (!metaDefinida) {
+    return <Insignia>{META_NO_DEFINIDA}</Insignia>;
+  }
+  if (alcanzado === null) {
+    return null;
+  }
   return alcanzado ? (
     <Insignia tono="marca">Alcanzado</Insignia>
   ) : (
-    <Insignia tono="advertencia">No alcanzado</Insignia>
+    <Insignia tono="advertencia">Por debajo de la meta</Insignia>
   );
 }
