@@ -1,5 +1,5 @@
-import { avisarSesionInvalida } from '@/sesion/eventos';
-import { ErrorApi, obtener } from './cliente';
+import { obtener } from './cliente';
+import { descargarArchivo } from './descargas';
 import type { components } from './openapi';
 
 type Esquemas = components['schemas'];
@@ -45,45 +45,10 @@ export function consultarLogroRap(
   );
 }
 
-/** Mismo límite que las demás solicitudes a la API (src/api/cliente.ts). */
-const TIEMPO_LIMITE_MS = 15_000;
-
-/**
- * Descarga el reporte en Excel (RF-32, p5). Pasa por /api como todo lo demás: el token sigue
- * en la cookie httpOnly. Devuelve el archivo y el nombre que propone el backend.
- */
-export async function descargarLogroRapExcel(
-  consulta: ConsultaLogroRap,
-): Promise<{ archivo: Blob; nombre: string }> {
-  let respuesta: Response;
-  try {
-    respuesta = await fetch(
-      `/api/reportes/logro-rap/excel?${parametros(consulta)}`,
-      { cache: 'no-store', signal: AbortSignal.timeout(TIEMPO_LIMITE_MS) },
-    );
-  } catch (error) {
-    throw new ErrorApi(
-      error instanceof DOMException && error.name === 'TimeoutError'
-        ? 'El servidor de URAP tardó demasiado en responder. Intente de nuevo en unos minutos.'
-        : 'No fue posible conectar con el servidor de URAP. Revise su conexión e intente de nuevo.',
-    );
-  }
-  if (!respuesta.ok) {
-    // Igual que el resto de solicitudes: con la sesión vencida, se vuelve al inicio de sesión.
-    if (respuesta.status === 401) {
-      avisarSesionInvalida();
-    }
-    const cuerpo: unknown = await respuesta.json().catch(() => undefined);
-    const mensaje =
-      typeof cuerpo === 'object' &&
-      cuerpo !== null &&
-      typeof (cuerpo as { mensaje?: unknown }).mensaje === 'string'
-        ? (cuerpo as { mensaje: string }).mensaje
-        : 'No fue posible generar el archivo de Excel.';
-    throw new ErrorApi(mensaje, respuesta.status);
-  }
-  const disposicion = respuesta.headers.get('content-disposition') ?? '';
-  const nombre =
-    /filename="([^"]+)"/.exec(disposicion)?.[1] ?? 'logro-rap.xlsx';
-  return { archivo: await respuesta.blob(), nombre };
+/** Descarga el reporte en Excel (RF-32, p5). */
+export function descargarLogroRapExcel(consulta: ConsultaLogroRap) {
+  return descargarArchivo(
+    `/reportes/logro-rap/excel?${parametros(consulta)}`,
+    'logro-rap.xlsx',
+  );
 }
