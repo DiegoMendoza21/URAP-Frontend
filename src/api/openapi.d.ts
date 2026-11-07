@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Inicia sesión con correo institucional y contraseña
-         * @description Público. Devuelve un JWT con vigencia definida por NFR-003 y los datos del usuario con sus roles activos (RF-01, HU-01-01).
+         * @description Público. Devuelve un JWT con vigencia definida por NFR-003 y los datos del usuario con sus roles activos (RF-01, HU-01-01). Tras varios intentos fallidos consecutivos la cuenta se bloquea temporalmente (HU-01-04), y cada IP tiene un límite de intentos.
          */
         post: operations["AuthController_iniciarSesion"];
         delete?: never;
@@ -77,6 +77,89 @@ export interface paths {
          */
         get: operations["SaludController_verificar"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista los roles, activos e inactivos, con sus permisos (HU-02-05) */
+        get: operations["RolesController_listar"];
+        put?: never;
+        /**
+         * Crea un rol con sus permisos (HU-02-05)
+         * @description Exige al menos un permiso de lectura (RF-03, p4).
+         */
+        post: operations["RolesController_crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles/matriz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Matriz de permisos: módulos × permisos × roles (HU-02-06) */
+        get: operations["RolesController_matriz"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un rol con sus permisos */
+        get: operations["RolesController_obtener"];
+        put?: never;
+        post?: never;
+        /**
+         * Inactiva un rol (HU-02-05)
+         * @description Borrado lógico (NFR-017): el rol queda inactivo y conserva su historial. No se permite con usuarios activos asociados (RF-03, p3) ni para los roles del sistema.
+         */
+        delete: operations["RolesController_inactivar"];
+        options?: never;
+        head?: never;
+        /**
+         * Edita el nombre o la descripción de un rol (HU-02-05)
+         * @description Los seis roles del sistema solo admiten cambiar su descripción.
+         */
+        patch: operations["RolesController_editar"];
+        trace?: never;
+    };
+    "/api/roles/{id}/permisos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reemplaza los permisos de un rol (HU-02-06)
+         * @description Rige desde la siguiente petición de los usuarios afectados (RF-03, q1). Exige un permiso de lectura y que algún usuario activo conserve la administración de usuarios y roles.
+         */
+        put: operations["RolesController_reemplazarPermisos"];
         post?: never;
         delete?: never;
         options?: never;
@@ -219,6 +302,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{idProyecto}/horario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Días y horas de clase del curso (HU-08-02)
+         * @description Lo consultan quienes ven el proyecto docente.
+         */
+        get: operations["SesionesController_obtenerHorario"];
+        /**
+         * Define los días y horas de clase del curso (HU-08-02)
+         * @description Reemplaza el horario completo. Solo el docente asignado al proyecto o el administrador. El calendario no cambia hasta generarlo de nuevo.
+         */
+        put: operations["SesionesController_guardarHorario"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/calendario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calendario de sesiones del curso (RF-19, p5)
+         * @description Sesiones en orden de fecha, con su semana, tipo y festivo. Lo consultan quienes ven el proyecto docente.
+         */
+        get: operations["SesionesController_consultarCalendario"];
+        put?: never;
+        /**
+         * Genera o recalcula el calendario de sesiones (HU-08-03)
+         * @description Una sesión por día de clase del período, numerada por semana, marcando como festivo las que coinciden con la tabla de festivos. Si ya existe, recalcula las sesiones sin diligenciar y deja intactas las diligenciadas. Si un año no tiene festivos, genera sin marcas, lo advierte y avisa al administrador (excepción p3).
+         */
+        post: operations["SesionesController_generarCalendario"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -252,6 +383,15 @@ export interface components {
              *     ]
              */
             roles: string[];
+            /**
+             * @description Permisos del usuario como `modulo.permiso`: la unión de los de todos sus roles en la matriz de permisos (HU-01-03). El frontend arma el menú con ellos; la autorización la vuelve a comprobar el backend en cada petición.
+             * @example [
+             *       "proyectos.actualizar",
+             *       "proyectos.leer",
+             *       "rap.leer"
+             *     ]
+             */
+            permisos: string[];
         };
         SesionIniciadaDto: {
             /**
@@ -302,6 +442,83 @@ export interface components {
             estado: "disponible";
             /** @example 2026-11-03T21:15:00.000Z */
             fecha: string;
+        };
+        PermisoAsignadoDto: {
+            /**
+             * @description Código del módulo
+             * @example proyectos
+             */
+            modulo: string;
+            /**
+             * @description Código del permiso: leer, crear, actualizar, eliminar, generar, administrar o aprobar
+             * @example leer
+             */
+            permiso: string;
+        };
+        RolDto: {
+            /** @example 7 */
+            id: number;
+            /** @example Coordinación de prácticas */
+            nombre: string;
+            /** @example Acompaña las prácticas profesionales. */
+            descripcion: string | null;
+            /** @example true */
+            activo: boolean;
+            /**
+             * @description Uno de los seis roles de RF-03: no se puede renombrar ni inactivar.
+             * @example false
+             */
+            sistema: boolean;
+            /**
+             * @description Usuarios activos con el rol asignado y vigente
+             * @example 3
+             */
+            usuariosActivos: number;
+            permisos: components["schemas"]["PermisoAsignadoDto"][];
+        };
+        PaginaRolesDto: {
+            elementos: components["schemas"]["RolDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 6 */
+            total: number;
+        };
+        ElementoCatalogoDto: {
+            /** @example proyectos */
+            codigo: string;
+            /** @example Proyectos docentes */
+            nombre: string;
+        };
+        MatrizPermisosDto: {
+            /** @description Filas de la matriz, en su orden */
+            modulos: components["schemas"]["ElementoCatalogoDto"][];
+            /** @description Columnas: leer, crear, actualizar, eliminar, generar, administrar y aprobar */
+            permisos: components["schemas"]["ElementoCatalogoDto"][];
+            /** @description Todos los roles, activos e inactivos, con sus permisos */
+            roles: components["schemas"]["RolDto"][];
+        };
+        CrearRolDto: {
+            /** @description Permisos del rol por módulo. Debe incluir al menos un permiso de lectura (RF-03, p4). */
+            permisos: components["schemas"]["PermisoAsignadoDto"][];
+            /** @example Coordinación de prácticas */
+            nombre: string;
+            /** @example Acompaña las prácticas profesionales. */
+            descripcion?: string;
+        };
+        EditarRolDto: {
+            /**
+             * @description Los seis roles del sistema (RF-03) no se pueden renombrar.
+             * @example Coordinación de prácticas
+             */
+            nombre?: string;
+            /** @example Acompaña las prácticas profesionales. */
+            descripcion?: string;
+        };
+        ReemplazarPermisosDto: {
+            /** @description Permisos del rol por módulo. Debe incluir al menos un permiso de lectura (RF-03, p4). */
+            permisos: components["schemas"]["PermisoAsignadoDto"][];
         };
         ProgramaOpcionDto: {
             /** @example 1 */
@@ -568,6 +785,184 @@ export interface components {
              */
             total: number;
         };
+        BloqueHorarioDto: {
+            /**
+             * @description 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /** @example 07:00 */
+            horaInicio: string;
+            /** @example 09:00 */
+            horaFin: string;
+        };
+        HorarioCursoDto: {
+            /** @example 4 */
+            idProyectoDocente: number;
+            bloques: components["schemas"]["BloqueHorarioDto"][];
+            /**
+             * @description Si el usuario puede cambiar el horario y generar el calendario: el docente asignado al proyecto o el administrador, con el período abierto.
+             * @example true
+             */
+            puedeEditar: boolean;
+        };
+        BloqueHorarioEntradaDto: {
+            /**
+             * @description Día de la semana: 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /**
+             * @description Hora de inicio, HH:mm
+             * @example 07:00
+             */
+            horaInicio: string;
+            /**
+             * @description Hora de fin, HH:mm
+             * @example 09:00
+             */
+            horaFin: string;
+        };
+        GuardarHorarioDto: {
+            /** @description Uno o varios días de clase, cada uno con su hora de inicio y de fin. Un día no se repite: el calendario tiene una sesión por fecha. */
+            bloques: components["schemas"]["BloqueHorarioEntradaDto"][];
+        };
+        TipoSesionDto: {
+            /**
+             * @description clase | parcial | festivo | actividad_complementaria
+             * @example clase
+             */
+            codigo: string;
+            /** @example Clase */
+            nombre: string;
+        };
+        SesionCalendarioDto: {
+            /** @example 120 */
+            id: number;
+            /**
+             * @description Semana del período
+             * @example 1
+             */
+            semana: number;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fecha: string;
+            /**
+             * @description 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /**
+             * @description Del horario vigente; nulo si ese día ya no está en el horario
+             * @example 07:00
+             */
+            horaInicio: string | null;
+            /** @example 09:00 */
+            horaFin: string | null;
+            tipo: components["schemas"]["TipoSesionDto"] | null;
+            /**
+             * @description programada | registrada (RF-20). Las retiradas no se listan.
+             * @example programada
+             */
+            estado: string | null;
+            /**
+             * @description Nombre del festivo con el que coincide la fecha (RF-19, p4)
+             * @example Batalla de Boyacá
+             */
+            festivo: string | null;
+            /**
+             * @description Si el docente ya la diligenció. Una sesión diligenciada no se recalcula.
+             * @example false
+             */
+            diligenciada: boolean;
+        };
+        PeriodoCalendarioDto: {
+            /** @example 2026-2 */
+            codigo: string | null;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fechaInicio: string | null;
+            /**
+             * Format: date
+             * @example 2026-11-21
+             */
+            fechaFin: string | null;
+            /** @example 16 */
+            numeroSemanas: number | null;
+            /** @example false */
+            cerrado: boolean;
+        };
+        SemanaRecesoDto: {
+            /**
+             * Format: date
+             * @description Lunes
+             * @example 2026-11-09
+             */
+            desde: string;
+            /**
+             * Format: date
+             * @description Sábado
+             * @example 2026-11-14
+             */
+            hasta: string;
+        };
+        CalendarioSesionesDto: {
+            elementos: components["schemas"]["SesionCalendarioDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 100 */
+            tamano: number;
+            /** @example 48 */
+            total: number;
+            periodo: components["schemas"]["PeriodoCalendarioDto"];
+            /** @example true */
+            puedeEditar: boolean;
+            /**
+             * @description Avisos para el usuario, por ejemplo un año del período sin festivos parametrizados (RF-19, excepción p3)
+             * @example []
+             */
+            advertencias: string[];
+            /** @description Semanas de receso del período: de lunes a sábado sin clase en la tabla de festivos. No tienen sesiones ni cuentan en la numeración de semanas (Acuerdo 46 de 2026). */
+            recesos: components["schemas"]["SemanaRecesoDto"][];
+        };
+        ResultadoGeneracionDto: {
+            /**
+             * @description Sesiones nuevas o reactivadas
+             * @example 48
+             */
+            creadas: number;
+            /**
+             * @description Sesiones sin diligenciar a las que se les recalculó la semana o el festivo
+             * @example 0
+             */
+            actualizadas: number;
+            /**
+             * @description Sesiones sin diligenciar que ya no caen en el horario: se inactivan (estado «retirada») y salen del calendario
+             * @example 0
+             */
+            retiradas: number;
+            /**
+             * @description Sesiones diligenciadas o con datos del docente, que se dejan intactas
+             * @example 0
+             */
+            conservadas: number;
+            /**
+             * @description Sesiones marcadas como festivo
+             * @example 3
+             */
+            festivos: number;
+            /**
+             * @description Sesiones del calendario después de generar
+             * @example 48
+             */
+            total: number;
+            /** @example [] */
+            advertencias: string[];
+        };
     };
     responses: never;
     parameters: never;
@@ -620,6 +1015,15 @@ export interface operations {
             };
             /** @description El usuario está inactivo o no tiene roles asignados: debe comunicarse con el administrador */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La cuenta está bloqueada temporalmente por intentos fallidos (el mensaje dice cuántos minutos faltan), o la IP superó el límite de intentos */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -703,6 +1107,374 @@ export interface operations {
             };
             /** @description La base de datos no responde */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaRolesDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearRolDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin permiso de lectura, o módulo o permiso inexistente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya existe un rol con ese nombre */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_matriz: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatrizPermisosDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_inactivar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El rol tiene usuarios activos o es un rol del sistema */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_editar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarRolDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Nombre repetido, o intento de renombrar un rol del sistema */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_reemplazarPermisos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReemplazarPermisosDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin permiso de lectura, o módulo o permiso inexistente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Se retiraría la administración de usuarios y roles al último usuario que la tiene */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -980,7 +1752,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description El usuario no tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1030,7 +1802,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description No es Departamento académico del programa de la asignatura */
+            /** @description Sin el permiso de crear proyectos docentes, o no es Departamento académico del programa de la asignatura */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1087,6 +1859,54 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
+            /** @description El usuario no tiene el permiso de consultar proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_obtenerHorario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HorarioCursoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
             /** @description El usuario no tiene un rol que consulte proyectos docentes */
             403: {
                 headers: {
@@ -1098,6 +1918,193 @@ export interface operations {
             };
             /** @description El proyecto no existe o el usuario no tiene acceso a él */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_guardarHorario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarHorarioDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HorarioCursoDto"];
+                };
+            };
+            /** @description Sin días, día fuera de lunes a sábado, día repetido u hora de fin no posterior a la de inicio */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período académico del proyecto está cerrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_consultarCalendario: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarioSesionesDto"];
+                };
+            };
+            /** @description Paginación inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_generarCalendario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoGeneracionDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El curso no tiene horario, el período no tiene fechas o el período está cerrado */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

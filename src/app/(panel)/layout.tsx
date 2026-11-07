@@ -1,5 +1,6 @@
 import { RequiereSesion } from '@/sesion/RequiereSesion';
 import { EncabezadoPanel } from './EncabezadoPanel';
+import { MenuPanel } from './MenuPanel';
 
 /**
  * Pantallas que exigen sesión. Se muestran cuando el navegador confirma la sesión, así que
@@ -11,6 +12,7 @@ export default function DisenoPanel({ children }: LayoutProps<'/'>) {
   return (
     <RequiereSesion>
       <EncabezadoPanel />
+      <MenuPanel />
       <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
         {children}
       </main>
