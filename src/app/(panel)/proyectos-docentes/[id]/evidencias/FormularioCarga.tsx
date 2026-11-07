@@ -80,7 +80,8 @@ export function FormularioCarga({
   const hoy = hoyLocal();
   const sesiones = opciones.sesiones
     .filter((sesion) => sesion.fecha <= hoy)
-    .toReversed();
+    // filter ya dio una copia; reverse (y no toReversed) funciona en teléfonos más viejos.
+    .reverse();
   const aceptar = [
     ...opciones.tiposMimePermitidos,
     ...opciones.extensionesPermitidas.map((extension) => `.${extension}`),

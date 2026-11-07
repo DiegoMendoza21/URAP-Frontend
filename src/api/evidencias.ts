@@ -50,13 +50,11 @@ export function urlArchivoEvidencia(idProyecto: number, idEvidencia: number) {
   return `/api/proyectos-docentes/${idProyecto}/evidencias/${idEvidencia}/archivo`;
 }
 
-export interface DatosCargaEvidencias {
-  idRap: number;
-  descripcion: string;
-  fecha: string;
-  idSesion?: number;
-  archivos: readonly File[];
-}
+/** Los campos del formulario del OpenAPI, con los archivos del navegador. */
+export type DatosCargaEvidencias = Omit<
+  Esquemas['FormularioCargaEvidenciasDto'],
+  'archivos'
+> & { archivos: readonly File[] };
 
 /** Espera mínima de una carga, más un margen por cada MB: depende de la señal del teléfono. */
 const TIEMPO_BASE_MS = 30_000;
