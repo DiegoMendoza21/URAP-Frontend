@@ -1,0 +1,102 @@
+import type { ClavePermiso } from '@/sesion/permisos';
+
+/** Nombres de los roles del sistema (RF-03), tal como los envía el backend. */
+export const ROL = {
+  administrador: 'Administrador',
+  departamento: 'Departamento académico',
+  direccion: 'Dirección del programa',
+  docente: 'Docente responsable',
+  liderRap: 'Líder RAP',
+} as const;
+
+type NombreRol = (typeof ROL)[keyof typeof ROL];
+
+/**
+ * Quién ve una opción. Lo normal es un permiso de la matriz (HU-01-03), que también funciona
+ * con los roles que cree el administrador. Los roles solo se usan cuando el backend protege
+ * esas pantallas con `@Roles`, porque la matriz no expresa la regla: así el menú muestra lo
+ * mismo que el backend deja abrir.
+ */
+type Acceso =
+  | { permiso: ClavePermiso; roles?: never }
+  | { roles: readonly NombreRol[]; permiso?: never };
+
+export type OpcionMenu = Acceso & {
+  ruta: string;
+  /** Título de la tarjeta del panel inicial. */
+  etiqueta: string;
+  /** Nombre corto para el menú, si `etiqueta` es larga para el teléfono. */
+  etiquetaMenu?: string;
+  /** Lo que el usuario hace allí, para la tarjeta del panel inicial. */
+  descripcion: string;
+  /** Otra descripción para quien tiene ese permiso. */
+  descripcionSi?: { permiso: ClavePermiso; texto: string };
+};
+
+const ROLES_SEGUIMIENTO = [
+  ROL.administrador,
+  ROL.departamento,
+  ROL.direccion,
+] as const;
+
+const ROLES_REPORTES_RAP = [...ROLES_SEGUIMIENTO, ROL.liderRap] as const;
+
+/**
+ * Opciones del menú del panel, en su orden. Cada pantalla nueva agrega aquí su opción, con el
+ * permiso de la matriz que la habilita o, si el backend usa `@Roles`, los mismos roles.
+ */
+export const OPCIONES_MENU: readonly OpcionMenu[] = [
+  {
+    ruta: '/proyectos-docentes',
+    etiqueta: 'Proyectos docentes',
+    descripcion: 'Consulte los proyectos docentes a su cargo.',
+    descripcionSi: {
+      permiso: 'proyectos.crear',
+      texto: 'Cree los proyectos del período y asigne los docentes.',
+    },
+    permiso: 'proyectos.leer',
+  },
+  {
+    // RF-25: el backend lo abre con @Roles.
+    ruta: '/seguimiento',
+    etiqueta: 'Seguimiento del diligenciamiento',
+    etiquetaMenu: 'Seguimiento',
+    descripcion: 'Qué proyectos van al día y cuáles tienen pendientes.',
+    roles: ROLES_SEGUIMIENTO,
+  },
+  {
+    // RF-30 y RF-31: el backend lo abre con @Roles.
+    ruta: '/mediciones',
+    etiqueta: 'Medición de RAP',
+    descripcion:
+      'Valoraciones, consolidado y acciones de mejora de cada curso.',
+    roles: [ROL.docente, ROL.liderRap, ROL.departamento],
+  },
+  {
+    // RF-32: el backend lo abre con @Roles.
+    ruta: '/reportes/logro-rap',
+    etiqueta: 'Reporte de logro de los RAP',
+    etiquetaMenu: 'Logro de los RAP',
+    descripcion:
+      'Porcentaje alcanzado por RAP frente al esperado, con exportación a Excel y PDF.',
+    roles: ROLES_REPORTES_RAP,
+  },
+  {
+    // RF-28: el backend lo abre con @Roles.
+    ruta: '/reportes/cumplimiento',
+    etiqueta: 'Reporte de cumplimiento',
+    etiquetaMenu: 'Cumplimiento',
+    descripcion:
+      'Proyectos docentes del período, su estado y su diligenciamiento, con exportación a Excel y PDF.',
+    roles: ROLES_SEGUIMIENTO,
+  },
+  {
+    // RF-28: el backend lo abre con @Roles.
+    ruta: '/reportes/contribucion-rac-rap',
+    etiqueta: 'Contribución de los RAC a los RAP',
+    etiquetaMenu: 'Contribución RAC-RAP',
+    descripcion:
+      'Asignaturas, docentes, RAC y evidencias que aportan a cada RAP.',
+    roles: ROLES_REPORTES_RAP,
+  },
+];

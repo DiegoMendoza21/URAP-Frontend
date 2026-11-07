@@ -7,27 +7,25 @@ import {
   nombreDocente,
   type ProyectoDocenteResumen,
 } from '@/api/proyectos-docentes';
-import { useSesion } from '@/sesion/ProveedorSesion';
+import { usePermisos } from '@/sesion/permisos';
 import { AvisoError, Cargando, Insignia } from './_componentes/Estados';
 import { useConsulta } from './_componentes/useConsulta';
 
 const TAMANO_PAGINA = 20;
-/** Rol que crea proyectos docentes (RF-08). Mostrar el botón es presentación: decide el backend. */
-const ROL_DEPARTAMENTO = 'Departamento académico';
 
 /**
  * Bandeja de proyectos docentes. El backend devuelve solo los que el usuario puede ver: el
  * docente, aquellos en los que está asignado (HU-05-03); el departamento, los de su programa.
  */
 export function BandejaProyectos() {
-  const { sesion } = useSesion();
+  const tiene = usePermisos();
   const [pagina, setPagina] = useState(1);
   const proyectos = useConsulta(`pagina-${pagina}`, (senal) =>
     consultarProyectosDocentes(pagina, TAMANO_PAGINA, senal),
   );
-  const puedeCrear =
-    sesion.estado === 'autenticado' &&
-    sesion.usuario.roles.includes(ROL_DEPARTAMENTO);
+  // HU-01-03: el botón aparece con el permiso de crear de la matriz. Es presentación: decide
+  // el backend, que además exige ser Departamento del programa (RF-08).
+  const puedeCrear = tiene('proyectos.crear');
   const totalPaginas =
     proyectos.estado === 'lista'
       ? Math.max(1, Math.ceil(proyectos.datos.total / TAMANO_PAGINA))
