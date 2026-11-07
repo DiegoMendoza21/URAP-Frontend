@@ -6,21 +6,52 @@ import {
   consultarProyectoDocente,
   nombreDocente,
 } from '@/api/proyectos-docentes';
+import { useSesion } from '@/sesion/ProveedorSesion';
 import { AvisoError, Cargando, Insignia } from '../_componentes/Estados';
 import { InformacionGeneral } from '../_componentes/InformacionGeneral';
 import { useConsulta } from '../_componentes/useConsulta';
+
+/**
+ * Roles que ven la lista de estudiantes del curso (RF-22). Es presentación: el backend solo la
+ * entrega al Administrador y a los docentes asignados al proyecto.
+ */
+const ROL_ADMINISTRADOR = 'Administrador';
+const ROL_DOCENTE = 'Docente responsable';
+/**
+ * Roles que consultan la medición de RAP del curso (RF-30). Es presentación: el backend
+ * filtra por alcance (el líder, solo los RAP que lidera; el departamento, su programa).
+ */
+const ROLES_MEDICION = ['Líder RAP', 'Departamento académico'];
 
 /**
  * Ficha del proyecto docente: la información base con la que lo creó el asistente (RF-08). Las
  * secciones que diligencia el docente (puntos 2 a 7 del formato) llegan con EP-06.
  */
 export function FichaProyectoDocente() {
+  const { sesion } = useSesion();
   const { id } = useParams<{ id: string }>();
   const idProyecto = /^\d+$/.test(id) ? Number(id) : null;
   const proyecto = useConsulta(
     idProyecto === null ? null : `proyecto-${idProyecto}`,
     (senal) => consultarProyectoDocente(idProyecto!, senal),
   );
+  // El Administrador la ve siempre; el docente, solo si dicta el curso (como en el backend).
+  const veEstudiantes =
+    sesion.estado === 'autenticado' &&
+    proyecto.estado === 'lista' &&
+    (sesion.usuario.roles.includes(ROL_ADMINISTRADOR) ||
+      (sesion.usuario.roles.includes(ROL_DOCENTE) &&
+        proyecto.datos.docentes.some(
+          (docente) => docente.id === sesion.usuario.id,
+        )));
+  const veMediciones =
+    sesion.estado === 'autenticado' &&
+    proyecto.estado === 'lista' &&
+    ((sesion.usuario.roles.includes(ROL_DOCENTE) &&
+      proyecto.datos.docentes.some(
+        (docente) => docente.id === sesion.usuario.id,
+      )) ||
+      sesion.usuario.roles.some((rol) => ROLES_MEDICION.includes(rol)));
 
   return (
     <section className="space-y-6">
@@ -93,6 +124,26 @@ export function FichaProyectoDocente() {
               ))}
             </ul>
           </section>
+
+          {veEstudiantes && (
+            <Link
+              href={`/proyectos-docentes/${idProyecto}/matriculados`}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 font-semibold shadow-sm hover:border-marca hover:text-marca sm:p-6"
+            >
+              <span>Estudiantes matriculados</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          )}
+
+          {veMediciones && (
+            <Link
+              href={`/proyectos-docentes/${idProyecto}/mediciones`}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 font-semibold shadow-sm hover:border-marca hover:text-marca sm:p-6"
+            >
+              <span>Medición de RAP</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          )}
 
           <section
             aria-labelledby="titulo-raps"
