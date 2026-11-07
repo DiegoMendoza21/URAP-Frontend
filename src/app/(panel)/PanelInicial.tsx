@@ -3,20 +3,23 @@
 import Link from 'next/link';
 import { useSesion } from '@/sesion/ProveedorSesion';
 import { usePermisos } from '@/sesion/permisos';
-import { OPCIONES_MENU } from './menu';
+import { ROL } from './menu';
+import { PendientesDocente } from './PendientesDocente';
+import { useOpcionesMenu } from './useOpcionesMenu';
 
 /**
- * Panel inicial después de iniciar sesión (RF-01, p4): los roles del usuario y un acceso por
- * cada opción que habilitan sus permisos (HU-01-03), los mismos del menú.
+ * Panel inicial después de iniciar sesión (RF-01, p4): los roles del usuario, un acceso por
+ * cada opción que puede abrir (HU-01-03), las mismas del menú, y, para el docente, sus
+ * sesiones vencidas y por vencer (RF-23, p5).
  */
 export function PanelInicial() {
   const { sesion } = useSesion();
   const tiene = usePermisos();
+  const opciones = useOpcionesMenu();
   if (sesion.estado !== 'autenticado') {
     return null;
   }
   const { nombres, roles } = sesion.usuario;
-  const opciones = OPCIONES_MENU.filter((opcion) => tiene(opcion.permiso));
 
   return (
     <section aria-labelledby="titulo-panel" className="space-y-6">
@@ -36,6 +39,8 @@ export function PanelInicial() {
           ))}
         </ul>
       </div>
+      {/* Las sesiones propias del docente: el backend las busca en sus cursos asignados. */}
+      {roles.includes(ROL.docente) && <PendientesDocente />}
       {opciones.length === 0 ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
           Su usuario todavía no tiene opciones habilitadas. Comuníquese con el
@@ -53,9 +58,8 @@ export function PanelInicial() {
                 {opcion.etiqueta}
               </span>
               <span className="block text-sm text-slate-600">
-                {opcion.ruta === '/proyectos-docentes' &&
-                tiene('proyectos.crear')
-                  ? 'Cree los proyectos del período y asigne los docentes.'
+                {opcion.descripcionSi && tiene(opcion.descripcionSi.permiso)
+                  ? opcion.descripcionSi.texto
                   : opcion.descripcion}
               </span>
             </Link>

@@ -2,20 +2,22 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { usePermisos } from '@/sesion/permisos';
-import { OPCIONES_MENU } from './menu';
+import { useOpcionesMenu } from './useOpcionesMenu';
 
 /**
- * Menú del panel (RF-01, p4; HU-01-03): solo las opciones que habilitan los permisos del
- * usuario, que son la unión de los de todos sus roles. Ocultar una opción es presentación: si
+ * Menú del panel (RF-01, p4; HU-01-03): solo las opciones que el usuario puede abrir, según la
+ * unión de los permisos de todos sus roles. Ocultar una opción es presentación: si
  * alguien abre la ruta igual, el backend responde 403 y la pantalla lo dice.
  */
 export function MenuPanel() {
-  const tiene = usePermisos();
   const ruta = usePathname();
-  const opciones = OPCIONES_MENU.filter((opcion) => tiene(opcion.permiso));
-
-  const enlaces = [{ ruta: '/', etiqueta: 'Inicio' }, ...opciones];
+  const enlaces = [
+    { ruta: '/', etiqueta: 'Inicio' },
+    ...useOpcionesMenu().map((opcion) => ({
+      ruta: opcion.ruta,
+      etiqueta: opcion.etiquetaMenu ?? opcion.etiqueta,
+    })),
+  ];
   return (
     <nav
       aria-label="Menú principal"
