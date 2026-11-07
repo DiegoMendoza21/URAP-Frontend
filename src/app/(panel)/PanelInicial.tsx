@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useSesion } from '@/sesion/ProveedorSesion';
+import { PendientesDocente } from './PendientesDocente';
 
 /**
  * Roles que consultan proyectos docentes; el backend filtra cuáles ve cada uno. El Estudiante
@@ -17,7 +18,8 @@ const ROLES_PROYECTOS = [
 
 /**
  * Panel inicial después de iniciar sesión (RF-01, p4). El menú completo según los roles llega
- * con HU-01-03; por ahora, el acceso a los proyectos docentes.
+ * con HU-01-03; por ahora, el acceso a los proyectos docentes y, para el docente, sus sesiones
+ * vencidas y por vencer (RF-23, p5).
  */
 export function PanelInicial() {
   const { sesion } = useSesion();
@@ -44,6 +46,7 @@ export function PanelInicial() {
           ))}
         </ul>
       </div>
+      {roles.includes('Docente responsable') && <PendientesDocente />}
       {roles.some((rol) => ROLES_PROYECTOS.includes(rol)) && (
         <nav aria-label="Accesos" className="grid gap-3 sm:grid-cols-2">
           <Link

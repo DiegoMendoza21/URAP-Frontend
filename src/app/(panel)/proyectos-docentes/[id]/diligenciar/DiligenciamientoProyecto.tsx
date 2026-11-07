@@ -1,0 +1,249 @@
+'use client';
+
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { type ComponentType, useCallback, useRef, useState } from 'react';
+import {
+  consultarDiligenciamiento,
+  type Diligenciamiento,
+} from '@/api/diligenciamiento';
+import { consultarProyectoDocente } from '@/api/proyectos-docentes';
+import {
+  Advertencia,
+  AvisoError,
+  Cargando,
+  Insignia,
+} from '../../_componentes/Estados';
+import { useConsulta } from '../../_componentes/useConsulta';
+import { SeccionBibliografia } from './SeccionBibliografia';
+import { SeccionContenidos } from './SeccionContenidos';
+import { SeccionDescripcion } from './SeccionDescripcion';
+import { SeccionEstrategias } from './SeccionEstrategias';
+import { SeccionEvaluacion } from './SeccionEvaluacion';
+import { SeccionRac } from './SeccionRac';
+import { useAvisoSalida } from './useAvisoSalida';
+
+const MENSAJE_SALIDA =
+  'Tiene cambios sin guardar. Si sale ahora, se perderán. ¿Desea salir?';
+
+export interface PropiedadesSeccion {
+  idProyecto: number;
+  puedeEditar: boolean;
+  /** Pide el resumen otra vez: tras guardar, o si el servidor rechazó el cambio. */
+  alGuardar: () => void;
+  /** Avisa si la sección tiene cambios sin guardar. */
+  alCambiar: (hayCambios: boolean) => void;
+}
+
+/** Pantalla de cada sección (puntos 2 a 7), por la clave que le da el backend. */
+const PANTALLAS: Record<string, ComponentType<PropiedadesSeccion>> = {
+  descripcion: SeccionDescripcion,
+  rac: SeccionRac,
+  estrategias: SeccionEstrategias,
+  evaluacion: SeccionEvaluacion,
+  contenidos: SeccionContenidos,
+  bibliografia: SeccionBibliografia,
+};
+
+/**
+ * Diligenciamiento del proyecto docente por secciones, con la numeración del formato
+ * FO-DO/PC-001. Cada sección se guarda por separado y se puede pasar de una a otra sin
+ * completarla (HU-06-08): las secciones quedan montadas, así un borrador no se pierde al
+ * cambiar de pestaña.
+ */
+export function DiligenciamientoProyecto() {
+  const { id } = useParams<{ id: string }>();
+  const idProyecto = /^\d+$/.test(id) ? Number(id) : null;
+  const proyecto = useConsulta(
+    idProyecto === null ? null : `proyecto-${idProyecto}`,
+    (senal) => consultarProyectoDocente(idProyecto!, senal),
+  );
+  const consulta = useConsulta(
+    idProyecto === null ? null : `diligenciamiento-${idProyecto}`,
+    (senal) => consultarDiligenciamiento(idProyecto!, senal),
+  );
+  const [refrescado, setRefrescado] = useState<Diligenciamiento | null>(null);
+  const [activa, setActiva] = useState<string | null>(null);
+  const [conCambios, setConCambios] = useState<ReadonlySet<string>>(new Set());
+  const ultimaConsulta = useRef(0);
+  useAvisoSalida(conCambios.size > 0);
+
+  // Tras guardar una sección se actualiza el resumen sin volver a mostrar «Cargando…». Si
+  // dos guardados seguidos responden en otro orden, solo cuenta la última consulta.
+  const alGuardar = useCallback(() => {
+    if (idProyecto === null) {
+      return;
+    }
+    const numero = ++ultimaConsulta.current;
+    consultarDiligenciamiento(idProyecto).then(
+      (datos) => {
+        if (numero === ultimaConsulta.current) {
+          setRefrescado(datos);
+        }
+      },
+      () => {
+        // Si falla, el resumen anterior sigue en pantalla; lo guardado no se pierde.
+      },
+    );
+  }, [idProyecto]);
+
+  const cambiosDe = useCallback(
+    (clave: string) => (hayCambios: boolean) =>
+      setConCambios((previas) => {
+        if (previas.has(clave) === hayCambios) {
+          return previas;
+        }
+        const siguientes = new Set(previas);
+        if (hayCambios) {
+          siguientes.add(clave);
+        } else {
+          siguientes.delete(clave);
+        }
+        return siguientes;
+      }),
+    [],
+  );
+
+  const resumen =
+    refrescado ?? (consulta.estado === 'lista' ? consulta.datos : null);
+  const claveActiva = activa ?? resumen?.secciones[0]?.clave ?? null;
+
+  return (
+    <section className="space-y-5">
+      <Link
+        href={
+          idProyecto === null
+            ? '/proyectos-docentes'
+            : `/proyectos-docentes/${idProyecto}`
+        }
+        onClick={(evento) => {
+          if (conCambios.size > 0 && !window.confirm(MENSAJE_SALIDA)) {
+            evento.preventDefault();
+          }
+        }}
+        className="text-sm font-medium text-marca hover:underline"
+      >
+        ← Ficha del proyecto
+      </Link>
+
+      {idProyecto === null && (
+        <AvisoError mensaje="El proyecto docente no existe o no tiene acceso a él." />
+      )}
+      {consulta.estado === 'cargando' && <Cargando />}
+      {consulta.estado === 'fallida' && (
+        <AvisoError
+          mensaje={consulta.mensaje}
+          reintentar={consulta.reintentable ? consulta.reintentar : undefined}
+        />
+      )}
+
+      {resumen && idProyecto !== null && (
+        <>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-600">
+              Diligenciamiento del proyecto docente
+            </p>
+            <h1 className="text-2xl font-bold sm:text-3xl">
+              {proyecto.estado === 'lista'
+                ? proyecto.datos.asignatura
+                : 'Proyecto docente'}
+            </h1>
+            <div className="flex flex-wrap gap-1.5">
+              {resumen.estado && (
+                <Insignia tono="marca">{resumen.estado.nombre}</Insignia>
+              )}
+              {proyecto.estado === 'lista' && proyecto.datos.periodo && (
+                <Insignia>Período {proyecto.datos.periodo}</Insignia>
+              )}
+            </div>
+          </div>
+
+          {resumen.motivoNoEditable && (
+            <Advertencia titulo="Solo lectura">
+              <p>{resumen.motivoNoEditable}</p>
+            </Advertencia>
+          )}
+
+          <nav aria-label="Secciones del proyecto docente">
+            <ol className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+              {resumen.secciones.map((seccion) => {
+                const actual = seccion.clave === claveActiva;
+                return (
+                  <li key={seccion.clave} className="shrink-0">
+                    <button
+                      type="button"
+                      aria-current={actual ? 'step' : undefined}
+                      onClick={() => setActiva(seccion.clave)}
+                      className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold ${
+                        actual
+                          ? 'border-marca bg-marca text-white'
+                          : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>
+                        {seccion.numero}. {seccion.titulo}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={`inline-block size-2.5 rounded-full ${
+                          seccion.completa ? 'bg-emerald-500' : 'bg-amber-400'
+                        }`}
+                      />
+                      <span className="sr-only">
+                        {seccion.completa ? '(completa)' : '(pendiente)'}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+
+          {resumen.secciones.map((seccion) => {
+            const Pantalla = PANTALLAS[seccion.clave];
+            return (
+              <section
+                key={seccion.clave}
+                hidden={seccion.clave !== claveActiva}
+                aria-labelledby={`titulo-${seccion.clave}`}
+                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+              >
+                <div className="space-y-1">
+                  <h2
+                    id={`titulo-${seccion.clave}`}
+                    className="text-lg font-semibold"
+                  >
+                    {seccion.numero}. {seccion.titulo}
+                  </h2>
+                  {seccion.pendientes.length > 0 ? (
+                    <ul className="list-disc pl-5 text-sm text-amber-900">
+                      {seccion.pendientes.map((pendiente) => (
+                        <li key={pendiente}>{pendiente}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm font-medium text-emerald-700">
+                      Sección completa.
+                    </p>
+                  )}
+                </div>
+                {Pantalla ? (
+                  <Pantalla
+                    idProyecto={idProyecto}
+                    puedeEditar={resumen.puedeEditar}
+                    alGuardar={alGuardar}
+                    alCambiar={cambiosDe(seccion.clave)}
+                  />
+                ) : (
+                  <p className="text-sm text-slate-600">
+                    Esta sección todavía no está disponible.
+                  </p>
+                )}
+              </section>
+            );
+          })}
+        </>
+      )}
+    </section>
+  );
+}

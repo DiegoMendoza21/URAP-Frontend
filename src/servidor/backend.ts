@@ -11,7 +11,11 @@ type RespuestaError = components['schemas']['RespuestaErrorDto'];
  * página. Este módulo solo puede importarse desde código del servidor.
  */
 
-/** Menor que la espera del navegador (15 s), para que llegue el mensaje de este servidor. */
+/**
+ * Espera máxima por la respuesta del backend, menor que la del navegador (15 s) para que llegue
+ * el mensaje de este servidor. Cuenta hasta que llegan las cabeceras: el cuerpo, como una foto
+ * que se descarga hacia un teléfono con mala señal, puede tardar más sin cortarse.
+ */
 const TIEMPO_LIMITE_MS = 12_000;
 
 /** Cabeceras del navegador que el backend necesita. Las demás, incluidas las cookies, no pasan. */
@@ -19,6 +23,7 @@ const CABECERAS_DE_PETICION = [
   'accept',
   'accept-language',
   'content-type',
+  'if-none-match',
   'user-agent',
   'x-forwarded-for',
 ];
@@ -30,6 +35,7 @@ const CABECERAS_DE_RESPUESTA = [
   'cache-control',
   'etag',
   'last-modified',
+  'x-content-type-options',
 ];
 
 const MENSAJE_SIN_BACKEND =
@@ -51,6 +57,13 @@ class BackendSinRespuesta extends Error {
 /**
  * Envía al backend la petición del navegador hacia `ruta` (sin el prefijo /api), con el token
  * de la sesión si lo hay. Devuelve la respuesta del backend tal cual, sea cual sea su estado.
+ *
+ * Sirve también para archivos: el cuerpo se reenvía en bytes, sin interpretarlo, así que un
+ * formulario multipart llega igual (con su `content-type` y su separador), y la respuesta se
+ * devuelve como flujo, sea JSON o una imagen. El cuerpo se lee completo antes de llamar al
+ * backend: una subida lenta desde el teléfono no consume el tiempo límite. No hay tope de
+ * tamaño aquí porque `src/proxy.ts` no corre sobre /api; si algún día lo hiciera, Next.js
+ * cortaría los cuerpos de más de 10 MB (`proxyClientMaxBodySize`).
  */
 export async function llamarBackend(
   peticion: NextRequest,
@@ -67,22 +80,34 @@ export async function llamarBackend(
   if (token) {
     cabeceras.set('authorization', `Bearer ${token}`);
   }
+  // Con `cache: 'no-store'`, fetch agrega «Cache-Control: no-cache» si la petición no trae uno,
+  // y con él el backend ignora If-None-Match: la foto ya guardada en el navegador se volvería
+  // a descargar entera. Se envía el del navegador o, si no trae, uno que permite revalidar.
+  cabeceras.set(
+    'cache-control',
+    peticion.headers.get('cache-control') ?? 'max-age=0',
+  );
   const conCuerpo = peticion.method !== 'GET' && peticion.method !== 'HEAD';
   const base = (process.env.URL_API ?? '').replace(/\/+$/, '');
 
+  const cuerpo = conCuerpo ? await peticion.arrayBuffer() : undefined;
+
+  const controlador = new AbortController();
+  const temporizador = setTimeout(() => controlador.abort(), TIEMPO_LIMITE_MS);
   try {
     return await fetch(`${base}${ruta}${peticion.nextUrl.search}`, {
       method: peticion.method,
       headers: cabeceras,
-      body: conCuerpo ? await peticion.arrayBuffer() : undefined,
+      body: cuerpo,
       cache: 'no-store',
       redirect: 'manual',
-      signal: AbortSignal.timeout(TIEMPO_LIMITE_MS),
+      signal: controlador.signal,
     });
-  } catch (error) {
-    throw new BackendSinRespuesta(
-      error instanceof DOMException && error.name === 'TimeoutError',
-    );
+  } catch {
+    throw new BackendSinRespuesta(controlador.signal.aborted);
+  } finally {
+    // Llegaron las cabeceras (o falló): el cuerpo sigue sin límite de tiempo.
+    clearTimeout(temporizador);
   }
 }
 
