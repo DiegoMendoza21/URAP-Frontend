@@ -329,8 +329,15 @@ function FormularioRegistro({
       });
       alGuardar(nuevo);
     } catch (error) {
-      // Si el backend pide confirmar que faltó todo el grupo (RF-22, p6), se pregunta aquí.
-      if (error instanceof ErrorApi && error.estado === 409 && todoElGrupo) {
+      // Si el backend pide confirmar que faltó todo el grupo (RF-22, p6), se pregunta aquí. Si
+      // ya se había confirmado, el 409 es por otra razón (período cerrado, por ejemplo) y se
+      // muestra tal cual.
+      if (
+        error instanceof ErrorApi &&
+        error.estado === 409 &&
+        todoElGrupo &&
+        !confirmarTodoElGrupo
+      ) {
         setConfirmandoTodos(true);
       } else {
         setFallo({
