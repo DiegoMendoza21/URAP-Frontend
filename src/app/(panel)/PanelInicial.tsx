@@ -15,6 +15,24 @@ const ROLES_PROYECTOS = [
   'Dirección del programa',
 ];
 
+/** Roles que abren mediciones de RAP (RF-30, RF-31); el backend filtra cuáles ve cada uno. */
+const ROLES_MEDICION = [
+  'Docente responsable',
+  'Líder RAP',
+  'Departamento académico',
+];
+
+/** Roles que consultan el reporte de logro de los RAP (RF-32, matriz de permisos). */
+const ROLES_REPORTE_LOGRO = [
+  'Administrador',
+  'Departamento académico',
+  'Dirección del programa',
+  'Líder RAP',
+];
+
+const CLASE_ACCESO =
+  'block rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca';
+
 /**
  * Panel inicial después de iniciar sesión (RF-01, p4). El menú completo según los roles llega
  * con HU-01-03; por ahora, el acceso a los proyectos docentes.
@@ -46,10 +64,7 @@ export function PanelInicial() {
       </div>
       {roles.some((rol) => ROLES_PROYECTOS.includes(rol)) && (
         <nav aria-label="Accesos" className="grid gap-3 sm:grid-cols-2">
-          <Link
-            href="/proyectos-docentes"
-            className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
-          >
+          <Link href="/proyectos-docentes" className={CLASE_ACCESO}>
             <span className="block font-semibold text-marca">
               Proyectos docentes
             </span>
@@ -59,6 +74,27 @@ export function PanelInicial() {
                 : 'Consulte los proyectos docentes a su cargo.'}
             </span>
           </Link>
+          {roles.some((rol) => ROLES_MEDICION.includes(rol)) && (
+            <Link href="/mediciones" className={CLASE_ACCESO}>
+              <span className="block font-semibold text-marca">
+                Medición de RAP
+              </span>
+              <span className="block text-sm text-slate-600">
+                Valoraciones, consolidado y acciones de mejora de cada curso.
+              </span>
+            </Link>
+          )}
+          {roles.some((rol) => ROLES_REPORTE_LOGRO.includes(rol)) && (
+            <Link href="/reportes/logro-rap" className={CLASE_ACCESO}>
+              <span className="block font-semibold text-marca">
+                Reporte de logro de los RAP
+              </span>
+              <span className="block text-sm text-slate-600">
+                Porcentaje alcanzado por RAP frente al esperado, con exportación
+                a Excel y PDF.
+              </span>
+            </Link>
+          )}
         </nav>
       )}
     </section>

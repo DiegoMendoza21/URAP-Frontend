@@ -39,8 +39,18 @@ const clave = (idMatricula: number, idIndicador: number) =>
  * para el teléfono: un indicador a la vez, un estudiante por fila y un botón grande por nivel.
  * La matriz completa queda en su propia pestaña. Cada cambio se guarda solo, en lotes.
  */
-export function Valoracion({ medicion }: { medicion: MedicionDetalle }) {
-  const { niveles, cambiar, guardado, reintentar } = useValoraciones(medicion);
+export function Valoracion({
+  medicion,
+  alGuardar,
+}: {
+  medicion: MedicionDetalle;
+  /** Avisa que se guardó un lote: el consolidado se vuelve a calcular. */
+  alGuardar?: () => void;
+}) {
+  const { niveles, cambiar, guardado, reintentar } = useValoraciones(
+    medicion,
+    alGuardar,
+  );
   const [vista, setVista] = useState<number | typeof VISTA_MATRIZ>(
     medicion.indicadores[0]?.idIndicador ?? VISTA_MATRIZ,
   );
@@ -113,11 +123,19 @@ export function Valoracion({ medicion }: { medicion: MedicionDetalle }) {
               return (
                 <button
                   key={fila.idIndicador}
+                  id={`${idPanel}-pestana-${fila.idIndicador}`}
                   type="button"
                   role="tab"
                   aria-selected={activo}
                   aria-controls={idPanel}
-                  onClick={() => setVista(fila.idIndicador)}
+                  aria-label={`Indicador ${fila.numero ?? i + 1}: ${total - faltan} de ${total} valorados`}
+                  onClick={(evento) => {
+                    setVista(fila.idIndicador);
+                    evento.currentTarget.scrollIntoView({
+                      block: 'nearest',
+                      inline: 'nearest',
+                    });
+                  }}
                   className={`flex min-h-11 shrink-0 flex-col items-center justify-center rounded-lg border px-3 py-1 text-sm font-semibold ${
                     activo
                       ? 'border-marca bg-marca text-white'
@@ -134,11 +152,18 @@ export function Valoracion({ medicion }: { medicion: MedicionDetalle }) {
               );
             })}
             <button
+              id={`${idPanel}-pestana-${VISTA_MATRIZ}`}
               type="button"
               role="tab"
               aria-selected={vista === VISTA_MATRIZ}
               aria-controls={idPanel}
-              onClick={() => setVista(VISTA_MATRIZ)}
+              onClick={(evento) => {
+                setVista(VISTA_MATRIZ);
+                evento.currentTarget.scrollIntoView({
+                  block: 'nearest',
+                  inline: 'nearest',
+                });
+              }}
               className={`min-h-11 shrink-0 rounded-lg border px-3 py-1 text-sm font-semibold ${
                 vista === VISTA_MATRIZ
                   ? 'border-marca bg-marca text-white'
@@ -165,6 +190,9 @@ export function Valoracion({ medicion }: { medicion: MedicionDetalle }) {
                   document
                     .getElementById('titulo-valoracion')
                     ?.scrollIntoView({ block: 'start' });
+                  document
+                    .getElementById(`${idPanel}-pestana-${destino}`)
+                    ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
                 }}
               />
             ) : (
@@ -524,7 +552,7 @@ type Cambiar = (
  * poco después del último toque; si falla, quedan pendientes para el siguiente intento. Un
  * cambio hecho mientras se guarda espera al siguiente lote.
  */
-function useValoraciones(medicion: MedicionDetalle) {
+function useValoraciones(medicion: MedicionDetalle, alGuardar?: () => void) {
   const [niveles, setNiveles] = useState<ReadonlyMap<string, number>>(
     () =>
       new Map(
@@ -546,6 +574,10 @@ function useValoraciones(medicion: MedicionDetalle) {
   const enCurso = useRef(false);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
   const guardarRef = useRef<() => Promise<void>>(async () => {});
+  const alGuardarRef = useRef(alGuardar);
+  useEffect(() => {
+    alGuardarRef.current = alGuardar;
+  }, [alGuardar]);
   const idMedicion = medicion.id;
 
   const programar = useCallback(() => {
@@ -573,6 +605,7 @@ function useValoraciones(medicion: MedicionDetalle) {
         }
       }
       enCurso.current = false;
+      alGuardarRef.current?.();
       if (pendientes.current.size > 0) {
         setGuardado({ estado: 'pendiente' });
         programar();

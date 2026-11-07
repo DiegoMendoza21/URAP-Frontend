@@ -243,6 +243,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mediciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mediciones que el usuario puede abrir, con su resultado (RF-31, p1)
+         * @description El docente ve las de sus cursos; el líder RAP, las de los RAP que lidera; el departamento, las de su programa. Paginada, de la más reciente a la más antigua.
+         */
+        get: operations["MedicionesController_listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/{idProyecto}/mediciones": {
         parameters: {
             query?: never;
@@ -320,6 +340,143 @@ export interface paths {
          * @description Guarda las celdas enviadas, todo o nada. Un valor nulo deja al estudiante sin valorar en ese indicador: queda fuera de la muestra. Medición en borrador.
          */
         put: operations["MedicionesController_registrarValoraciones"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/consolidado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consolidado de la medición (RF-31, p2 a p4; HU-11-04 y HU-11-05)
+         * @description Conteos y porcentajes por nivel e indicador, muestra, cohorte y porcentaje en los niveles de cumplimiento frente al esperado. Se calcula desde las valoraciones cada vez: corregir una valoración lo actualiza.
+         */
+        get: operations["MedicionesController_consolidado"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/analisis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra acciones implementadas, resultados y acciones propuestas (RF-31, p5; HU-11-06)
+         * @description El docente asignado o el líder del RAP, con la medición en borrador. Un campo omitido no cambia; uno vacío se borra.
+         */
+        put: operations["MedicionesController_registrarAnalisis"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/cerrar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cierra la medición (RF-31, p6 y p7; HU-11-07)
+         * @description Registra quién y cuándo, bloquea las valoraciones y la deja disponible para el reporte de logro. No cierra sin valoraciones, ni por debajo del porcentaje esperado sin acciones propuestas.
+         */
+        post: operations["MedicionesController_cerrar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/reabrir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reabre una medición cerrada (RF-30, excepción de p7)
+         * @description Solo el departamento académico del programa del curso.
+         */
+        post: operations["MedicionesController_reabrir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/logro-rap/filtros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Programas, RAP y períodos del reporte de logro (RF-32, p1) */
+        get: operations["ReportesController_filtros"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/logro-rap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de logro de los RAP del programa (RF-32, HU-11-08)
+         * @description Por cada RAP: las asignaturas que lo evaluaron con medición cerrada en el período, su porcentaje en los niveles de cumplimiento frente al esperado y la comparación con períodos anteriores. Un RAP sin mediciones cerradas aparece como no evaluado.
+         */
+        get: operations["ReportesController_logroRap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/logro-rap/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Exporta el reporte de logro a Excel (RF-32, p5)
+         * @description Libro con tres hojas: logro por RAP y asignatura, indicadores y comparación con períodos anteriores. La exportación a PDF la hace el navegador desde la pantalla.
+         */
+        get: operations["ReportesController_excel"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -758,6 +915,52 @@ export interface components {
             /** @example 2026-2 */
             periodo: string | null;
         };
+        RapMedicionDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            /** @example Identifica, interpreta y evalúa el entorno económico y financiero de las organizaciones… */
+            descripcion: string | null;
+        };
+        MedicionListadaDto: {
+            /** @example 8 */
+            id: number;
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            rap: components["schemas"]["RapMedicionDto"];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @enum {string} */
+            estado: "borrador" | "cerrada";
+            /** @example 1 */
+            versionRubrica: number | null;
+            /**
+             * @description Último cambio de la medición
+             * @example 2026-11-07T15:30:00.000Z
+             */
+            actualizada: string | null;
+            /** @example 63.97 */
+            porcentajeCumplimiento: number | null;
+            /** @example null */
+            porcentajeEsperado: number | null;
+            /** @example null */
+            alcanzado: boolean | null;
+        };
+        PaginaMedicionesDto: {
+            elementos: components["schemas"]["MedicionListadaDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 3 */
+            total: number;
+        };
         EstadoProyectoMedicionDto: {
             /** @example aprobado */
             codigo: string;
@@ -809,16 +1012,6 @@ export interface components {
             descripcion: string | null;
             /** @description Rúbrica con la que se mediría hoy. Nula si el RAP no tiene rúbrica vigente: no se puede iniciar su medición hasta registrarla (RF-06). */
             rubricaVigente: components["schemas"]["RubricaVigenteDto"] | null;
-        };
-        RapMedicionDto: {
-            /** @example 2 */
-            id: number;
-            /** @example RAP 2 */
-            codigo: string | null;
-            /** @example 2 */
-            numero: number | null;
-            /** @example Identifica, interpreta y evalúa el entorno económico y financiero de las organizaciones… */
-            descripcion: string | null;
         };
         MedicionResumenDto: {
             /** @example 8 */
@@ -940,6 +1133,93 @@ export interface components {
             /** @description Un indicador que no aparece aquí está sin valorar */
             valoraciones: components["schemas"]["ValoracionRegistradaDto"][];
         };
+        ConteoNivelDto: {
+            /** @example 3 */
+            valor: number;
+            /** @example Competente */
+            etiqueta: string;
+            /**
+             * @description Estudiantes en este nivel
+             * @example 29
+             */
+            cantidad: number;
+            /**
+             * @description Sobre la muestra del indicador, con dos decimales
+             * @example 85.29
+             */
+            porcentaje: number;
+        };
+        IndicadorConsolidadoDto: {
+            /** @example 7 */
+            idIndicador: number;
+            /** @example 1 */
+            numero: number | null;
+            descripcion: string | null;
+            instrumento: string | null;
+            descripcionInstrumento: string | null;
+            /** @description Tabla resumen y tabla porcentual del indicador */
+            conteos: components["schemas"]["ConteoNivelDto"][];
+            /**
+             * @description Estudiantes valorados en el indicador
+             * @example 34
+             */
+            muestra: number;
+            /**
+             * @description Estudiantes de la hoja sin valorar en el indicador: fuera de la muestra
+             * @example 0
+             */
+            sinValorar: number;
+            /**
+             * @description Porcentaje en los niveles de cumplimiento (desde el umbral de la escala); nulo si nadie fue valorado
+             * @example 85.29
+             */
+            porcentajeCumplimiento: number | null;
+            /**
+             * @description Si alcanzó el porcentaje esperado; nulo sin meta definida
+             * @example null
+             */
+            alcanzado: boolean | null;
+        };
+        ConsolidadoDto: {
+            indicadores: components["schemas"]["IndicadorConsolidadoDto"][];
+            /** @example 3 */
+            umbralCumplimiento: number;
+            /**
+             * @example [
+             *       "Competente",
+             *       "Ejemplar"
+             *     ]
+             */
+            nivelesCumplimiento: string[];
+            /**
+             * @description Tamaño de la muestra: el mayor de los indicadores
+             * @example 34
+             */
+            tamanoMuestra: number;
+            /**
+             * @description Tamaño de la cohorte; si no se registró, el de la muestra
+             * @example 34
+             */
+            tamanoCohorte: number;
+            /** @example false */
+            cohorteRegistrada: boolean;
+            /**
+             * @description Resultado de la medición: promedio de los porcentajes de cumplimiento de sus indicadores con muestra
+             * @example 63.97
+             */
+            porcentajeCumplimiento: number | null;
+            /** @example null */
+            porcentajeEsperado: number | null;
+            /**
+             * @description Falso: el programa no ha definido la meta (RF-31, excepción de p4)
+             * @example false
+             */
+            metaDefinida: boolean;
+            /** @example null */
+            alcanzado: boolean | null;
+            /** @description Avisos para mostrar con el resultado (cohorte, meta, sin valorar) */
+            advertencias: string[];
+        };
         MedicionDetalleDto: {
             /** @example 8 */
             id: number;
@@ -980,6 +1260,25 @@ export interface components {
              * @example true
              */
             puedeEditar: boolean;
+            consolidado: components["schemas"]["ConsolidadoDto"];
+            /** @description Hoja «Evaluación»: acciones implementadas (RF-31, p5) */
+            accionesImplementadas: string | null;
+            resultadosObtenidos: string | null;
+            accionesPropuestas: string | null;
+            /** @example Docente Líder Demo */
+            cerradoPor: string | null;
+            /** @example 2026-11-20T15:30:00.000Z */
+            fechaCierre: string | null;
+            /**
+             * @description Puede registrar el análisis y cerrar: docente asignado o líder del RAP, medición en borrador
+             * @example true
+             */
+            puedeAnalizar: boolean;
+            /**
+             * @description Puede reabrirla: departamento del programa, medición cerrada
+             * @example false
+             */
+            puedeReabrir: boolean;
         };
         InstrumentoIndicadorDto: {
             /**
@@ -1026,6 +1325,140 @@ export interface components {
              * @example 2
              */
             borradas: number;
+        };
+        RegistrarAnalisisDto: {
+            accionesImplementadas?: string | null;
+            resultadosObtenidos?: string | null;
+            accionesPropuestas?: string | null;
+        };
+        RapOpcionReporteDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+        };
+        ProgramaOpcionReporteDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+            /** @description RAP del programa que el usuario puede consultar */
+            raps: components["schemas"]["RapOpcionReporteDto"][];
+        };
+        PeriodoOpcionReporteDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string;
+        };
+        FiltrosLogroRapDto: {
+            programas: components["schemas"]["ProgramaOpcionReporteDto"][];
+            /** @description Del más reciente al más antiguo */
+            periodos: components["schemas"]["PeriodoOpcionReporteDto"][];
+        };
+        ProgramaReporteDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+        };
+        IndicadorReporteDto: {
+            /** @example 1 */
+            numero: number | null;
+            /** @example Taller de análisis financiero */
+            instrumento: string | null;
+            /** @example 34 */
+            muestra: number;
+            /** @example 85.29 */
+            porcentajeCumplimiento: number | null;
+        };
+        AsignaturaEvaluadaDto: {
+            /** @example 8 */
+            idMedicion: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /**
+             * @example [
+             *       "Docente Demo"
+             *     ]
+             */
+            docentes: string[];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @example 34 */
+            tamanoMuestra: number;
+            /**
+             * @description Porcentaje en los niveles de cumplimiento (promedio de los indicadores)
+             * @example 63.97
+             */
+            porcentajeCumplimiento: number | null;
+            /** @example null */
+            porcentajeEsperado: number | null;
+            /** @example null */
+            alcanzado: boolean | null;
+            indicadores: components["schemas"]["IndicadorReporteDto"][];
+            accionesImplementadas: string | null;
+            resultadosObtenidos: string | null;
+            accionesPropuestas: string | null;
+        };
+        ComparacionPeriodoDto: {
+            /** @example 2026-1 */
+            periodo: string;
+            /** @example 70.5 */
+            porcentajeCumplimiento: number;
+            /**
+             * @description Mediciones cerradas que lo componen
+             * @example 2
+             */
+            mediciones: number;
+        };
+        RapReporteDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            descripcion: string | null;
+            /**
+             * @description Falso: no tiene mediciones cerradas en el período y se presenta como no evaluado (RF-32, excepción de p2)
+             * @example true
+             */
+            evaluado: boolean;
+            asignaturas: components["schemas"]["AsignaturaEvaluadaDto"][];
+            /**
+             * @description Promedio de las asignaturas que lo evaluaron en el período
+             * @example 63.97
+             */
+            porcentajeCumplimiento: number | null;
+            /**
+             * @description Porcentaje esperado vigente del programa; nulo si no lo ha definido
+             * @example null
+             */
+            porcentajeEsperado: number | null;
+            /** @example null */
+            alcanzado: boolean | null;
+            /** @description Períodos anteriores con mediciones cerradas, del más antiguo al más reciente */
+            comparacion: components["schemas"]["ComparacionPeriodoDto"][];
+            /** @description Por qué no hay comparación con períodos anteriores (RF-32, excepción de p4); nulo si la hay */
+            motivoSinComparacion: string | null;
+        };
+        ReporteLogroRapDto: {
+            programa: components["schemas"]["ProgramaReporteDto"];
+            periodo: components["schemas"]["PeriodoOpcionReporteDto"];
+            /** @example 2026-11-20T15:30:00.000Z */
+            generado: string;
+            /** @example false */
+            metaDefinida: boolean;
+            raps: components["schemas"]["RapReporteDto"][];
         };
     };
     responses: never;
@@ -1710,6 +2143,57 @@ export interface operations {
             };
         };
     };
+    MedicionesController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                estado?: "borrador" | "cerrada";
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaMedicionesDto"];
+                };
+            };
+            /** @description Paginación o filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
     MedicionesController_delProyecto: {
         parameters: {
             query?: never;
@@ -2012,6 +2496,396 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_consolidado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsolidadoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_registrarAnalisis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarAnalisisDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Datos inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es el docente asignado ni el líder del RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición está cerrada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_cerrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es el docente asignado ni el líder del RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya está cerrada, no tiene valoraciones o está por debajo de la meta sin acciones propuestas */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_reabrir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es el departamento académico del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no está cerrada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesController_filtros: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FiltrosLogroRapDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesController_logroRap: {
+        parameters: {
+            query: {
+                idPrograma: number;
+                idPeriodo: number;
+                /** @description Solo este RAP */
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteLogroRapDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El programa, el período o el RAP no existen o el usuario no tiene alcance sobre ellos */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesController_excel: {
+        parameters: {
+            query: {
+                idPrograma: number;
+                idPeriodo: number;
+                /** @description Solo este RAP */
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El programa, el período o el RAP no existen o el usuario no tiene alcance sobre ellos */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
                 };
             };
         };
