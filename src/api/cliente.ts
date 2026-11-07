@@ -18,7 +18,7 @@ const URL_API = '/api';
  */
 const TIEMPO_LIMITE_MS = 15_000;
 
-const MENSAJES = {
+export const MENSAJES = {
   sinConexion:
     'No fue posible conectar con el servidor de URAP. Revise su conexión e intente de nuevo.',
   tiempoAgotado:
@@ -26,6 +26,8 @@ const MENSAJES = {
   servidorNoDisponible:
     'El servidor de URAP no está disponible en este momento. Intente de nuevo más tarde.',
   solicitudRechazada: 'No fue posible completar la solicitud.',
+  demasiadosIntentos:
+    'Se hicieron demasiados intentos. Espere un momento e intente de nuevo.',
   inesperado: 'Ocurrió un error inesperado. Intente de nuevo más tarde.',
 } as const;
 
@@ -176,14 +178,18 @@ export function mensajeParaUsuario(error: unknown): string {
 /**
  * Con un cuerpo de la forma de RespuestaErrorDto se usa el mensaje del backend, que ya viene
  * en español y apto para el usuario. Con cualquier otro (por ejemplo, la página de error de
- * un proxy) se usa un mensaje genérico.
+ * un proxy) se usa un mensaje genérico. Un 429 sin ese cuerpo viene de algo delante del
+ * backend (un balanceador o un firewall), y su mensaje dice que hay que esperar.
  */
-function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
+export function errorDeRespuesta(estado: number, cuerpo: unknown): ErrorApi {
   if (esRespuestaError(cuerpo)) {
     const detalles = Array.isArray(cuerpo.detalles)
       ? cuerpo.detalles.filter((detalle) => typeof detalle === 'string')
       : undefined;
     return new ErrorApi(cuerpo.mensaje, estado, detalles);
+  }
+  if (estado === 429) {
+    return new ErrorApi(MENSAJES.demasiadosIntentos, estado);
   }
   return new ErrorApi(
     estado >= 500 ? MENSAJES.servidorNoDisponible : MENSAJES.solicitudRechazada,

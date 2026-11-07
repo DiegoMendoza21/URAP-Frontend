@@ -67,12 +67,15 @@ export function Insignia({
   tono = 'neutro',
 }: {
   children: ReactNode;
-  tono?: 'neutro' | 'marca' | 'advertencia';
+  /** `peligro`: sesiones vencidas (RF-23). `informativo`: festivos y otros datos sin alerta. */
+  tono?: 'neutro' | 'marca' | 'advertencia' | 'peligro' | 'informativo';
 }) {
   const colores = {
     neutro: 'bg-slate-100 text-slate-800',
     marca: 'bg-marca/10 text-marca',
     advertencia: 'bg-amber-100 text-amber-900',
+    peligro: 'bg-red-100 text-red-800',
+    informativo: 'bg-sky-100 text-sky-900',
   }[tono];
   return (
     <span

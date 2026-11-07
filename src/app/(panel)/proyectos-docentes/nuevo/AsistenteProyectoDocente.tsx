@@ -651,6 +651,8 @@ export function AsistenteProyectoDocente() {
             <button
               type="button"
               onClick={continuar}
+              // Mientras cargan los RAP no hay qué validar: avisar «seleccione un RAP» confunde.
+              disabled={paso === 3 && informacion.estado === 'cargando'}
               className={claseBotonPrincipal}
             >
               Continuar
@@ -659,12 +661,14 @@ export function AsistenteProyectoDocente() {
             <button
               type="button"
               onClick={crear}
+              // No se espera la consulta de p6: se dispara al salir del campo del grupo, y un
+              // clic en este botón con el foco en el grupo caería en un botón deshabilitado. Si
+              // el curso ya existe, el backend responde 409 y el aviso se vuelve a consultar.
               disabled={
                 creando ||
                 !datosInformacion ||
                 sinPeriodo ||
-                Boolean(proyectoExistente) ||
-                existente.estado === 'cargando'
+                Boolean(proyectoExistente)
               }
               className={claseBotonPrincipal}
             >
