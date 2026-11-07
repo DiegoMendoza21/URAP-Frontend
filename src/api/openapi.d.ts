@@ -219,6 +219,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{idProyecto}/matriculados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista de estudiantes del curso (RF-22)
+         * @description Datos personales (Ley 1581 de 2012): solo el Administrador y los docentes asignados al proyecto. `ultimaCarga` es nulo si el curso todavía no tiene lista.
+         */
+        get: operations["MatriculasController_listar"];
+        put?: never;
+        /**
+         * Carga la lista de estudiantes matriculados del curso (RF-22, HU-09-01)
+         * @description Recibe un Excel (.xlsx) con las columnas Documento, Nombres, Apellidos y, si se quiere, Correo, y reemplaza la lista del curso. Los que no aparecen quedan retirados, sin borrarse. Si una fila tiene un error no se guarda ninguna, y `detalles` dice qué fila falló y por qué. Solo el Administrador.
+         */
+        post: operations["MatriculasController_cargar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -567,6 +591,78 @@ export interface components {
              * @example 42
              */
             total: number;
+        };
+        UltimaCargaDto: {
+            /** @example 2026-11-07T15:30:00.000Z */
+            fecha: string;
+            /**
+             * @description Quién la cargó
+             * @example Administrador Demo
+             */
+            cargadoPor: string;
+        };
+        ResultadoCargaMatriculadosDto: {
+            /**
+             * @description Estudiantes en el archivo
+             * @example 32
+             */
+            matriculados: number;
+            /**
+             * @description Estudiantes que no estaban en la lista del curso
+             * @example 30
+             */
+            nuevos: number;
+            /**
+             * @description Estaban retirados y vuelven a aparecer en el archivo
+             * @example 1
+             */
+            reincorporados: number;
+            /**
+             * @description Estaban en la lista y no aparecen en el archivo: quedan como retirados, sin borrarse
+             * @example 2
+             */
+            retirados: number;
+            /**
+             * @description Estudiantes ya registrados cuyos nombres o correo se actualizaron con el archivo
+             * @example 3
+             */
+            actualizados: number;
+            carga: components["schemas"]["UltimaCargaDto"];
+        };
+        MatriculadoDto: {
+            /**
+             * @description Identificador de la matrícula
+             * @example 41
+             */
+            idMatricula: number;
+            /** @example 1000000001 */
+            documento: string;
+            /** @example Estudiante Uno */
+            nombres: string;
+            /** @example Ficticio Demo */
+            apellidos: string;
+            /** @example estudiante.uno@ejemplo.edu.co */
+            correo: string | null;
+            /** @enum {string} */
+            estado: "matriculado" | "retirado";
+        };
+        PaginaMatriculadosDto: {
+            elementos: components["schemas"]["MatriculadoDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /**
+             * @description Total con el estado consultado
+             * @example 32
+             */
+            total: number;
+            /** @example 32 */
+            totalMatriculados: number;
+            /** @example 2 */
+            totalRetirados: number;
+            /** @description Nulo si el curso todavía no tiene lista cargada (RF-22, excepción de p3) */
+            ultimaCarga: components["schemas"]["UltimaCargaDto"] | null;
         };
     };
     responses: never;
@@ -1098,6 +1194,150 @@ export interface operations {
             };
             /** @description El proyecto no existe o el usuario no tiene acceso a él */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MatriculasController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Matriculados (por defecto) o retirados: los que estaban en una carga anterior y no en la última */
+                estado?: "matriculado" | "retirado";
+            };
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaMatriculadosDto"];
+                };
+            };
+            /** @description Paginación o estado inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador ni Docente responsable */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MatriculasController_cargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    archivo: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoCargaMatriculadosDto"];
+                };
+            };
+            /** @description Sin archivo, más de un archivo o un archivo que no es .xlsx */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el tamaño máximo de archivo del parámetro archivo_tamano_maximo_mb */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El archivo no se puede leer, le faltan columnas, no tiene estudiantes o tiene filas con errores (documento repetido o inválido, nombres o apellidos vacíos, correo inválido) */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
