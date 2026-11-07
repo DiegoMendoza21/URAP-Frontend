@@ -17,6 +17,11 @@ import { useConsulta } from '../_componentes/useConsulta';
  */
 const ROL_ADMINISTRADOR = 'Administrador';
 const ROL_DOCENTE = 'Docente responsable';
+/**
+ * Roles que consultan la medición de RAP del curso (RF-30). Es presentación: el backend
+ * filtra por alcance (el líder, solo los RAP que lidera; el departamento, su programa).
+ */
+const ROLES_MEDICION = ['Líder RAP', 'Departamento académico'];
 
 /**
  * Ficha del proyecto docente: la información base con la que lo creó el asistente (RF-08). Las
@@ -39,6 +44,14 @@ export function FichaProyectoDocente() {
         proyecto.datos.docentes.some(
           (docente) => docente.id === sesion.usuario.id,
         )));
+  const veMediciones =
+    sesion.estado === 'autenticado' &&
+    proyecto.estado === 'lista' &&
+    ((sesion.usuario.roles.includes(ROL_DOCENTE) &&
+      proyecto.datos.docentes.some(
+        (docente) => docente.id === sesion.usuario.id,
+      )) ||
+      sesion.usuario.roles.some((rol) => ROLES_MEDICION.includes(rol)));
 
   return (
     <section className="space-y-6">
@@ -146,6 +159,16 @@ export function FichaProyectoDocente() {
             </Link>
           )}
 
+          {veMediciones && (
+            <Link
+              href={`/proyectos-docentes/${idProyecto}/mediciones`}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 font-semibold shadow-sm hover:border-marca hover:text-marca sm:p-6"
+            >
+              <span>Medición de RAP</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          )}
+
           <section
             aria-labelledby="titulo-raps"
             className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
@@ -166,6 +189,25 @@ export function FichaProyectoDocente() {
               ))}
             </ul>
           </section>
+
+          {/* RF-24: el backend decide quién carga y quién ve cada evidencia. */}
+          <Link
+            href={`/proyectos-docentes/${idProyecto}/evidencias`}
+            className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca sm:p-6"
+          >
+            <span>
+              <span className="block text-lg font-semibold">
+                Evidencias de los RAP
+              </span>
+              <span className="block text-sm text-slate-600">
+                Fotos y documentos que respaldan el desarrollo de cada RAP en el
+                curso.
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-xl text-marca">
+              →
+            </span>
+          </Link>
         </>
       )}
     </section>

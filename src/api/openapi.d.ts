@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Inicia sesión con correo institucional y contraseña
-         * @description Público. Devuelve un JWT con vigencia definida por NFR-003 y los datos del usuario con sus roles activos (RF-01, HU-01-01).
+         * @description Público. Devuelve un JWT con vigencia definida por NFR-003 y los datos del usuario con sus roles activos (RF-01, HU-01-01). Tras varios intentos fallidos consecutivos la cuenta se bloquea temporalmente (HU-01-04), y cada IP tiene un límite de intentos.
          */
         post: operations["AuthController_iniciarSesion"];
         delete?: never;
@@ -77,6 +77,89 @@ export interface paths {
          */
         get: operations["SaludController_verificar"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista los roles, activos e inactivos, con sus permisos (HU-02-05) */
+        get: operations["RolesController_listar"];
+        put?: never;
+        /**
+         * Crea un rol con sus permisos (HU-02-05)
+         * @description Exige al menos un permiso de lectura (RF-03, p4).
+         */
+        post: operations["RolesController_crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles/matriz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Matriz de permisos: módulos × permisos × roles (HU-02-06) */
+        get: operations["RolesController_matriz"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un rol con sus permisos */
+        get: operations["RolesController_obtener"];
+        put?: never;
+        post?: never;
+        /**
+         * Inactiva un rol (HU-02-05)
+         * @description Borrado lógico (NFR-017): el rol queda inactivo y conserva su historial. No se permite con usuarios activos asociados (RF-03, p3) ni para los roles del sistema.
+         */
+        delete: operations["RolesController_inactivar"];
+        options?: never;
+        head?: never;
+        /**
+         * Edita el nombre o la descripción de un rol (HU-02-05)
+         * @description Los seis roles del sistema solo admiten cambiar su descripción.
+         */
+        patch: operations["RolesController_editar"];
+        trace?: never;
+    };
+    "/api/roles/{id}/permisos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reemplaza los permisos de un rol (HU-02-06)
+         * @description Rige desde la siguiente petición de los usuarios afectados (RF-03, q1). Exige un permiso de lectura y que algún usuario activo conserve la administración de usuarios y roles.
+         */
+        put: operations["RolesController_reemplazarPermisos"];
         post?: never;
         delete?: never;
         options?: never;
@@ -437,6 +520,503 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{idProyecto}/matriculados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista de estudiantes del curso (RF-22)
+         * @description Datos personales (Ley 1581 de 2012): solo el Administrador y los docentes asignados al proyecto. `ultimaCarga` es nulo si el curso todavía no tiene lista.
+         */
+        get: operations["MatriculasController_listar"];
+        put?: never;
+        /**
+         * Carga la lista de estudiantes matriculados del curso (RF-22, HU-09-01)
+         * @description Recibe un Excel (.xlsx) con las columnas Documento, Nombres, Apellidos y, si se quiere, Correo, y reemplaza la lista del curso. Los que no aparecen quedan retirados, sin borrarse. Si una fila tiene un error no se guarda ninguna, y `detalles` dice qué fila falló y por qué. Solo el Administrador.
+         */
+        post: operations["MatriculasController_cargar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mediciones que el usuario puede abrir, con su resultado (RF-31, p1)
+         * @description El docente ve las de sus cursos; el líder RAP, las de los RAP que lidera; el departamento, las de su programa. Paginada, de la más reciente a la más antigua.
+         */
+        get: operations["MedicionesController_listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/mediciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mediciones de RAP del curso y sus precondiciones (RF-30, p1 y p2)
+         * @description Dice si el proyecto está aprobado, si el curso tiene lista de estudiantes y qué RAP tienen rúbrica vigente, y lista las mediciones registradas. El líder RAP solo ve los RAP que lidera.
+         */
+        get: operations["MedicionesController_delProyecto"];
+        put?: never;
+        /**
+         * Inicia la medición de un RAP en el curso (RF-30, HU-11-01)
+         * @description Solo el docente asignado al curso. Exige el proyecto aprobado, la lista de estudiantes y una rúbrica vigente del RAP; la medición queda asociada a esa versión de la rúbrica, en borrador.
+         */
+        post: operations["MedicionesController_iniciar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Hoja de valoración de la medición (RF-30, p3 a p6)
+         * @description Rúbrica con sus indicadores e instrumentos, escala del programa y nivel de cada estudiante en cada indicador. Datos personales (Ley 1581 de 2012): solo el docente asignado, el líder del RAP y el departamento del programa.
+         */
+        get: operations["MedicionesController_obtener"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/instrumentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra el instrumento de cada indicador (RF-30, p4; HU-11-02)
+         * @description Solo cambia los indicadores enviados. Medición en borrador.
+         */
+        put: operations["MedicionesController_registrarInstrumentos"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/valoraciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra el nivel de los estudiantes por indicador (RF-30, p6; HU-11-03)
+         * @description Guarda las celdas enviadas, todo o nada. Un valor nulo deja al estudiante sin valorar en ese indicador: queda fuera de la muestra. Medición en borrador.
+         */
+        put: operations["MedicionesController_registrarValoraciones"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/consolidado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consolidado de la medición (RF-31, p2 a p4; HU-11-04 y HU-11-05)
+         * @description Conteos y porcentajes por nivel e indicador, muestra, cohorte y porcentaje en los niveles de cumplimiento frente al esperado. Se calcula desde las valoraciones cada vez: corregir una valoración lo actualiza.
+         */
+        get: operations["MedicionesController_consolidado"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/analisis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra acciones implementadas, resultados y acciones propuestas (RF-31, p5; HU-11-06)
+         * @description El docente asignado o el líder del RAP, con la medición en borrador. Un campo omitido no cambia; uno vacío se borra.
+         */
+        put: operations["MedicionesController_registrarAnalisis"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/cerrar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cierra la medición (RF-31, p6 y p7; HU-11-07)
+         * @description Registra quién y cuándo, bloquea las valoraciones y la deja disponible para el reporte de logro. No cierra sin valoraciones, ni por debajo del porcentaje esperado sin acciones propuestas.
+         */
+        post: operations["MedicionesController_cerrar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mediciones/{id}/reabrir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reabre una medición cerrada (RF-30, excepción de p7)
+         * @description Solo el departamento académico del programa del curso.
+         */
+        post: operations["MedicionesController_reabrir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/logro-rap/filtros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Programas, RAP y períodos del reporte de logro (RF-32, p1) */
+        get: operations["ReportesController_filtros"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/logro-rap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de logro de los RAP del programa (RF-32, HU-11-08)
+         * @description Por cada RAP: las asignaturas que lo evaluaron con medición cerrada en el período, su porcentaje en los niveles de cumplimiento frente al esperado y la comparación con períodos anteriores. Un RAP sin mediciones cerradas aparece como no evaluado.
+         */
+        get: operations["ReportesController_logroRap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/logro-rap/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Exporta el reporte de logro a Excel (RF-32, p5)
+         * @description Libro con tres hojas: logro por RAP y asignatura, indicadores y comparación con períodos anteriores. La exportación a PDF la hace el navegador desde la pantalla.
+         */
+        get: operations["ReportesController_excel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/cumplimiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de cumplimiento por período (RF-28, HU-12-03)
+         * @description Proyectos docentes, su estado y su diligenciamiento (secciones y sesiones), con filtros por período, programa, asignatura, docente y estado. Queda registrado en reporte_academico con el usuario y la fecha.
+         */
+        get: operations["ReportesAcademicosController_cumplimiento"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/cumplimiento/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporta el reporte de cumplimiento a Excel (RF-28, p5) */
+        get: operations["ReportesAcademicosController_cumplimientoExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/contribucion-rac-rap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de contribución de los RAC a los RAP (RF-28, HU-12-05)
+         * @description Por RAP: las asignaturas del período que contribuyen, sus docentes, los RAC asociados y las evidencias cargadas. El Líder RAP solo ve los RAP que lidera.
+         */
+        get: operations["ReportesAcademicosController_contribucion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/contribucion-rac-rap/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporta el reporte de contribución RAC-RAP a Excel (RF-28, p5) */
+        get: operations["ReportesAcademicosController_contribucionExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seguimiento/filtros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Opciones de los filtros del tablero (RF-25, p2)
+         * @description Programas, períodos, asignaturas y docentes dentro del alcance del usuario.
+         */
+        get: operations["SeguimientoController_filtros"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seguimiento/tablero": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tablero del estado de diligenciamiento del período (RF-25, HU-12-01)
+         * @description Por proyecto: secciones completas, sesiones registradas frente a programadas, vencidas, evidencias por RAP, estado y un color. Sin período, el activo más reciente.
+         */
+        get: operations["SeguimientoController_tablero"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seguimiento/tablero/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporta el tablero a Excel (RF-25, p5) */
+        get: operations["SeguimientoController_tableroExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seguimiento/pendientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Proyectos con pendientes, por gravedad (RF-25, HU-12-02)
+         * @description Los proyectos con secciones incompletas o sesiones vencidas, del más grave al menos grave: primero los de color rojo, luego por sesiones atrasadas y secciones incompletas.
+         */
+        get: operations["SeguimientoController_pendientes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seguimiento/pendientes/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporta la lista de pendientes a Excel (HU-12-02) */
+        get: operations["SeguimientoController_pendientesExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/evidencias/opciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * RAP, sesiones y límites para cargar y consultar evidencias (RF-24, p1 y p2)
+         * @description RAP del proyecto cuyas evidencias puede ver el usuario, con cuántas tiene cada uno; si puede cargar; las sesiones del calendario; y el tamaño y los tipos de archivo permitidos, de `parametro_sistema`. El Docente ve las de sus proyectos; el Líder RAP, las de los RAP que lidera; el Departamento, la Dirección y el Administrador, las de su programa. Responde 404 si el usuario no ve el proyecto y 403 si lo ve pero no puede consultar ninguna de sus evidencias.
+         */
+        get: operations["EvidenciasController_opciones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/evidencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Galería de evidencias del proyecto, por RAP (RF-24, p6)
+         * @description Paginada, las más recientes primero. El Docente ve las de sus proyectos; el Líder RAP, las de los RAP que lidera; el Departamento, la Dirección y el Administrador, las de su programa. Responde 404 si el usuario no ve el proyecto y 403 si lo ve pero no puede consultar ninguna de sus evidencias.
+         */
+        get: operations["EvidenciasController_listar"];
+        put?: never;
+        /**
+         * Carga evidencias fotográficas de un RAP del proyecto (RF-24, p3 a p5)
+         * @description Uno o varios archivos con la misma descripción, fecha y, si corresponde, sesión. Solo los docentes del proyecto (`proyecto_docente_docente`). Es todo o nada: si un archivo no pasa la validación, no se guarda ninguno. El archivo va al almacenamiento documental y la base guarda solo su referencia.
+         */
+        post: operations["EvidenciasController_cargar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/evidencias/{idEvidencia}/archivo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descarga el archivo de una evidencia (NFR-007)
+         * @description Los archivos nunca son públicos: se entregan solo por aquí, con la sesión iniciada y el mismo alcance de la galería. Cada descarga queda en la auditoría. El Docente ve las de sus proyectos; el Líder RAP, las de los RAP que lidera; el Departamento, la Dirección y el Administrador, las de su programa. Responde 404 si el usuario no ve el proyecto y 403 si lo ve pero no puede consultar ninguna de sus evidencias.
+         */
+        get: operations["EvidenciasController_descargar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/{idProyecto}/horario": {
         parameters: {
             query?: never;
@@ -545,30 +1125,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/proyectos-docentes/{idProyecto}/matriculados": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Lista de estudiantes del curso (RF-22)
-         * @description Datos personales (Ley 1581 de 2012): solo el Administrador y los docentes asignados al proyecto. `ultimaCarga` es nulo si el curso todavía no tiene lista.
-         */
-        get: operations["MatriculasController_listar"];
-        put?: never;
-        /**
-         * Carga la lista de estudiantes matriculados del curso (RF-22, HU-09-01)
-         * @description Recibe un Excel (.xlsx) con las columnas Documento, Nombres, Apellidos y, si se quiere, Correo, y reemplaza la lista del curso. Los que no aparecen quedan retirados, sin borrarse. Si una fila tiene un error no se guarda ninguna, y `detalles` dice qué fila falló y por qué. Solo el Administrador.
-         */
-        post: operations["MatriculasController_cargar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -602,6 +1158,15 @@ export interface components {
              *     ]
              */
             roles: string[];
+            /**
+             * @description Permisos del usuario como `modulo.permiso`: la unión de los de todos sus roles en la matriz de permisos (HU-01-03). El frontend arma el menú con ellos; la autorización la vuelve a comprobar el backend en cada petición.
+             * @example [
+             *       "proyectos.actualizar",
+             *       "proyectos.leer",
+             *       "rap.leer"
+             *     ]
+             */
+            permisos: string[];
         };
         SesionIniciadaDto: {
             /**
@@ -652,6 +1217,83 @@ export interface components {
             estado: "disponible";
             /** @example 2026-11-03T21:15:00.000Z */
             fecha: string;
+        };
+        PermisoAsignadoDto: {
+            /**
+             * @description Código del módulo
+             * @example proyectos
+             */
+            modulo: string;
+            /**
+             * @description Código del permiso: leer, crear, actualizar, eliminar, generar, administrar o aprobar
+             * @example leer
+             */
+            permiso: string;
+        };
+        RolDto: {
+            /** @example 7 */
+            id: number;
+            /** @example Coordinación de prácticas */
+            nombre: string;
+            /** @example Acompaña las prácticas profesionales. */
+            descripcion: string | null;
+            /** @example true */
+            activo: boolean;
+            /**
+             * @description Uno de los seis roles de RF-03: no se puede renombrar ni inactivar.
+             * @example false
+             */
+            sistema: boolean;
+            /**
+             * @description Usuarios activos con el rol asignado y vigente
+             * @example 3
+             */
+            usuariosActivos: number;
+            permisos: components["schemas"]["PermisoAsignadoDto"][];
+        };
+        PaginaRolesDto: {
+            elementos: components["schemas"]["RolDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 6 */
+            total: number;
+        };
+        ElementoCatalogoDto: {
+            /** @example proyectos */
+            codigo: string;
+            /** @example Proyectos docentes */
+            nombre: string;
+        };
+        MatrizPermisosDto: {
+            /** @description Filas de la matriz, en su orden */
+            modulos: components["schemas"]["ElementoCatalogoDto"][];
+            /** @description Columnas: leer, crear, actualizar, eliminar, generar, administrar y aprobar */
+            permisos: components["schemas"]["ElementoCatalogoDto"][];
+            /** @description Todos los roles, activos e inactivos, con sus permisos */
+            roles: components["schemas"]["RolDto"][];
+        };
+        CrearRolDto: {
+            /** @description Permisos del rol por módulo. Debe incluir al menos un permiso de lectura (RF-03, p4). */
+            permisos: components["schemas"]["PermisoAsignadoDto"][];
+            /** @example Coordinación de prácticas */
+            nombre: string;
+            /** @example Acompaña las prácticas profesionales. */
+            descripcion?: string;
+        };
+        EditarRolDto: {
+            /**
+             * @description Los seis roles del sistema (RF-03) no se pueden renombrar.
+             * @example Coordinación de prácticas
+             */
+            nombre?: string;
+            /** @example Acompaña las prácticas profesionales. */
+            descripcion?: string;
+        };
+        ReemplazarPermisosDto: {
+            /** @description Permisos del rol por módulo. Debe incluir al menos un permiso de lectura (RF-03, p4). */
+            permisos: components["schemas"]["PermisoAsignadoDto"][];
         };
         ProgramaOpcionDto: {
             /** @example 1 */
@@ -1270,6 +1912,1099 @@ export interface components {
              */
             mismaAsignatura: boolean;
         };
+        UltimaCargaDto: {
+            /** @example 2026-11-07T15:30:00.000Z */
+            fecha: string;
+            /**
+             * @description Quién la cargó
+             * @example Administrador Demo
+             */
+            cargadoPor: string;
+        };
+        ResultadoCargaMatriculadosDto: {
+            /**
+             * @description Estudiantes en el archivo
+             * @example 32
+             */
+            matriculados: number;
+            /**
+             * @description Estudiantes que no estaban en la lista del curso
+             * @example 30
+             */
+            nuevos: number;
+            /**
+             * @description Estaban retirados y vuelven a aparecer en el archivo
+             * @example 1
+             */
+            reincorporados: number;
+            /**
+             * @description Estaban en la lista y no aparecen en el archivo: quedan como retirados, sin borrarse
+             * @example 2
+             */
+            retirados: number;
+            /**
+             * @description Estudiantes ya registrados cuyos nombres o correo se actualizaron con el archivo
+             * @example 3
+             */
+            actualizados: number;
+            carga: components["schemas"]["UltimaCargaDto"];
+        };
+        MatriculadoDto: {
+            /**
+             * @description Identificador de la matrícula
+             * @example 41
+             */
+            idMatricula: number;
+            /** @example 1000000001 */
+            documento: string;
+            /** @example Estudiante Uno */
+            nombres: string;
+            /** @example Ficticio Demo */
+            apellidos: string;
+            /** @example estudiante.uno@ejemplo.edu.co */
+            correo: string | null;
+            /** @enum {string} */
+            estado: "matriculado" | "retirado";
+        };
+        PaginaMatriculadosDto: {
+            elementos: components["schemas"]["MatriculadoDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /**
+             * @description Total con el estado consultado
+             * @example 32
+             */
+            total: number;
+            /** @example 32 */
+            totalMatriculados: number;
+            /** @example 2 */
+            totalRetirados: number;
+            /** @description Nulo si el curso todavía no tiene lista cargada (RF-22, excepción de p3) */
+            ultimaCarga: components["schemas"]["UltimaCargaDto"] | null;
+        };
+        ProyectoMedicionDto: {
+            /** @example 13 */
+            id: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+        };
+        RapMedicionDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            /** @example Identifica, interpreta y evalúa el entorno económico y financiero de las organizaciones… */
+            descripcion: string | null;
+        };
+        MedicionListadaDto: {
+            /** @example 8 */
+            id: number;
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            rap: components["schemas"]["RapMedicionDto"];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @enum {string} */
+            estado: "borrador" | "cerrada";
+            /** @example 1 */
+            versionRubrica: number | null;
+            /**
+             * @description Último cambio de la medición
+             * @example 2026-11-07T15:30:00.000Z
+             */
+            actualizada: string | null;
+            /** @example 63.97 */
+            porcentajeCumplimiento: number | null;
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
+            /** @example null */
+            porcentajeEsperado: number | null;
+            /** @example null */
+            alcanzado: boolean | null;
+        };
+        PaginaMedicionesDto: {
+            elementos: components["schemas"]["MedicionListadaDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 3 */
+            total: number;
+        };
+        EstadoProyectoMedicionDto: {
+            /** @example aprobado */
+            codigo: string;
+            /** @example Aprobado */
+            nombre: string;
+        };
+        RequisitosMedicionDto: {
+            /**
+             * @description El departamento académico aprobó el proyecto docente
+             * @example true
+             */
+            proyectoAprobado: boolean;
+            /**
+             * @description El período académico del curso no está cerrado (RF-17)
+             * @example true
+             */
+            periodoAbierto: boolean;
+            /**
+             * @description El curso tiene la lista de estudiantes matriculados (RF-22)
+             * @example true
+             */
+            listaCargada: boolean;
+            /**
+             * @description Estudiantes matriculados hoy
+             * @example 34
+             */
+            matriculados: number;
+        };
+        PeriodoTomaSugeridoDto: {
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+        };
+        RubricaVigenteDto: {
+            /** @example 5 */
+            id: number;
+            /** @example 1 */
+            version: number | null;
+            /**
+             * @description Indicadores de desempeño que valora
+             * @example 4
+             */
+            indicadores: number;
+        };
+        RapMedibleDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            /** @example Identifica, interpreta y evalúa el entorno económico y financiero de las organizaciones… */
+            descripcion: string | null;
+            /** @description Rúbrica con la que se mediría hoy. Nula si el RAP no tiene rúbrica vigente: no se puede iniciar su medición hasta registrarla (RF-06). */
+            rubricaVigente: components["schemas"]["RubricaVigenteDto"] | null;
+        };
+        MedicionResumenDto: {
+            /** @example 8 */
+            id: number;
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            rap: components["schemas"]["RapMedicionDto"];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @enum {string} */
+            estado: "borrador" | "cerrada";
+            /** @example 1 */
+            versionRubrica: number | null;
+            /**
+             * @description Último cambio de la medición
+             * @example 2026-11-07T15:30:00.000Z
+             */
+            actualizada: string | null;
+        };
+        MedicionesDelProyectoDto: {
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            estadoProyecto: components["schemas"]["EstadoProyectoMedicionDto"] | null;
+            requisitos: components["schemas"]["RequisitosMedicionDto"];
+            /**
+             * @description Quien consulta es docente asignado al curso: es quien inicia y registra las mediciones
+             * @example true
+             */
+            puedeRegistrar: boolean;
+            /** @description Período y año de toma deducidos del período académico del curso (2026-2 → segundo, 2026) */
+            periodoSugerido: components["schemas"]["PeriodoTomaSugeridoDto"] | null;
+            raps: components["schemas"]["RapMedibleDto"][];
+            mediciones: components["schemas"]["MedicionResumenDto"][];
+        };
+        IniciarMedicionDto: {
+            /**
+             * @description RAP a evaluar: uno de los RAP del proyecto docente
+             * @example 2
+             */
+            idRap: number;
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /**
+             * @description Período del año en que se tomaron los datos
+             * @enum {string}
+             */
+            periodoToma: "primer" | "segundo";
+            /**
+             * @description Año de toma de datos
+             * @example 2026
+             */
+            anioToma: number;
+            /**
+             * @description Tamaño de la cohorte, si el docente lo conoce. Ningún porcentaje lo usa: si no se registra, el consolidado toma el tamaño de la muestra y lo advierte (RF-31, p3).
+             * @example 34
+             */
+            tamanoCohorte?: number | null;
+        };
+        NivelEscalaDto: {
+            /** @example 3 */
+            valor: number;
+            /** @example Competente */
+            etiqueta: string;
+        };
+        EscalaMedicionDto: {
+            /** @example Escala de valoración de los RAP */
+            nombre: string | null;
+            /**
+             * @description Nivel desde el cual se considera logrado el resultado
+             * @example 3
+             */
+            umbralCumplimiento: number;
+            niveles: components["schemas"]["NivelEscalaDto"][];
+        };
+        DescriptorNivelDto: {
+            /** @example 2 */
+            valor: number;
+            /** @example Raras veces identifica las variables del entorno económico y financiero de las organizaciones */
+            descripcion: string;
+        };
+        IndicadorMedicionDto: {
+            /** @example 7 */
+            idIndicador: number;
+            /** @example 1 */
+            numero: number | null;
+            /** @example Identifica las variables del entorno económico y financiero de las organizaciones */
+            descripcion: string | null;
+            /** @example Taller de análisis financiero */
+            instrumento: string | null;
+            descripcionInstrumento: string | null;
+            /** @description Desempeño esperado en cada nivel de la escala (celdas de la rúbrica) */
+            descriptores: components["schemas"]["DescriptorNivelDto"][];
+        };
+        ValoracionRegistradaDto: {
+            /** @example 7 */
+            idIndicador: number;
+            /**
+             * @description Valor del nivel en la escala
+             * @example 3
+             */
+            valor: number;
+        };
+        EstudianteMedicionDto: {
+            /** @example 41 */
+            idMatricula: number;
+            /** @example 1000000001 */
+            documento: string;
+            /** @example Estudiante Uno */
+            nombres: string;
+            /** @example Ficticio Demo */
+            apellidos: string;
+            /**
+             * @description Salió de la lista del curso después de ser valorado: sus valoraciones se conservan
+             * @example false
+             */
+            retirado: boolean;
+            /** @description Un indicador que no aparece aquí está sin valorar */
+            valoraciones: components["schemas"]["ValoracionRegistradaDto"][];
+        };
+        ConteoNivelDto: {
+            /** @example 3 */
+            valor: number;
+            /** @example Competente */
+            etiqueta: string;
+            /**
+             * @description Estudiantes en este nivel
+             * @example 29
+             */
+            cantidad: number;
+            /**
+             * @description Sobre la muestra del indicador, con dos decimales
+             * @example 85.29
+             */
+            porcentaje: number;
+        };
+        IndicadorConsolidadoDto: {
+            /** @example 7 */
+            idIndicador: number;
+            /** @example 1 */
+            numero: number | null;
+            descripcion: string | null;
+            instrumento: string | null;
+            descripcionInstrumento: string | null;
+            /** @description Tabla resumen y tabla porcentual del indicador */
+            conteos: components["schemas"]["ConteoNivelDto"][];
+            /**
+             * @description Estudiantes valorados en el indicador
+             * @example 34
+             */
+            muestra: number;
+            /**
+             * @description Estudiantes del indicador en los niveles de cumplimiento
+             * @example 29
+             */
+            enCumplimiento: number;
+            /**
+             * @description Estudiantes de la hoja sin valorar en el indicador: fuera de la muestra
+             * @example 0
+             */
+            sinValorar: number;
+            /**
+             * @description Porcentaje en los niveles de cumplimiento (desde el umbral de la escala); nulo si nadie fue valorado
+             * @example 85.29
+             */
+            porcentajeCumplimiento: number | null;
+            /**
+             * @description Si alcanzó el porcentaje esperado; nulo sin meta definida
+             * @example null
+             */
+            alcanzado: boolean | null;
+        };
+        ConsolidadoDto: {
+            indicadores: components["schemas"]["IndicadorConsolidadoDto"][];
+            /** @example 3 */
+            umbralCumplimiento: number;
+            /**
+             * @example [
+             *       "Competente",
+             *       "Ejemplar"
+             *     ]
+             */
+            nivelesCumplimiento: string[];
+            /**
+             * @description Tamaño de la muestra: el mayor de los indicadores
+             * @example 34
+             */
+            tamanoMuestra: number;
+            /**
+             * @description Tamaño de la cohorte; si no se registró, el de la muestra
+             * @example 34
+             */
+            tamanoCohorte: number;
+            /** @example false */
+            cohorteRegistrada: boolean;
+            /**
+             * @description Logro del RAP en la medición: valoraciones en los niveles de cumplimiento entre el total de valoraciones (estudiante × indicador). Regla provisional, pendiente de confirmar con el programa.
+             * @example 63.97
+             */
+            porcentajeCumplimiento: number | null;
+            /**
+             * @description Base del logro: valoraciones en los niveles de cumplimiento
+             * @example 87
+             */
+            valoracionesEnCumplimiento: number;
+            /**
+             * @description Base del logro: total de valoraciones
+             * @example 136
+             */
+            valoracionesTotales: number;
+            /** @example null */
+            porcentajeEsperado: number | null;
+            /**
+             * @description Falso: el programa no ha definido la meta (RF-31, excepción de p4)
+             * @example false
+             */
+            metaDefinida: boolean;
+            /** @example null */
+            alcanzado: boolean | null;
+            /** @description Avisos para mostrar con el resultado (cohorte, meta, sin valorar) */
+            advertencias: string[];
+        };
+        MedicionDetalleDto: {
+            /** @example 8 */
+            id: number;
+            proyecto: components["schemas"]["ProyectoMedicionDto"];
+            rap: components["schemas"]["RapMedicionDto"];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @enum {string} */
+            estado: "borrador" | "cerrada";
+            /** @example 1 */
+            versionRubrica: number | null;
+            /**
+             * @description Último cambio de la medición
+             * @example 2026-11-07T15:30:00.000Z
+             */
+            actualizada: string | null;
+            /**
+             * @description Tamaño de la cohorte registrado; nulo si no se registró
+             * @example null
+             */
+            tamanoCohorte: number | null;
+            /**
+             * @description Porcentaje esperado en los niveles de cumplimiento, copiado de la escala del programa al iniciar la medición. Nulo: el programa no lo ha definido.
+             * @example null
+             */
+            porcentajeEsperado: number | null;
+            escala: components["schemas"]["EscalaMedicionDto"];
+            indicadores: components["schemas"]["IndicadorMedicionDto"][];
+            estudiantes: components["schemas"]["EstudianteMedicionDto"][];
+            /** @example Docente Demo */
+            registradoPor: string | null;
+            /**
+             * @description Quien consulta puede registrar instrumentos y valoraciones: es docente asignado al curso y la medición está en borrador
+             * @example true
+             */
+            puedeEditar: boolean;
+            consolidado: components["schemas"]["ConsolidadoDto"];
+            /** @description Hoja «Evaluación»: acciones implementadas (RF-31, p5) */
+            accionesImplementadas: string | null;
+            resultadosObtenidos: string | null;
+            accionesPropuestas: string | null;
+            /** @example Docente Líder Demo */
+            cerradoPor: string | null;
+            /** @example 2026-11-20T15:30:00.000Z */
+            fechaCierre: string | null;
+            /**
+             * @description Puede registrar el análisis y cerrar: docente asignado o líder del RAP, medición en borrador
+             * @example true
+             */
+            puedeAnalizar: boolean;
+            /**
+             * @description Puede reabrirla: departamento del programa, medición cerrada
+             * @example false
+             */
+            puedeReabrir: boolean;
+        };
+        InstrumentoIndicadorDto: {
+            /**
+             * @description Indicador de desempeño de la rúbrica de la medición
+             * @example 7
+             */
+            idIndicador: number;
+            /** @example Taller de análisis financiero */
+            instrumento: string;
+            /** @example Caso práctico sobre el capital de trabajo de una empresa local. */
+            descripcionInstrumento?: string | null;
+        };
+        RegistrarInstrumentosDto: {
+            indicadores: components["schemas"]["InstrumentoIndicadorDto"][];
+        };
+        ValoracionDto: {
+            /**
+             * @description Matrícula del estudiante en el curso
+             * @example 41
+             */
+            idMatricula: number;
+            /**
+             * @description Indicador de desempeño
+             * @example 7
+             */
+            idIndicador: number;
+            /**
+             * @description Valor del nivel en la escala del programa (1 a 4 en Administración Industrial). Nulo deja al estudiante sin valorar en ese indicador.
+             * @example 3
+             */
+            valor: number | null;
+        };
+        RegistrarValoracionesDto: {
+            valoraciones: components["schemas"]["ValoracionDto"][];
+        };
+        ResultadoValoracionesDto: {
+            /**
+             * @description Valoraciones con un nivel registrado
+             * @example 136
+             */
+            registradas: number;
+            /**
+             * @description Valoraciones que quedaron sin nivel
+             * @example 2
+             */
+            borradas: number;
+        };
+        RegistrarAnalisisDto: {
+            accionesImplementadas?: string | null;
+            resultadosObtenidos?: string | null;
+            accionesPropuestas?: string | null;
+        };
+        RapOpcionReporteDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+        };
+        ProgramaOpcionReporteDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+            /** @description RAP del programa que el usuario puede consultar */
+            raps: components["schemas"]["RapOpcionReporteDto"][];
+        };
+        PeriodoOpcionReporteDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string;
+        };
+        FiltrosLogroRapDto: {
+            programas: components["schemas"]["ProgramaOpcionReporteDto"][];
+            /** @description Del más reciente al más antiguo */
+            periodos: components["schemas"]["PeriodoOpcionReporteDto"][];
+        };
+        ProgramaReporteDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+        };
+        IndicadorReporteDto: {
+            /** @example 1 */
+            numero: number | null;
+            /** @example Taller de análisis financiero */
+            instrumento: string | null;
+            /** @example 34 */
+            muestra: number;
+            /** @example 29 */
+            enCumplimiento: number;
+            /** @example 85.29 */
+            porcentajeCumplimiento: number | null;
+            /**
+             * @description Falso: el indicador quedó por debajo de la meta, aunque el RAP la alcance. Nulo sin meta.
+             * @example null
+             */
+            alcanzado: boolean | null;
+        };
+        AsignaturaEvaluadaDto: {
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
+            /** @example 8 */
+            idMedicion: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /**
+             * @example [
+             *       "Docente Demo"
+             *     ]
+             */
+            docentes: string[];
+            /** @enum {string} */
+            tipoValoracion: "formativa" | "sumativa";
+            /** @enum {string} */
+            periodoToma: "primer" | "segundo";
+            /** @example 2026 */
+            anioToma: number;
+            /** @example 34 */
+            tamanoMuestra: number;
+            /** @example 1 */
+            versionRubrica: number | null;
+            /**
+             * @description Logro del RAP en la medición: valoraciones en cumplimiento entre el total de valoraciones
+             * @example 63.97
+             */
+            porcentajeCumplimiento: number | null;
+            /** @example null */
+            porcentajeEsperado: number | null;
+            /** @example null */
+            alcanzado: boolean | null;
+            indicadores: components["schemas"]["IndicadorReporteDto"][];
+            accionesImplementadas: string | null;
+            resultadosObtenidos: string | null;
+            accionesPropuestas: string | null;
+        };
+        ComparacionPeriodoDto: {
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
+            /** @example 2026-1 */
+            periodo: string;
+            /** @example 70.5 */
+            porcentajeCumplimiento: number;
+            /**
+             * @description Mediciones cerradas que lo componen
+             * @example 2
+             */
+            mediciones: number;
+            /**
+             * @example [
+             *       1
+             *     ]
+             */
+            versionesRubrica: number[];
+            /**
+             * @description Falso: se midió con otra versión de la rúbrica y el número no es comparable (RF-32, p4)
+             * @example true
+             */
+            comparable: boolean;
+            nota: string | null;
+        };
+        RapReporteDto: {
+            /** @example 87 */
+            valoracionesEnCumplimiento: number;
+            /** @example 136 */
+            valoracionesTotales: number;
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            descripcion: string | null;
+            /**
+             * @description Falso: no tiene mediciones cerradas en el período y se presenta como no evaluado (RF-32, excepción de p2)
+             * @example true
+             */
+            evaluado: boolean;
+            asignaturas: components["schemas"]["AsignaturaEvaluadaDto"][];
+            /**
+             * @description Versiones de la rúbrica con que se midió en el período
+             * @example [
+             *       1
+             *     ]
+             */
+            versionesRubrica: number[];
+            /**
+             * @description Logro del RAP en el período: se suman las valoraciones de todas sus mediciones cerradas (no se promedian porcentajes). Regla provisional, pendiente de confirmar con el programa.
+             * @example 63.97
+             */
+            porcentajeCumplimiento: number | null;
+            /**
+             * @description Porcentaje esperado vigente del programa; nulo si no lo ha definido
+             * @example null
+             */
+            porcentajeEsperado: number | null;
+            /** @example null */
+            alcanzado: boolean | null;
+            /** @description Períodos anteriores con mediciones cerradas, del más antiguo al más reciente */
+            comparacion: components["schemas"]["ComparacionPeriodoDto"][];
+            /** @description Por qué no hay comparación con períodos anteriores (RF-32, excepción de p4); nulo si la hay */
+            motivoSinComparacion: string | null;
+        };
+        ReporteLogroRapDto: {
+            programa: components["schemas"]["ProgramaReporteDto"];
+            periodo: components["schemas"]["PeriodoOpcionReporteDto"];
+            /** @example 2026-11-20T15:30:00.000Z */
+            generado: string;
+            /** @example false */
+            metaDefinida: boolean;
+            raps: components["schemas"]["RapReporteDto"][];
+        };
+        PeriodoSeguimientoDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string;
+        };
+        CantidadPorEstadoDto: {
+            /** @example en_diligenciamiento */
+            codigo: string;
+            /** @example En diligenciamiento */
+            nombre: string;
+            /** @example 12 */
+            cantidad: number;
+        };
+        ResumenCumplimientoDto: {
+            /** @example 24 */
+            proyectos: number;
+            /** @description Proyectos por estado, en el orden del ciclo del proyecto; al final, los que no tienen estado (sin_estado) */
+            porEstado: components["schemas"]["CantidadPorEstadoDto"][];
+            /**
+             * @description Secciones completas, sumando todos los proyectos
+             * @example 98
+             */
+            seccionesCompletas: number;
+            /** @example 144 */
+            seccionesTotales: number;
+            /** @example 68.06 */
+            porcentajeSecciones: number | null;
+            /** @example 180 */
+            sesionesRegistradas: number;
+            /** @example 420 */
+            sesionesProgramadas: number;
+            /** @example 42.86 */
+            porcentajeSesiones: number | null;
+            /**
+             * @description Proyectos con secciones o sesiones pendientes
+             * @example 15
+             */
+            conPendientes: number;
+        };
+        EstadoProyectoSeguimientoDto: {
+            /** @example en_diligenciamiento */
+            codigo: string;
+            /** @example En diligenciamiento */
+            nombre: string;
+        };
+        SeccionesSeguimientoDto: {
+            /** @example 4 */
+            completas: number;
+            /** @example 6 */
+            total: number;
+            /**
+             * @description Con dos decimales
+             * @example 66.67
+             */
+            porcentaje: number;
+            /**
+             * @description Secciones incompletas, con la numeración del formato
+             * @example [
+             *       "2. Descripción",
+             *       "7. Bibliografía"
+             *     ]
+             */
+            incompletas: string[];
+        };
+        SesionesSeguimientoDto: {
+            /**
+             * @description Sesiones del calendario sin contar festivos ni retiradas
+             * @example 32
+             */
+            programadas: number;
+            /**
+             * @description Programadas que el docente ya registró (RF-20)
+             * @example 10
+             */
+            registradas: number;
+            /**
+             * @description Vencidas sin registrar (RF-23)
+             * @example 3
+             */
+            vencidas: number;
+            /**
+             * @description Vencidas en un período ya cerrado (RF-23, excepción de p4)
+             * @example 0
+             */
+            incumplidas: number;
+            /**
+             * @description Por vencer dentro del umbral de alerta
+             * @example 1
+             */
+            porVencer: number;
+            /**
+             * @description Días de atraso de la vencida más antigua
+             * @example 12
+             */
+            mayorAtraso: number | null;
+        };
+        EvidenciasRapDto: {
+            /** @example 2 */
+            idRap: number;
+            /** @example RAP 2 */
+            rap: string;
+            /**
+             * @description Evidencias cargadas para el RAP en el curso
+             * @example 3
+             */
+            cantidad: number;
+        };
+        ProyectoSeguimientoDto: {
+            /** @example 13 */
+            idProyecto: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+            /**
+             * @description El responsable va primero
+             * @example [
+             *       "Docente Demo"
+             *     ]
+             */
+            docentes: string[];
+            estado: components["schemas"]["EstadoProyectoSeguimientoDto"] | null;
+            secciones: components["schemas"]["SeccionesSeguimientoDto"];
+            sesiones: components["schemas"]["SesionesSeguimientoDto"];
+            evidencias: components["schemas"]["EvidenciasRapDto"][];
+            /** @enum {string} */
+            color: "rojo" | "amarillo" | "verde";
+            /** @example 3 sesiones vencidas sin registrar. */
+            motivoColor: string;
+        };
+        ReporteCumplimientoDto: {
+            periodo: components["schemas"]["PeriodoSeguimientoDto"] | null;
+            /** @example 2026-11-07T15:30:00.000Z */
+            generado: string;
+            resumen: components["schemas"]["ResumenCumplimientoDto"];
+            /** @description Vacío si no hay proyectos para los filtros (RF-28, excepción de p3) */
+            proyectos: components["schemas"]["ProyectoSeguimientoDto"][];
+        };
+        RacContribucionDto: {
+            /** @example RAC 1 */
+            codigo: string | null;
+            descripcion: string | null;
+            /** @description Cómo contribuye el RAC al RAP (`rac_rap.descripcion_contribucion`) */
+            contribucion: string | null;
+        };
+        AsignaturaContribucionDto: {
+            /** @example 13 */
+            idProyecto: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /**
+             * @example [
+             *       "Docente Demo"
+             *     ]
+             */
+            docentes: string[];
+            estado: components["schemas"]["EstadoProyectoSeguimientoDto"] | null;
+            /** @description RAC del curso asociados al RAP; vacío si todavía no tiene */
+            racs: components["schemas"]["RacContribucionDto"][];
+            /**
+             * @description Evidencias del curso cargadas para el RAP
+             * @example 3
+             */
+            evidencias: number;
+            /**
+             * @description Fecha de la evidencia más reciente
+             * @example 2026-10-12T15:30:00.000Z
+             */
+            ultimaEvidencia: string | null;
+        };
+        RapContribucionDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            descripcion: string | null;
+            /** @description Cursos del período que contribuyen al RAP; vacío si ninguno */
+            asignaturas: components["schemas"]["AsignaturaContribucionDto"][];
+        };
+        ReporteContribucionDto: {
+            periodo: components["schemas"]["PeriodoSeguimientoDto"] | null;
+            /** @example 2026-11-07T15:30:00.000Z */
+            generado: string;
+            /** @description Solo los RAP que el usuario puede consultar: el líder RAP, los que lidera en el período */
+            raps: components["schemas"]["RapContribucionDto"][];
+        };
+        OpcionDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+        };
+        PeriodoOpcionSeguimientoDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string;
+            /**
+             * @description Período activo y sin cerrar
+             * @example true
+             */
+            vigente: boolean;
+        };
+        AsignaturaOpcionSeguimientoDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+            /** @example 1 */
+            idPrograma: number | null;
+        };
+        FiltrosSeguimientoDto: {
+            programas: components["schemas"]["OpcionDto"][];
+            /** @description Del más reciente al más antiguo */
+            periodos: components["schemas"]["PeriodoOpcionSeguimientoDto"][];
+            /** @description Asignaturas con proyectos docentes en los programas del usuario */
+            asignaturas: components["schemas"]["AsignaturaOpcionSeguimientoDto"][];
+            /** @description Docentes asignados a proyectos de los programas del usuario */
+            docentes: components["schemas"]["OpcionDto"][];
+            /** @description Estados del proyecto docente, en el orden del ciclo (RF-28) */
+            estados: components["schemas"]["EstadoProyectoSeguimientoDto"][];
+        };
+        ResumenSeguimientoDto: {
+            /** @example 24 */
+            proyectos: number;
+            /** @example 3 */
+            rojo: number;
+            /** @example 12 */
+            amarillo: number;
+            /** @example 9 */
+            verde: number;
+            /**
+             * @description Proyectos con pendientes (HU-12-02)
+             * @example 15
+             */
+            conPendientes: number;
+        };
+        PaginaSeguimientoDto: {
+            /** @description Período consultado; nulo si no hay ninguno registrado */
+            periodo: components["schemas"]["PeriodoSeguimientoDto"] | null;
+            /** @example 2026-11-07T15:30:00.000Z */
+            generado: string;
+            resumen: components["schemas"]["ResumenSeguimientoDto"];
+            elementos: components["schemas"]["ProyectoSeguimientoDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 50 */
+            tamano: number;
+            /**
+             * @description Proyectos de la lista consultada
+             * @example 24
+             */
+            total: number;
+        };
+        RapEvidenciasDto: {
+            /** @example 2 */
+            id: number;
+            /** @example 2 */
+            numero: number | null;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example Diseña sistemas productivos… */
+            descripcion: string | null;
+            /**
+             * @description Evidencias del RAP en este proyecto que el usuario puede ver
+             * @example 3
+             */
+            totalEvidencias: number;
+        };
+        SesionEvidenciaDto: {
+            /** @example 31 */
+            id: number;
+            /**
+             * Format: date
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /** @example 6 */
+            semana: number | null;
+        };
+        OpcionesEvidenciasDto: {
+            /** @example 12 */
+            idProyectoDocente: number;
+            /** @description Si el usuario puede cargar evidencias en este proyecto: es uno de sus docentes, el período no está cerrado y el proyecto tiene RAP */
+            puedeCargar: boolean;
+            /**
+             * @description Por qué no puede cargar, cuando es un docente del proyecto
+             * @example El período académico del proyecto ya está cerrado.
+             */
+            motivoSinCarga: string | null;
+            /** @description RAP del proyecto cuyas evidencias puede consultar el usuario */
+            raps: components["schemas"]["RapEvidenciasDto"][];
+            /** @description Sesiones del calendario que se pueden relacionar con una evidencia. Vacía si el usuario no puede cargar o si el calendario no se ha generado. */
+            sesiones: components["schemas"]["SesionEvidenciaDto"][];
+            /**
+             * @description Tamaño máximo de cada archivo, en MB (`archivo_tamano_maximo_mb`)
+             * @example 10
+             */
+            tamanoMaximoMb: number;
+            /**
+             * @description Extensiones permitidas (`evidencia_tipos_permitidos`)
+             * @example [
+             *       "jpg",
+             *       "jpeg",
+             *       "png",
+             *       "pdf"
+             *     ]
+             */
+            extensionesPermitidas: string[];
+            /**
+             * @example [
+             *       "image/jpeg",
+             *       "image/png",
+             *       "application/pdf"
+             *     ]
+             */
+            tiposMimePermitidos: string[];
+            /**
+             * @description Archivos por cada carga
+             * @example 5
+             */
+            maximoArchivosPorCarga: number;
+        };
+        UsuarioEvidenciaDto: {
+            /** @example 7 */
+            id: number;
+            /** @example Docente */
+            nombres: string | null;
+            /** @example Demostración */
+            apellidos: string | null;
+        };
+        EvidenciaDto: {
+            /** @example 40 */
+            id: number;
+            /** @example 12 */
+            idProyectoDocente: number;
+            /** @example 2 */
+            idRap: number;
+            sesion: components["schemas"]["SesionEvidenciaDto"] | null;
+            /** @example Exposición de los grupos. */
+            descripcion: string;
+            /**
+             * Format: date
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /** @example IMG_20260914_101500.jpg */
+            nombreOriginal: string;
+            /** @example image/jpeg */
+            tipo: string;
+            /** @example 2481337 */
+            tamanoBytes: number;
+            /**
+             * Format: date-time
+             * @example 2026-09-14T15:20:00.000Z
+             */
+            fechaSubida: string;
+            subidoPor: components["schemas"]["UsuarioEvidenciaDto"] | null;
+        };
+        PaginaEvidenciasDto: {
+            elementos: components["schemas"]["EvidenciaDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 3 */
+            total: number;
+        };
+        FormularioCargaEvidenciasDto: {
+            /**
+             * @description RAP del proyecto al que corresponde (p2)
+             * @example 2
+             */
+            idRap: number;
+            /** @example Exposición de los grupos sobre el estudio de métodos. */
+            descripcion: string;
+            /**
+             * Format: date
+             * @description Día en que se tomó la evidencia (AAAA-MM-DD)
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /**
+             * @description Sesión de clase relacionada, si corresponde
+             * @example 31
+             */
+            idSesion?: number;
+            /** @description Uno o varios archivos (JPG, PNG o PDF según `evidencia_tipos_permitidos`), cada uno hasta el tamaño de `archivo_tamano_maximo_mb`. */
+            archivos: string[];
+        };
+        CargaEvidenciasDto: {
+            evidencias: components["schemas"]["EvidenciaDto"][];
+        };
         BloqueHorarioDto: {
             /**
              * @description 1 = lunes … 6 = sábado
@@ -1680,78 +3415,6 @@ export interface components {
              */
             confirmarTodoElGrupo?: boolean;
         };
-        UltimaCargaDto: {
-            /** @example 2026-11-07T15:30:00.000Z */
-            fecha: string;
-            /**
-             * @description Quién la cargó
-             * @example Administrador Demo
-             */
-            cargadoPor: string;
-        };
-        ResultadoCargaMatriculadosDto: {
-            /**
-             * @description Estudiantes en el archivo
-             * @example 32
-             */
-            matriculados: number;
-            /**
-             * @description Estudiantes que no estaban en la lista del curso
-             * @example 30
-             */
-            nuevos: number;
-            /**
-             * @description Estaban retirados y vuelven a aparecer en el archivo
-             * @example 1
-             */
-            reincorporados: number;
-            /**
-             * @description Estaban en la lista y no aparecen en el archivo: quedan como retirados, sin borrarse
-             * @example 2
-             */
-            retirados: number;
-            /**
-             * @description Estudiantes ya registrados cuyos nombres o correo se actualizaron con el archivo
-             * @example 3
-             */
-            actualizados: number;
-            carga: components["schemas"]["UltimaCargaDto"];
-        };
-        MatriculadoDto: {
-            /**
-             * @description Identificador de la matrícula
-             * @example 41
-             */
-            idMatricula: number;
-            /** @example 1000000001 */
-            documento: string;
-            /** @example Estudiante Uno */
-            nombres: string;
-            /** @example Ficticio Demo */
-            apellidos: string;
-            /** @example estudiante.uno@ejemplo.edu.co */
-            correo: string | null;
-            /** @enum {string} */
-            estado: "matriculado" | "retirado";
-        };
-        PaginaMatriculadosDto: {
-            elementos: components["schemas"]["MatriculadoDto"][];
-            /** @example 1 */
-            pagina: number;
-            /** @example 20 */
-            tamano: number;
-            /**
-             * @description Total con el estado consultado
-             * @example 32
-             */
-            total: number;
-            /** @example 32 */
-            totalMatriculados: number;
-            /** @example 2 */
-            totalRetirados: number;
-            /** @description Nulo si el curso todavía no tiene lista cargada (RF-22, excepción de p3) */
-            ultimaCarga: components["schemas"]["UltimaCargaDto"] | null;
-        };
     };
     responses: never;
     parameters: never;
@@ -1804,6 +3467,15 @@ export interface operations {
             };
             /** @description El usuario está inactivo o no tiene roles asignados: debe comunicarse con el administrador */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La cuenta está bloqueada temporalmente por intentos fallidos (el mensaje dice cuántos minutos faltan), o la IP superó el límite de intentos */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1887,6 +3559,374 @@ export interface operations {
             };
             /** @description La base de datos no responde */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaRolesDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearRolDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin permiso de lectura, o módulo o permiso inexistente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya existe un rol con ese nombre */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_matriz: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatrizPermisosDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_inactivar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El rol tiene usuarios activos o es un rol del sistema */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_editar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarRolDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Nombre repetido, o intento de renombrar un rol del sistema */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RolesController_reemplazarPermisos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReemplazarPermisosDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolDto"];
+                };
+            };
+            /** @description Sin permiso de lectura, o módulo o permiso inexistente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar usuarios y roles */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Se retiraría la administración de usuarios y roles al último usuario que la tiene */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2164,7 +4204,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description El usuario no tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2214,7 +4254,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description No es Departamento académico del programa de la asignatura */
+            /** @description Sin el permiso de crear proyectos docentes, o no es Departamento académico del programa de la asignatura */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2271,7 +4311,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description El usuario no tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3225,6 +5265,1734 @@ export interface operations {
             };
         };
     };
+    MatriculasController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Matriculados (por defecto) o retirados: los que estaban en una carga anterior y no en la última */
+                estado?: "matriculado" | "retirado";
+            };
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaMatriculadosDto"];
+                };
+            };
+            /** @description Paginación o estado inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador ni Docente responsable */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MatriculasController_cargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    archivo: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoCargaMatriculadosDto"];
+                };
+            };
+            /** @description Sin archivo, más de un archivo o un archivo que no es .xlsx */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el tamaño máximo de archivo del parámetro archivo_tamano_maximo_mb */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El archivo no se puede leer, le faltan columnas, no tiene estudiantes o tiene filas con errores (documento repetido o inválido, nombres o apellidos vacíos, correo inválido) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                estado?: "borrador" | "cerrada";
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaMedicionesDto"];
+                };
+            };
+            /** @description Paginación o filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_delProyecto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionesDelProyectoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene alcance sobre él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_iniciar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarMedicionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Datos inválidos o un RAP que no es del curso */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es docente asignado al curso */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene alcance sobre él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Proyecto sin aprobar, curso sin lista de estudiantes, RAP sin rúbrica vigente, programa sin escala o medición ya existente para el RAP, el tipo y el año */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_registrarInstrumentos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarInstrumentosDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Datos inválidos o un indicador que no es de la rúbrica de la medición */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es docente asignado al curso */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición está cerrada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_registrarValoraciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarValoracionesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoValoracionesDto"];
+                };
+            };
+            /** @description Datos inválidos, una celda repetida, un indicador ajeno a la medición, un estudiante que no es del curso o un nivel que no está en la escala */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es docente asignado al curso */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición está cerrada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_consolidado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsolidadoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente responsable, Líder RAP ni Departamento académico */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_registrarAnalisis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarAnalisisDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Datos inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es el docente asignado ni el líder del RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición está cerrada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_cerrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es el docente asignado ni el líder del RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya está cerrada, no tiene valoraciones o está por debajo de la meta sin acciones propuestas */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    MedicionesController_reabrir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicionDetalleDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es el departamento académico del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no existe o el usuario no tiene alcance sobre ella */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La medición no está cerrada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesController_filtros: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FiltrosLogroRapDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesController_logroRap: {
+        parameters: {
+            query: {
+                idPrograma: number;
+                idPeriodo: number;
+                /** @description Solo este RAP */
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteLogroRapDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El programa, el período o el RAP no existen o el usuario no tiene alcance sobre ellos */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesController_excel: {
+        parameters: {
+            query: {
+                idPrograma: number;
+                idPeriodo: number;
+                /** @description Solo este RAP */
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El programa, el período o el RAP no existen o el usuario no tiene alcance sobre ellos */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_cumplimiento: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+                /** @description Código del estado del proyecto docente */
+                estado?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteCumplimientoDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_cumplimientoExcel: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+                /** @description Código del estado del proyecto docente */
+                estado?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el máximo de filas exportables: hay que restringir los filtros */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_contribucion: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteContribucionDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe, o el RAP no existe o no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_contribucionExcel: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idRap?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico, Dirección del programa ni Líder RAP */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe, o el RAP no existe o no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SeguimientoController_filtros: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FiltrosSeguimientoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SeguimientoController_tablero: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaSeguimientoDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SeguimientoController_tableroExcel: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el máximo de filas exportables: hay que restringir los filtros */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SeguimientoController_pendientes: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaSeguimientoDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SeguimientoController_pendientesExcel: {
+        parameters: {
+            query?: {
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Usuario docente asignado */
+                idDocente?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el máximo de filas exportables: hay que restringir los filtros */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_opciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpcionesEvidenciasDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Solo las evidencias de este RAP. Sin él, todas las que el usuario puede ver. */
+                idRap?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaEvidenciasDto"];
+                };
+            };
+            /** @description Paginación o RAP inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_cargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["FormularioCargaEvidenciasDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CargaEvidenciasDto"];
+                };
+            };
+            /** @description Sin archivos o con más de los permitidos por carga, sin descripción, fecha inválida o futura, RAP que no es del proyecto o sesión de otro calendario */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Docente, o no es uno de los docentes del proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período del proyecto está cerrado, o el proyecto no tiene RAP */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Un archivo supera el tamaño máximo; el mensaje dice el límite (p4) */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Un archivo no es de un tipo permitido (p4) */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Falló el almacenamiento documental; no quedó nada guardado y se puede reintentar (p5) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasController_descargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                idEvidencia: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description El archivo, con su tipo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "application/pdf": string;
+                };
+            };
+            /** @description El navegador ya tiene esta versión (If-None-Match) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": components["schemas"]["RespuestaErrorDto"];
+                    "image/png": components["schemas"]["RespuestaErrorDto"];
+                    "application/pdf": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No se pudo leer el almacenamiento documental */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": components["schemas"]["RespuestaErrorDto"];
+                    "image/png": components["schemas"]["RespuestaErrorDto"];
+                    "application/pdf": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
     SesionesController_obtenerHorario: {
         parameters: {
             query?: never;
@@ -3620,150 +7388,6 @@ export interface operations {
             };
             /** @description Sesión de fecha futura, período cerrado, proyecto sin aprobar, sesión de un tipo que no lleva temas, o todo el grupo ausente sin confirmar */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    MatriculasController_listar: {
-        parameters: {
-            query?: {
-                pagina?: number;
-                tamano?: number;
-                /** @description Matriculados (por defecto) o retirados: los que estaban en una carga anterior y no en la última */
-                estado?: "matriculado" | "retirado";
-            };
-            header?: never;
-            path: {
-                idProyecto: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginaMatriculadosDto"];
-                };
-            };
-            /** @description Paginación o estado inválidos */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description No es Administrador ni Docente responsable */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    MatriculasController_cargar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                idProyecto: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    archivo: string;
-                };
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultadoCargaMatriculadosDto"];
-                };
-            };
-            /** @description Sin archivo, más de un archivo o un archivo que no es .xlsx */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description No es Administrador */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Supera el tamaño máximo de archivo del parámetro archivo_tamano_maximo_mb */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El archivo no se puede leer, le faltan columnas, no tiene estudiantes o tiene filas con errores (documento repetido o inválido, nombres o apellidos vacíos, correo inválido) */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
