@@ -51,6 +51,11 @@ export interface OpcionesSolicitud {
   metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** Se envía como JSON. */
   cuerpo?: unknown;
+  /**
+   * Se envía como multipart/form-data, para cargar archivos. El navegador pone el
+   * Content-Type con su separador; no se debe fijar a mano.
+   */
+  formulario?: FormData;
   /** Si `senal` cancela la solicitud, se propaga su motivo en vez de un ErrorApi. */
   senal?: AbortSignal;
   /**
@@ -67,7 +72,13 @@ export interface OpcionesSolicitud {
  */
 export async function solicitar<T>(
   ruta: string,
-  { metodo = 'GET', cuerpo, senal, publica = false }: OpcionesSolicitud = {},
+  {
+    metodo = 'GET',
+    cuerpo,
+    formulario,
+    senal,
+    publica = false,
+  }: OpcionesSolicitud = {},
 ): Promise<T> {
   senal?.throwIfAborted();
   const controlador = new AbortController();
@@ -86,7 +97,9 @@ export async function solicitar<T>(
         Accept: 'application/json',
         ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      body:
+        formulario ??
+        (cuerpo === undefined ? undefined : JSON.stringify(cuerpo)),
       cache: 'no-store',
       signal: controlador.signal,
     });
@@ -137,6 +150,24 @@ export function enviar<T>(
   opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo'> = {},
 ): Promise<T> {
   return solicitar<T>(ruta, { ...opciones, metodo: 'POST', cuerpo });
+}
+
+/** PUT a la API con un cuerpo JSON: reemplaza lo enviado (ver `solicitar`). */
+export function reemplazar<T>(
+  ruta: string,
+  cuerpo: unknown,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, { ...opciones, metodo: 'PUT', cuerpo });
+}
+
+/** POST a la API con un formulario multipart, para cargar archivos (ver `solicitar`). */
+export function enviarFormulario<T>(
+  ruta: string,
+  formulario: FormData,
+  opciones: Omit<OpcionesSolicitud, 'metodo' | 'cuerpo' | 'formulario'> = {},
+): Promise<T> {
+  return solicitar<T>(ruta, { ...opciones, metodo: 'POST', formulario });
 }
 
 /** Mensaje en español para el usuario ante cualquier error, sin detalles técnicos (NFR-011). */
