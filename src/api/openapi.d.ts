@@ -84,6 +84,189 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/asistente/programas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paso 1: programas en los que el usuario puede crear proyectos docentes */
+        get: operations["AsistenteController_programas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/asistente/programas/{idPrograma}/asignaturas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paso 2: asignaturas activas del programa */
+        get: operations["AsistenteController_asignaturas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/asistente/asignaturas/{idAsignatura}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pasos 3 y 4: información autocompletada, período vigente y RAP del programa
+         * @description RF-08, p5 (HU-05-02): facultad, código, componente, tipo de curso, créditos, horas TDE, TDP y TI, prerrequisitos, correquisitos y período. Marca la información incompleta (p7) y propone los RAP del mapeo curricular.
+         */
+        get: operations["AsistenteController_informacionAsignatura"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/asistente/programas/{idPrograma}/docentes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paso 4: docentes del programa que se pueden asignar (HU-05-03) */
+        get: operations["AsistenteController_docentes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/asistente/proyecto-existente": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Paso 4: proyecto ya creado para la asignatura, el período vigente y el grupo
+         * @description RF-08, p6: permite advertir antes de crear y ofrecer abrir el existente o duplicarlo.
+         */
+        get: operations["AsistenteController_proyectoExistente"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bandeja de proyectos docentes visibles para el usuario
+         * @description El Docente ve solo aquellos en los que está asignado (HU-05-03); Departamento, Dirección y Líder RAP, los de su programa; el Administrador, todos.
+         */
+        get: operations["ProyectosDocentesController_listar"];
+        put?: never;
+        /**
+         * Crea el proyecto docente con el asistente (RF-08)
+         * @description Crea el proyecto en estado «En diligenciamiento» para el período vigente, con los RAP seleccionados y de 1 a 3 docentes, uno de ellos responsable (HU-05-01, HU-05-03). Si la asignatura no tiene créditos u horas, lo crea igual y lo marca con información incompleta (p7).
+         */
+        post: operations["ProyectosDocentesController_crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ficha del proyecto docente
+         * @description Información institucional, RAP y docentes. Responde 404 tanto si no existe como si el usuario no tiene acceso a él.
+         */
+        get: operations["ProyectosDocentesController_obtener"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/horario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Días y horas de clase del curso (HU-08-02)
+         * @description Lo consultan quienes ven el proyecto docente.
+         */
+        get: operations["SesionesController_obtenerHorario"];
+        /**
+         * Define los días y horas de clase del curso (HU-08-02)
+         * @description Reemplaza el horario completo. Solo el docente asignado al proyecto o el administrador. El calendario no cambia hasta generarlo de nuevo.
+         */
+        put: operations["SesionesController_guardarHorario"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/calendario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calendario de sesiones del curso (RF-19, p5)
+         * @description Sesiones en orden de fecha, con su semana, tipo y festivo. Lo consultan quienes ven el proyecto docente.
+         */
+        get: operations["SesionesController_consultarCalendario"];
+        put?: never;
+        /**
+         * Genera o recalcula el calendario de sesiones (HU-08-03)
+         * @description Una sesión por día de clase del período, numerada por semana, marcando como festivo las que coinciden con la tabla de festivos. Si ya existe, recalcula las sesiones sin diligenciar y deja intactas las diligenciadas. Si un año no tiene festivos, genera sin marcas, lo advierte y avisa al administrador (excepción p3).
+         */
+        post: operations["SesionesController_generarCalendario"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -167,6 +350,449 @@ export interface components {
             estado: "disponible";
             /** @example 2026-11-03T21:15:00.000Z */
             fecha: string;
+        };
+        ProgramaOpcionDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+            /** @example Facultad de Ciencias Económicas */
+            facultad: string | null;
+        };
+        AsignaturaOpcionDto: {
+            /** @example 3 */
+            id: number;
+            /** @example DEMO-01 */
+            codigo: string | null;
+            /** @example Finanzas a corto plazo */
+            nombre: string;
+            /** @example 6 */
+            semestre: number | null;
+        };
+        AsignaturaRequisitoDto: {
+            /** @example 2 */
+            id: number;
+            /** @example DEMO-02 */
+            codigo: string | null;
+            /** @example Gestión de la producción */
+            nombre: string;
+        };
+        InformacionInstitucionalDto: {
+            /** @example Facultad de Ciencias Económicas */
+            facultad: string | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /** @example 3 */
+            idAsignatura: number;
+            /** @example DEMO-01 */
+            codigo: string | null;
+            /** @example Finanzas a corto plazo */
+            asignatura: string | null;
+            /** @example 6 */
+            semestre: number | null;
+            /** @example PROFESIONAL */
+            componente: string | null;
+            /** @example Obligatorio */
+            tipoCurso: string | null;
+            /** @example 3 */
+            creditos: number | null;
+            /**
+             * @description Horas TDE
+             * @example 48
+             */
+            horasTde: number | null;
+            /**
+             * @description Horas TDP
+             * @example 0
+             */
+            horasTdp: number | null;
+            /**
+             * @description Horas TI
+             * @example 96
+             */
+            horasTi: number | null;
+            /** @example 144 */
+            horasTotales: number | null;
+            prerrequisitos: components["schemas"]["AsignaturaRequisitoDto"][];
+            correquisitos: components["schemas"]["AsignaturaRequisitoDto"][];
+            /**
+             * @description RF-08, p7: la asignatura no tiene registrados los créditos o alguna de las horas. Se calcula a partir de la asignatura, así que desaparece cuando se completan.
+             * @example false
+             */
+            informacionIncompleta: boolean;
+            /**
+             * @description Datos que faltan, para mostrarlos al usuario (p. ej. «horas TDE»)
+             * @example []
+             */
+            camposFaltantes: string[];
+        };
+        PeriodoAcademicoDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fechaInicio: string | null;
+            /**
+             * Format: date
+             * @example 2026-11-21
+             */
+            fechaFin: string | null;
+            /** @example 16 */
+            numeroSemanas: number | null;
+        };
+        RapOpcionDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            /** @description Enunciado completo del RAP */
+            descripcion: string | null;
+            /**
+             * @description Si el mapeo curricular (asignatura_rap) ya relaciona la asignatura con este RAP. El asistente lo propone seleccionado, pero el usuario decide.
+             * @example true
+             */
+            mapeado: boolean;
+        };
+        InformacionAsignaturaDto: {
+            informacion: components["schemas"]["InformacionInstitucionalDto"];
+            /** @description Período académico vigente, en el que se crea el proyecto. Nulo si no hay ninguno activo: en ese caso no se puede crear el proyecto (precondición de RF-08). */
+            periodo: components["schemas"]["PeriodoAcademicoDto"] | null;
+            /** @description RAP activos del programa, para el paso 3. Vacío si el programa no tiene catálogo. */
+            raps: components["schemas"]["RapOpcionDto"][];
+        };
+        DocenteOpcionDto: {
+            /** @example 12 */
+            id: number;
+            /** @example Ana María */
+            nombres: string | null;
+            /** @example Pérez Gómez */
+            apellidos: string | null;
+            /** @example docente@unicartagena.edu.co */
+            correo: string;
+        };
+        EstadoProyectoDto: {
+            /** @example en_diligenciamiento */
+            codigo: string;
+            /** @example En diligenciamiento */
+            nombre: string;
+        };
+        DocenteProyectoDto: {
+            /** @example 12 */
+            id: number;
+            /** @example Ana María */
+            nombres: string | null;
+            /** @example Pérez Gómez */
+            apellidos: string | null;
+            /**
+             * @description Docente responsable: diligencia el proyecto y firma «elaboró»
+             * @example true
+             */
+            responsable: boolean;
+        };
+        ProyectoDocenteResumenDto: {
+            /** @example 41 */
+            id: number;
+            /** @example 3 */
+            idAsignatura: number;
+            /** @example DEMO-01 */
+            codigoAsignatura: string | null;
+            /** @example Finanzas a corto plazo */
+            asignatura: string | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+            /** @example A */
+            grupo: string | null;
+            estado: components["schemas"]["EstadoProyectoDto"] | null;
+            /** @description Docentes asignados, con el responsable primero */
+            docentes: components["schemas"]["DocenteProyectoDto"][];
+            /**
+             * @description RF-08, p7
+             * @example false
+             */
+            informacionIncompleta: boolean;
+            /** @example 2026-11-06T14:00:00.000Z */
+            fechaCreacion: string | null;
+        };
+        ProyectoExistenteDto: {
+            /** @description Proyecto ya creado para la misma asignatura, período vigente y grupo (RF-08, p6), o nulo si no hay ninguno. */
+            proyecto: components["schemas"]["ProyectoDocenteResumenDto"] | null;
+        };
+        DocenteAsignadoDto: {
+            /**
+             * @description Usuario con el rol Docente responsable
+             * @example 12
+             */
+            idUsuario: number;
+            /**
+             * @description Si es el docente responsable: quien diligencia el proyecto y firma «elaboró». Debe haber exactamente uno.
+             * @example true
+             */
+            responsable: boolean;
+        };
+        CrearProyectoDocenteDto: {
+            /**
+             * @description Asignatura del proyecto (paso 2)
+             * @example 3
+             */
+            idAsignatura: number;
+            /**
+             * @description RAP del programa a los que contribuye la asignatura (paso 3). Al menos uno (RF-08, p4).
+             * @example [
+             *       1,
+             *       3
+             *     ]
+             */
+            idsRap: number[];
+            /** @description De 1 a 3 docentes, con un único responsable (HU-05-03). */
+            docentes: components["schemas"]["DocenteAsignadoDto"][];
+            /**
+             * @description Grupo del curso, si la asignatura tiene varios en el período
+             * @example A
+             */
+            grupo?: string;
+        };
+        RapDto: {
+            /** @example 2 */
+            id: number;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example 2 */
+            numero: number | null;
+            /** @description Enunciado completo del RAP */
+            descripcion: string | null;
+        };
+        ProyectoDocenteDetalleDto: {
+            /** @example 41 */
+            id: number;
+            /** @example 3 */
+            idAsignatura: number;
+            /** @example DEMO-01 */
+            codigoAsignatura: string | null;
+            /** @example Finanzas a corto plazo */
+            asignatura: string | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+            /** @example A */
+            grupo: string | null;
+            estado: components["schemas"]["EstadoProyectoDto"] | null;
+            /** @description Docentes asignados, con el responsable primero */
+            docentes: components["schemas"]["DocenteProyectoDto"][];
+            /**
+             * @description RF-08, p7
+             * @example false
+             */
+            informacionIncompleta: boolean;
+            /** @example 2026-11-06T14:00:00.000Z */
+            fechaCreacion: string | null;
+            /**
+             * @description manual | duplicado | importado_excel
+             * @example manual
+             */
+            origen: string | null;
+            periodoAcademico: components["schemas"]["PeriodoAcademicoDto"] | null;
+            informacion: components["schemas"]["InformacionInstitucionalDto"];
+            /** @description RAP a los que contribuye el curso (paso 3) */
+            raps: components["schemas"]["RapDto"][];
+        };
+        PaginaProyectosDocentesDto: {
+            elementos: components["schemas"]["ProyectoDocenteResumenDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /**
+             * @description Total de proyectos visibles para el usuario
+             * @example 42
+             */
+            total: number;
+        };
+        BloqueHorarioDto: {
+            /**
+             * @description 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /** @example 07:00 */
+            horaInicio: string;
+            /** @example 09:00 */
+            horaFin: string;
+        };
+        HorarioCursoDto: {
+            /** @example 4 */
+            idProyectoDocente: number;
+            bloques: components["schemas"]["BloqueHorarioDto"][];
+            /**
+             * @description Si el usuario puede cambiar el horario y generar el calendario: el docente asignado al proyecto o el administrador, con el período abierto.
+             * @example true
+             */
+            puedeEditar: boolean;
+        };
+        BloqueHorarioEntradaDto: {
+            /**
+             * @description Día de la semana: 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /**
+             * @description Hora de inicio, HH:mm
+             * @example 07:00
+             */
+            horaInicio: string;
+            /**
+             * @description Hora de fin, HH:mm
+             * @example 09:00
+             */
+            horaFin: string;
+        };
+        GuardarHorarioDto: {
+            /** @description Uno o varios días de clase, cada uno con su hora de inicio y de fin. Un día no se repite: el calendario tiene una sesión por fecha. */
+            bloques: components["schemas"]["BloqueHorarioEntradaDto"][];
+        };
+        TipoSesionDto: {
+            /**
+             * @description clase | parcial | festivo | actividad_complementaria
+             * @example clase
+             */
+            codigo: string;
+            /** @example Clase */
+            nombre: string;
+        };
+        SesionCalendarioDto: {
+            /** @example 120 */
+            id: number;
+            /**
+             * @description Semana del período
+             * @example 1
+             */
+            semana: number;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fecha: string;
+            /**
+             * @description 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /**
+             * @description Del horario vigente; nulo si ese día ya no está en el horario
+             * @example 07:00
+             */
+            horaInicio: string | null;
+            /** @example 09:00 */
+            horaFin: string | null;
+            tipo: components["schemas"]["TipoSesionDto"] | null;
+            /**
+             * @description programada | registrada (RF-20). Las retiradas no se listan.
+             * @example programada
+             */
+            estado: string | null;
+            /**
+             * @description Nombre del festivo con el que coincide la fecha (RF-19, p4)
+             * @example Batalla de Boyacá
+             */
+            festivo: string | null;
+            /**
+             * @description Si el docente ya la diligenció. Una sesión diligenciada no se recalcula.
+             * @example false
+             */
+            diligenciada: boolean;
+        };
+        PeriodoCalendarioDto: {
+            /** @example 2026-2 */
+            codigo: string | null;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fechaInicio: string | null;
+            /**
+             * Format: date
+             * @example 2026-11-21
+             */
+            fechaFin: string | null;
+            /** @example 16 */
+            numeroSemanas: number | null;
+            /** @example false */
+            cerrado: boolean;
+        };
+        SemanaRecesoDto: {
+            /**
+             * Format: date
+             * @description Lunes
+             * @example 2026-11-09
+             */
+            desde: string;
+            /**
+             * Format: date
+             * @description Sábado
+             * @example 2026-11-14
+             */
+            hasta: string;
+        };
+        CalendarioSesionesDto: {
+            elementos: components["schemas"]["SesionCalendarioDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 100 */
+            tamano: number;
+            /** @example 48 */
+            total: number;
+            periodo: components["schemas"]["PeriodoCalendarioDto"];
+            /** @example true */
+            puedeEditar: boolean;
+            /**
+             * @description Avisos para el usuario, por ejemplo un año del período sin festivos parametrizados (RF-19, excepción p3)
+             * @example []
+             */
+            advertencias: string[];
+            /** @description Semanas de receso del período: de lunes a sábado sin clase en la tabla de festivos. No tienen sesiones ni cuentan en la numeración de semanas (Acuerdo 46 de 2026). */
+            recesos: components["schemas"]["SemanaRecesoDto"][];
+        };
+        ResultadoGeneracionDto: {
+            /**
+             * @description Sesiones nuevas o reactivadas
+             * @example 48
+             */
+            creadas: number;
+            /**
+             * @description Sesiones sin diligenciar a las que se les recalculó la semana o el festivo
+             * @example 0
+             */
+            actualizadas: number;
+            /**
+             * @description Sesiones sin diligenciar que ya no caen en el horario: se inactivan (estado «retirada») y salen del calendario
+             * @example 0
+             */
+            retiradas: number;
+            /**
+             * @description Sesiones diligenciadas o con datos del docente, que se dejan intactas
+             * @example 0
+             */
+            conservadas: number;
+            /**
+             * @description Sesiones marcadas como festivo
+             * @example 3
+             */
+            festivos: number;
+            /**
+             * @description Sesiones del calendario después de generar
+             * @example 48
+             */
+            total: number;
+            /** @example [] */
+            advertencias: string[];
         };
     };
     responses: never;
@@ -303,6 +929,636 @@ export interface operations {
             };
             /** @description La base de datos no responde */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AsistenteController_programas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramaOpcionDto"][];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no es Departamento académico, o no lo es en el programa consultado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AsistenteController_asignaturas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idPrograma: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AsignaturaOpcionDto"][];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no es Departamento académico, o no lo es en el programa consultado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El programa no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AsistenteController_informacionAsignatura: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idAsignatura: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InformacionAsignaturaDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no es Departamento académico, o no lo es en el programa consultado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La asignatura no existe o está inactiva */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AsistenteController_docentes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idPrograma: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocenteOpcionDto"][];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no es Departamento académico, o no lo es en el programa consultado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El programa no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AsistenteController_proyectoExistente: {
+        parameters: {
+            query: {
+                idAsignatura: number;
+                grupo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProyectoExistenteDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no es Departamento académico, o no lo es en el programa consultado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La asignatura no existe o está inactiva */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ProyectosDocentesController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaProyectosDocentesDto"];
+                };
+            };
+            /** @description Paginación inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ProyectosDocentesController_crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearProyectoDocenteDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProyectoDocenteDetalleDto"];
+                };
+            };
+            /** @description Sin RAP (p4), RAP de otro programa, docentes repetidos, sin responsable o con más de uno, más de tres docentes o docentes que no lo son en el programa */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Departamento académico del programa de la asignatura */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La asignatura o su programa no existen o están inactivos */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya existe un proyecto para la asignatura, el período y el grupo (p6), o no hay un período académico activo */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ProyectosDocentesController_obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProyectoDocenteDetalleDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_obtenerHorario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HorarioCursoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_guardarHorario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarHorarioDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HorarioCursoDto"];
+                };
+            };
+            /** @description Sin días, día fuera de lunes a sábado, día repetido u hora de fin no posterior a la de inicio */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período académico del proyecto está cerrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_consultarCalendario: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarioSesionesDto"];
+                };
+            };
+            /** @description Paginación inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_generarCalendario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoGeneracionDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El curso no tiene horario, el período no tiene fechas o el período está cerrado */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
