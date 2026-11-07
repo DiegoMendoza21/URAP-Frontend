@@ -694,7 +694,7 @@ export interface components {
             horaFin: string | null;
             tipo: components["schemas"]["TipoSesionDto"] | null;
             /**
-             * @description programada | registrada (RF-20)
+             * @description programada | registrada (RF-20). Las retiradas no se listan.
              * @example programada
              */
             estado: string | null;
@@ -746,7 +746,7 @@ export interface components {
         };
         ResultadoGeneracionDto: {
             /**
-             * @description Sesiones nuevas
+             * @description Sesiones nuevas o reactivadas
              * @example 48
              */
             creadas: number;
@@ -756,12 +756,12 @@ export interface components {
              */
             actualizadas: number;
             /**
-             * @description Sesiones sin diligenciar que ya no caen en el horario: nunca tuvieron datos, se retiran
+             * @description Sesiones sin diligenciar que ya no caen en el horario: se inactivan (estado «retirada») y salen del calendario
              * @example 0
              */
             retiradas: number;
             /**
-             * @description Sesiones diligenciadas, que se dejan intactas
+             * @description Sesiones diligenciadas o con datos del docente, que se dejan intactas
              * @example 0
              */
             conservadas: number;
