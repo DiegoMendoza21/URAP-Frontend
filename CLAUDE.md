@@ -16,6 +16,9 @@ El dominio es institucional y no se deduce leyendo el repositorio. Lee primero:
 
 - `docs/glosario-dominio.md` — **siempre**. RAP, RAC, proyecto docente, roles, escalas.
   Confundir RAP con RAC es el error más fácil y más caro de este proyecto.
+- `docs/datos-institucionales.md` — los datos reales del programa: matriz de permisos por rol
+  (qué ve y qué puede hacer cada rol en cada pantalla), RAP y rúbricas, escala, plan de
+  estudios y calendario 2026-2. Sirve para no inventar textos ni ejemplos en la interfaz.
 - `docs/urap-backlog.md` — qué se construye y en qué orden: 15 épicas, 89 historias, 8 sprints.
 - `docs/indice-requisitos.md` — para ubicar el requisito que aplica.
 - `docs/requisitos-funcionales.md` — el RF completo de la pantalla que vas a construir,
