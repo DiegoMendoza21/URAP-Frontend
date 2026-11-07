@@ -53,10 +53,12 @@ export function useConsulta<T>(
             consulta: {
               estado: 'fallida',
               mensaje: mensajeParaUsuario(error),
+              // 429 (demasiadas solicitudes) es pasajero: tiene sentido reintentar.
               reintentable: !(
                 error instanceof ErrorApi &&
                 error.estado !== undefined &&
-                error.estado < 500
+                error.estado < 500 &&
+                error.estado !== 429
               ),
             },
           });
