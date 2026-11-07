@@ -91,3 +91,51 @@ export function registrarValoraciones(
     { valoraciones },
   );
 }
+
+/* Consolidado, análisis y cierre (RF-31). */
+
+export type Consolidado = Esquemas['ConsolidadoDto'];
+export type IndicadorConsolidado = Esquemas['IndicadorConsolidadoDto'];
+export type MedicionListada = Esquemas['MedicionListadaDto'];
+export type PaginaMediciones = Esquemas['PaginaMedicionesDto'];
+export type DatosAnalisis = Esquemas['RegistrarAnalisisDto'];
+export type EstadoMedicion = MedicionResumen['estado'];
+
+export function consultarMediciones(
+  {
+    pagina,
+    tamano,
+    estado,
+  }: { pagina: number; tamano: number; estado?: EstadoMedicion },
+  senal?: AbortSignal,
+) {
+  const consulta = new URLSearchParams({
+    pagina: String(pagina),
+    tamano: String(tamano),
+  });
+  if (estado) {
+    consulta.set('estado', estado);
+  }
+  return obtener<PaginaMediciones>(`/mediciones?${consulta}`, { senal });
+}
+
+export function consultarConsolidado(idMedicion: number, senal?: AbortSignal) {
+  return obtener<Consolidado>(`/mediciones/${idMedicion}/consolidado`, {
+    senal,
+  });
+}
+
+export function registrarAnalisis(idMedicion: number, datos: DatosAnalisis) {
+  return reemplazar<MedicionDetalle>(
+    `/mediciones/${idMedicion}/analisis`,
+    datos,
+  );
+}
+
+export function cerrarMedicion(idMedicion: number) {
+  return enviar<MedicionDetalle>(`/mediciones/${idMedicion}/cerrar`);
+}
+
+export function reabrirMedicion(idMedicion: number) {
+  return enviar<MedicionDetalle>(`/mediciones/${idMedicion}/reabrir`);
+}

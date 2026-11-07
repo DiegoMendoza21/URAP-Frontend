@@ -17,6 +17,8 @@ import {
   Insignia,
 } from '../../proyectos-docentes/_componentes/Estados';
 import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
+import { Analisis } from './Analisis';
+import { Consolidado } from './Consolidado';
 import { Instrumentos } from './Instrumentos';
 import { Valoracion } from './Valoracion';
 
@@ -24,9 +26,9 @@ import { Valoracion } from './Valoracion';
 const PREFIJO_PROVISIONAL = 'PROVISIONAL';
 
 /**
- * Hoja de la medición de RAP (RF-30; formato FO-DO/PC-023, hoja «Valoración»): rúbrica y
- * escala, instrumentos por indicador (HU-11-02) y nivel de cada estudiante (HU-11-03). El
- * backend dice si quien consulta puede registrar (`puedeEditar`).
+ * Medición de RAP (formato FO-DO/PC-023): rúbrica y escala, instrumentos por indicador
+ * (HU-11-02), nivel de cada estudiante (HU-11-03), consolidado (HU-11-04, HU-11-05) y análisis
+ * con el cierre (HU-11-06, HU-11-07). El backend dice qué puede hacer quien consulta.
  */
 export function HojaMedicion() {
   const { id } = useParams<{ id: string }>();
@@ -35,12 +37,20 @@ export function HojaMedicion() {
     idMedicion === null ? null : `medicion-${idMedicion}`,
     (senal) => consultarMedicion(idMedicion!, senal),
   );
-  // Guardar los instrumentos devuelve la medición actualizada. Vale mientras no llegue una
-  // consulta nueva: si se vuelve a consultar, manda lo consultado.
+  // Guardar devuelve la medición actualizada. Vale mientras no llegue una consulta nueva: si
+  // se vuelve a consultar, manda lo consultado.
   const [actualizada, setActualizada] = useState<{
     base: MedicionDetalle;
     medicion: MedicionDetalle;
   } | null>(null);
+  // Cambia con cada guardado de valoraciones o del estado: el consolidado se vuelve a pedir.
+  const [version, setVersion] = useState(0);
+  const alCambiar = (nueva: MedicionDetalle) => {
+    if (consulta.estado === 'lista') {
+      setActualizada({ base: consulta.datos, medicion: nueva });
+    }
+    setVersion((valor) => valor + 1);
+  };
   const medicion =
     consulta.estado !== 'lista'
       ? null
@@ -63,15 +73,18 @@ export function HojaMedicion() {
       {medicion && (
         <>
           <Cabecera medicion={medicion} />
-          <Instrumentos
+          <Instrumentos medicion={medicion} alGuardar={alCambiar} />
+          <Valoracion
+            key={medicion.id}
             medicion={medicion}
-            alGuardar={(nueva) => {
-              if (consulta.estado === 'lista') {
-                setActualizada({ base: consulta.datos, medicion: nueva });
-              }
-            }}
+            alGuardar={() => setVersion((valor) => valor + 1)}
           />
-          <Valoracion key={medicion.id} medicion={medicion} />
+          <Consolidado idMedicion={medicion.id} version={version} />
+          <Analisis
+            key={`analisis-${medicion.id}`}
+            medicion={medicion}
+            alCambiar={alCambiar}
+          />
         </>
       )}
     </section>
