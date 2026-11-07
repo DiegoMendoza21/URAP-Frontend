@@ -789,6 +789,20 @@ export interface components {
              */
             mayorAtraso: number | null;
         };
+        SemanaRecesoDto: {
+            /**
+             * Format: date
+             * @description Lunes
+             * @example 2026-11-09
+             */
+            desde: string;
+            /**
+             * Format: date
+             * @description Sábado
+             * @example 2026-11-14
+             */
+            hasta: string;
+        };
         CalendarioSesionesDto: {
             elementos: components["schemas"]["SesionCalendarioDto"][];
             /** @example 1 */
@@ -818,6 +832,8 @@ export interface components {
             umbralDias: number | null;
             /** @description Alertas de todo el calendario, no solo de la página (RF-23) */
             resumen: components["schemas"]["ResumenAlertasDto"];
+            /** @description Semanas de receso del período: de lunes a sábado sin clase en la tabla de festivos. No tienen sesiones ni cuentan en la numeración de semanas (Acuerdo 46 de 2026). */
+            recesos: components["schemas"]["SemanaRecesoDto"][];
         };
         ResultadoGeneracionDto: {
             /**

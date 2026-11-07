@@ -17,7 +17,20 @@ interface ErroresCampos {
 interface Falla {
   mensaje: string;
   detalles?: string[];
+  /**
+   * 429: el acceso está bloqueado por un tiempo, por intentos fallidos de la cuenta o desde la
+   * conexión (HU-01-04). No es un error en los datos, así que se muestra como aviso.
+   */
+  esBloqueo: boolean;
 }
+
+/** El mismo correo con otra forma de escribirlo (espacios, mayúsculas) cuenta como el mismo. */
+function normalizarCorreo(correo: string): string {
+  return correo.trim().toLowerCase();
+}
+
+/** Respuestas que significan que la contraseña escrita no sirvió y conviene borrarla. */
+const ESTADOS_CONTRASENA_DESCARTADA = new Set([401, 429]);
 
 /** Las mismas reglas del backend, para avisar antes de enviar (NFR-011). */
 function validar(correo: string, contrasena: string): ErroresCampos {
@@ -38,7 +51,8 @@ function validar(correo: string, contrasena: string): ErroresCampos {
 /**
  * Inicio de sesión con correo institucional y contraseña (HU-01-01). Los errores del servidor
  * se muestran con su propio mensaje: el genérico de credenciales, que no dice cuál de los dos
- * datos falló, y el del usuario inactivo, que lo remite al administrador.
+ * datos falló, y el del usuario inactivo, que lo remite al administrador. El bloqueo temporal
+ * (HU-01-04) se muestra como aviso, con los minutos que indica el backend.
  */
 export function FormularioInicioSesion() {
   const { sesion, iniciar } = useSesion();
@@ -52,6 +66,13 @@ export function FormularioInicioSesion() {
   const [errores, setErrores] = useState<ErroresCampos>({});
   const [falla, setFalla] = useState<Falla | null>(null);
   const [enviando, setEnviando] = useState(false);
+  /**
+   * Correo con el que el backend respondió 429. Mientras siga escrito, reenviar solo repetiría
+   * el aviso del bloqueo, así que «Ingresar» queda deshabilitado hasta que cambie el correo.
+   */
+  const [correoBloqueado, setCorreoBloqueado] = useState<string | null>(null);
+  const bloqueado =
+    correoBloqueado !== null && normalizarCorreo(correo) === correoBloqueado;
 
   const aviso = sesion.estado === 'anonimo' ? sesion.aviso : undefined;
 
@@ -68,17 +89,32 @@ export function FormularioInicioSesion() {
       return;
     }
 
+    if (bloqueado) {
+      return;
+    }
     setFalla(null);
     setEnviando(true);
     try {
       await iniciar({ correo: correo.trim(), contrasena });
       router.replace('/');
     } catch (error) {
+      const estado = error instanceof ErrorApi ? error.estado : undefined;
       setFalla({
         mensaje: mensajeParaUsuario(error),
         detalles: error instanceof ErrorApi ? error.detalles : undefined,
+        esBloqueo: estado === 429,
       });
       setEnviando(false);
+      if (estado === 429) {
+        setCorreoBloqueado(normalizarCorreo(correo));
+      }
+      // Sin respuesta del servidor la contraseña no se probó: se conserva para reintentar.
+      if (estado !== undefined && ESTADOS_CONTRASENA_DESCARTADA.has(estado)) {
+        setContrasena('');
+        if (estado === 401) {
+          refContrasena.current?.focus();
+        }
+      }
     }
   }
 
@@ -108,7 +144,11 @@ export function FormularioInicioSesion() {
       {falla && (
         <div
           role="alert"
-          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+          className={`rounded-lg px-3 py-2 text-sm ${
+            falla.esBloqueo
+              ? 'bg-amber-50 text-amber-900'
+              : 'bg-red-50 text-red-800'
+          }`}
         >
           <p>{falla.mensaje}</p>
           {falla.detalles && falla.detalles.length > 0 && (
@@ -188,7 +228,7 @@ export function FormularioInicioSesion() {
 
       <button
         type="submit"
-        disabled={enviando}
+        disabled={enviando || bloqueado}
         className="w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:cursor-not-allowed disabled:opacity-60"
       >
         {enviando ? 'Ingresando…' : 'Ingresar'}
