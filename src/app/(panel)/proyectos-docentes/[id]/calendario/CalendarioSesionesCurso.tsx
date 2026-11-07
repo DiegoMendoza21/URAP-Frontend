@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { Fragment, type FormEvent, useState } from 'react';
 import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
 import { consultarProyectoDocente } from '@/api/proyectos-docentes';
 import {
@@ -506,6 +506,25 @@ function ResumenGeneracion({ resultado }: { resultado: ResultadoGeneracion }) {
   );
 }
 
+type SemanaReceso = CalendarioSesiones['recesos'][number];
+
+/**
+ * Semana de receso institucional (Acuerdo 46 de 2026): no tiene sesiones ni cuenta como semana
+ * del curso. Se muestra para que el salto en la numeración no parezca un error.
+ */
+function AvisoReceso({ receso }: { receso: SemanaReceso }) {
+  return (
+    <p
+      role="note"
+      className="rounded-xl border border-dashed border-sky-300 bg-sky-50 px-3 py-2 text-sm text-sky-900"
+    >
+      <span className="font-semibold">Receso institucional</span> ·{' '}
+      {fechaCorta(receso.desde)} – {fechaCorta(receso.hasta)}. Sin clases; no
+      cuenta como semana del curso.
+    </p>
+  );
+}
+
 function ListaSesiones({ calendario }: { calendario: CalendarioSesiones }) {
   if (calendario.total === 0) {
     return (
@@ -521,6 +540,22 @@ function ListaSesiones({ calendario }: { calendario: CalendarioSesiones }) {
   }
   const proxima = calendario.elementos.find(
     (sesion) => sesion.fecha >= fechaHoy,
+  );
+  // Cada receso va justo antes de la primera semana que lo sigue.
+  const bloques = [...semanas].map(([semana, sesiones], indice, todas) => {
+    const despuesDe = indice === 0 ? '' : todas[indice - 1][1].at(-1)!.fecha;
+    return {
+      semana,
+      sesiones,
+      recesos: calendario.recesos.filter(
+        (receso) =>
+          receso.desde > despuesDe && receso.hasta < sesiones[0].fecha,
+      ),
+    };
+  });
+  const ultimaFecha = calendario.elementos.at(-1)?.fecha ?? '';
+  const recesosAlFinal = calendario.recesos.filter(
+    (receso) => receso.desde > ultimaFecha,
   );
 
   return (
@@ -538,35 +573,42 @@ function ListaSesiones({ calendario }: { calendario: CalendarioSesiones }) {
           </a>
         )}
       </div>
-      {[...semanas].map(([semana, sesiones]) => (
-        <section
-          key={semana}
-          id={`semana-${semana}`}
-          aria-labelledby={`titulo-semana-${semana}`}
-          className="scroll-mt-4 space-y-2"
-        >
-          <h3
-            id={`titulo-semana-${semana}`}
-            className="text-sm font-semibold uppercase tracking-wide text-slate-600"
+      {bloques.map(({ semana, sesiones, recesos }) => (
+        <Fragment key={semana}>
+          {recesos.map((receso) => (
+            <AvisoReceso key={receso.desde} receso={receso} />
+          ))}
+          <section
+            id={`semana-${semana}`}
+            aria-labelledby={`titulo-semana-${semana}`}
+            className="scroll-mt-4 space-y-2"
           >
-            Semana {semana}
-            <span className="font-normal normal-case tracking-normal">
-              {' '}
-              · {fechaCorta(sesiones[0].fecha)}
-              {sesiones.length > 1 &&
-                ` – ${fechaCorta(sesiones.at(-1)!.fecha)}`}
-            </span>
-          </h3>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {sesiones.map((sesion) => (
-              <TarjetaSesion
-                key={sesion.id}
-                sesion={sesion}
-                esHoy={sesion.fecha === fechaHoy}
-              />
-            ))}
-          </ul>
-        </section>
+            <h3
+              id={`titulo-semana-${semana}`}
+              className="text-sm font-semibold uppercase tracking-wide text-slate-600"
+            >
+              Semana {semana}
+              <span className="font-normal normal-case tracking-normal">
+                {' '}
+                · {fechaCorta(sesiones[0].fecha)}
+                {sesiones.length > 1 &&
+                  ` – ${fechaCorta(sesiones.at(-1)!.fecha)}`}
+              </span>
+            </h3>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {sesiones.map((sesion) => (
+                <TarjetaSesion
+                  key={sesion.id}
+                  sesion={sesion}
+                  esHoy={sesion.fecha === fechaHoy}
+                />
+              ))}
+            </ul>
+          </section>
+        </Fragment>
+      ))}
+      {recesosAlFinal.map((receso) => (
+        <AvisoReceso key={receso.desde} receso={receso} />
       ))}
     </section>
   );
