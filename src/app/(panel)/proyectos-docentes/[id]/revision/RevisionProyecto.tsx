@@ -1,0 +1,325 @@
+'use client';
+
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
+import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
+import { consultarDiligenciamiento } from '@/api/diligenciamiento';
+import {
+  consultarProyectoDocente,
+  nombreDocente,
+} from '@/api/proyectos-docentes';
+import {
+  aprobarProyecto,
+  devolverProyecto,
+  type ObservacionEntrada,
+} from '@/api/revision';
+import {
+  Advertencia,
+  AvisoError,
+  Cargando,
+  Insignia,
+} from '../../_componentes/Estados';
+import { useConsulta } from '../../_componentes/useConsulta';
+import { PANTALLAS } from '../diligenciar/DiligenciamientoProyecto';
+
+/** Mismo límite que el backend para cada observación (RF-18). */
+const OBSERVACION_MAXIMA = 2000;
+const OBSERVACION_GENERAL_MAXIMA = 4000;
+const MENSAJE_SIN_OBSERVACIONES =
+  'Escriba al menos una observación en alguna sección para devolver el proyecto.';
+
+const nada = () => {};
+
+type Resultado = { tipo: 'aprobado' } | { tipo: 'devuelto'; cantidad: number };
+
+/**
+ * Revisión del proyecto docente por el departamento académico (RF-18, p2 a p4; HU-07-03 y
+ * HU-07-04): las secciones en solo lectura, con un campo de observación debajo de cada una, y
+ * las decisiones de aprobar o devolver. El backend comprueba el permiso y el programa.
+ */
+export function RevisionProyecto() {
+  const { id } = useParams<{ id: string }>();
+  const idProyecto = /^\d+$/.test(id) ? Number(id) : null;
+  const proyecto = useConsulta(
+    idProyecto === null ? null : `proyecto-${idProyecto}`,
+    (senal) => consultarProyectoDocente(idProyecto!, senal),
+  );
+  const resumen = useConsulta(
+    idProyecto === null ? null : `diligenciamiento-${idProyecto}`,
+    (senal) => consultarDiligenciamiento(idProyecto!, senal),
+  );
+  const [observaciones, setObservaciones] = useState<Record<string, string>>(
+    {},
+  );
+  const [general, setGeneral] = useState('');
+  const [decidiendo, setDecidiendo] = useState<'aprobar' | 'devolver' | null>(
+    null,
+  );
+  const [error, setError] = useState<{
+    mensaje: string;
+    detalles?: string[];
+  } | null>(null);
+  const [resultado, setResultado] = useState<Resultado | null>(null);
+
+  const escritas: ObservacionEntrada[] = Object.entries(observaciones)
+    // Las claves son las de las secciones que mandó el backend; él vuelve a validarlas.
+    .map(([seccion, texto]) => ({
+      seccion: seccion as ObservacionEntrada['seccion'],
+      observacion: texto.trim(),
+    }))
+    .filter((observacion) => observacion.observacion !== '');
+  const enviado =
+    resumen.estado === 'lista' && resumen.datos.estado?.codigo === 'enviado';
+
+  async function decidir(accion: 'aprobar' | 'devolver') {
+    setError(null);
+    if (accion === 'devolver' && escritas.length === 0) {
+      setError({ mensaje: MENSAJE_SIN_OBSERVACIONES });
+      return;
+    }
+    const confirmacion =
+      accion === 'aprobar'
+        ? escritas.length > 0
+          ? 'Escribió observaciones por sección: al aprobar no se envían al docente. ¿Desea aprobar el proyecto de todas formas?'
+          : '¿Aprobar el proyecto docente? El docente podrá registrar sus clases y el proyecto ya no se podrá editar.'
+        : `¿Devolver el proyecto con ${escritas.length === 1 ? 'una observación' : `${escritas.length} observaciones`}? El docente podrá editarlo de nuevo.`;
+    if (!window.confirm(confirmacion)) {
+      return;
+    }
+    setDecidiendo(accion);
+    const nota = general.trim() || undefined;
+    try {
+      if (accion === 'aprobar') {
+        await aprobarProyecto(idProyecto!, nota);
+        setResultado({ tipo: 'aprobado' });
+      } else {
+        await devolverProyecto(idProyecto!, escritas, nota);
+        setResultado({ tipo: 'devuelto', cantidad: escritas.length });
+      }
+    } catch (causa) {
+      setError({
+        mensaje: mensajeParaUsuario(causa),
+        detalles: causa instanceof ErrorApi ? causa.detalles : undefined,
+      });
+    } finally {
+      setDecidiendo(null);
+    }
+  }
+
+  return (
+    <section className="space-y-5">
+      <Link
+        href="/revision"
+        className="text-sm font-medium text-marca hover:underline"
+      >
+        ← Proyectos pendientes de revisión
+      </Link>
+
+      {idProyecto === null && (
+        <AvisoError mensaje="El proyecto docente no existe o no tiene acceso a él." />
+      )}
+      {(proyecto.estado === 'cargando' || resumen.estado === 'cargando') && (
+        <Cargando />
+      )}
+      {proyecto.estado === 'fallida' && (
+        <AvisoError
+          mensaje={proyecto.mensaje}
+          reintentar={proyecto.reintentable ? proyecto.reintentar : undefined}
+        />
+      )}
+
+      {proyecto.estado === 'lista' && resumen.estado === 'lista' && (
+        <>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-600">
+              Revisión del proyecto docente
+            </p>
+            <h1 className="text-2xl font-bold sm:text-3xl">
+              {proyecto.datos.asignatura}
+            </h1>
+            <div className="flex flex-wrap gap-1.5">
+              {resumen.datos.estado && (
+                <Insignia tono="marca">{resumen.datos.estado.nombre}</Insignia>
+              )}
+              {proyecto.datos.periodo && (
+                <Insignia>Período {proyecto.datos.periodo}</Insignia>
+              )}
+              {proyecto.datos.grupo && (
+                <Insignia>Grupo {proyecto.datos.grupo}</Insignia>
+              )}
+            </div>
+            <p className="text-sm text-slate-700">
+              {proyecto.datos.docentes
+                .map(
+                  (docente) =>
+                    `${nombreDocente(docente)}${docente.responsable ? ' (responsable)' : ''}`,
+                )
+                .join(' · ')}
+            </p>
+            <Link
+              href={`/proyectos-docentes/${idProyecto}`}
+              className="inline-block text-sm font-medium text-marca hover:underline"
+            >
+              Ver la ficha y el historial de revisiones
+            </Link>
+          </div>
+
+          {resultado ? (
+            <ResultadoRevision resultado={resultado} />
+          ) : (
+            !enviado && (
+              <Advertencia titulo="Este proyecto no está pendiente de revisión">
+                <p>
+                  Está «{resumen.datos.estado?.nombre ?? 'sin estado'}». Solo se
+                  aprueban o devuelven los proyectos enviados a revisión.
+                </p>
+              </Advertencia>
+            )
+          )}
+
+          {resumen.datos.secciones.map((seccion) => {
+            const Pantalla = PANTALLAS[seccion.clave];
+            const campo = `observacion-${seccion.clave}`;
+            return (
+              <section
+                key={seccion.clave}
+                aria-labelledby={`titulo-${seccion.clave}`}
+                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2
+                    id={`titulo-${seccion.clave}`}
+                    className="text-lg font-semibold"
+                  >
+                    {seccion.numero}. {seccion.titulo}
+                  </h2>
+                  <Insignia tono={seccion.completa ? 'neutro' : 'advertencia'}>
+                    {seccion.completa ? 'Completa' : 'Con pendientes'}
+                  </Insignia>
+                </div>
+                {Pantalla && (
+                  <Pantalla
+                    idProyecto={idProyecto!}
+                    puedeEditar={false}
+                    alGuardar={nada}
+                    alCambiar={nada}
+                  />
+                )}
+                {enviado && !resultado && (
+                  <div className="space-y-1 border-t border-slate-200 pt-3">
+                    <label
+                      htmlFor={campo}
+                      className="block text-sm font-medium"
+                    >
+                      Observación para el docente sobre el punto{' '}
+                      {seccion.numero} (opcional)
+                    </label>
+                    <textarea
+                      id={campo}
+                      rows={3}
+                      maxLength={OBSERVACION_MAXIMA}
+                      value={observaciones[seccion.clave] ?? ''}
+                      onChange={(evento) =>
+                        setObservaciones((previas) => ({
+                          ...previas,
+                          [seccion.clave]: evento.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-marca"
+                    />
+                  </div>
+                )}
+              </section>
+            );
+          })}
+
+          {enviado && !resultado && (
+            <section
+              aria-labelledby="titulo-decision"
+              className="space-y-3 rounded-2xl border border-marca/30 bg-white p-4 shadow-sm sm:p-6"
+            >
+              <h2 id="titulo-decision" className="text-lg font-semibold">
+                Decisión
+              </h2>
+              <div className="space-y-1">
+                <label
+                  htmlFor="observacion-general"
+                  className="block text-sm font-medium"
+                >
+                  Observación general (opcional)
+                </label>
+                <textarea
+                  id="observacion-general"
+                  rows={3}
+                  maxLength={OBSERVACION_GENERAL_MAXIMA}
+                  value={general}
+                  onChange={(evento) => setGeneral(evento.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-marca"
+                />
+              </div>
+              <p className="text-sm text-slate-600">
+                {escritas.length === 0
+                  ? 'Para devolverlo, escriba al menos una observación en alguna sección.'
+                  : escritas.length === 1
+                    ? 'Escribió una observación por sección.'
+                    : `Escribió ${escritas.length} observaciones por sección.`}
+              </p>
+              {error && (
+                <AvisoError mensaje={error.mensaje} detalles={error.detalles} />
+              )}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => void decidir('aprobar')}
+                  disabled={decidiendo !== null}
+                  className="w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro disabled:opacity-50 sm:w-auto sm:py-2"
+                >
+                  {decidiendo === 'aprobar'
+                    ? 'Aprobando…'
+                    : 'Aprobar el proyecto'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void decidir('devolver')}
+                  disabled={decidiendo !== null}
+                  className="w-full rounded-lg border border-amber-400 bg-white px-4 py-3 font-semibold text-amber-950 hover:bg-amber-50 disabled:opacity-50 sm:w-auto sm:py-2"
+                >
+                  {decidiendo === 'devolver'
+                    ? 'Devolviendo…'
+                    : 'Devolver con observaciones'}
+                </button>
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function ResultadoRevision({ resultado }: { resultado: Resultado }) {
+  return (
+    <div
+      role="status"
+      className="space-y-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950"
+    >
+      <p className="font-semibold">
+        {resultado.tipo === 'aprobado'
+          ? 'Proyecto aprobado.'
+          : 'Proyecto devuelto con observaciones.'}
+      </p>
+      <p className="text-sm">
+        {resultado.tipo === 'aprobado'
+          ? 'Se avisó a los docentes. Ya pueden registrar sus clases.'
+          : `Se avisó a los docentes con ${resultado.cantidad === 1 ? 'la observación' : `las ${resultado.cantidad} observaciones`}. Podrán editarlo y enviarlo de nuevo.`}
+      </p>
+      <Link
+        href="/revision"
+        className="inline-block font-semibold text-marca hover:underline"
+      >
+        Volver a los pendientes
+      </Link>
+    </div>
+  );
+}

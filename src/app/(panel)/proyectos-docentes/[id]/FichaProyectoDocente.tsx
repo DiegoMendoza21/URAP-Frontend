@@ -6,10 +6,12 @@ import {
   consultarProyectoDocente,
   nombreDocente,
 } from '@/api/proyectos-docentes';
+import { usePermisos } from '@/sesion/permisos';
 import { useSesion } from '@/sesion/ProveedorSesion';
 import { AvisoError, Cargando, Insignia } from '../_componentes/Estados';
 import { InformacionGeneral } from '../_componentes/InformacionGeneral';
 import { useConsulta } from '../_componentes/useConsulta';
+import { HistorialRevisiones } from './HistorialRevisiones';
 
 /**
  * Roles que ven la lista de estudiantes del curso (RF-22). Es presentación: el backend solo la
@@ -29,6 +31,7 @@ const ROLES_MEDICION = ['Líder RAP', 'Departamento académico'];
  */
 export function FichaProyectoDocente() {
   const { sesion } = useSesion();
+  const tiene = usePermisos();
   const { id } = useParams<{ id: string }>();
   const idProyecto = /^\d+$/.test(id) ? Number(id) : null;
   const proyecto = useConsulta(
@@ -52,6 +55,13 @@ export function FichaProyectoDocente() {
         (docente) => docente.id === sesion.usuario.id,
       )) ||
       sesion.usuario.roles.some((rol) => ROLES_MEDICION.includes(rol)));
+
+  // HU-07-02: quien aprueba entra a revisar un proyecto enviado. El backend comprueba además
+  // que apruebe en el programa del proyecto.
+  const puedeRevisar =
+    proyecto.estado === 'lista' &&
+    proyecto.datos.estado?.codigo === 'enviado' &&
+    tiene('proyectos.aprobar');
 
   return (
     <section className="space-y-6">
@@ -93,6 +103,14 @@ export function FichaProyectoDocente() {
             >
               Diligenciar el proyecto
             </Link>
+            {puedeRevisar && (
+              <Link
+                href={`/proyectos-docentes/${proyecto.datos.id}/revision`}
+                className="inline-block w-full rounded-lg border border-marca px-4 py-3 text-center font-semibold text-marca hover:bg-marca/5 sm:ml-2 sm:w-auto sm:py-2"
+              >
+                Revisar el proyecto
+              </Link>
+            )}
           </div>
 
           <section
@@ -189,6 +207,8 @@ export function FichaProyectoDocente() {
               ))}
             </ul>
           </section>
+
+          <HistorialRevisiones idProyecto={proyecto.datos.id} />
 
           {/* RF-24: el backend decide quién carga y quién ve cada evidencia. */}
           <Link

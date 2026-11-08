@@ -9,12 +9,20 @@ import {
 } from '@/api/diligenciamiento';
 import { consultarProyectoDocente } from '@/api/proyectos-docentes';
 import {
+  consultarObservaciones,
+  type Observacion,
+  type ObservacionesProyecto,
+} from '@/api/revision';
+import {
   Advertencia,
   AvisoError,
   Cargando,
   Insignia,
 } from '../../_componentes/Estados';
+import { momento } from '../../_componentes/fechas';
 import { useConsulta } from '../../_componentes/useConsulta';
+import { ObservacionesSeccion } from './ObservacionesSeccion';
+import { PanelEnvio } from './PanelEnvio';
 import { SeccionBibliografia } from './SeccionBibliografia';
 import { SeccionContenidos } from './SeccionContenidos';
 import { SeccionDescripcion } from './SeccionDescripcion';
@@ -35,8 +43,14 @@ export interface PropiedadesSeccion {
   alCambiar: (hayCambios: boolean) => void;
 }
 
-/** Pantalla de cada sección (puntos 2 a 7), por la clave que le da el backend. */
-const PANTALLAS: Record<string, ComponentType<PropiedadesSeccion>> = {
+/** Estados desde los que el docente envía a revisión (RF-17, precondición). */
+const ESTADOS_QUE_SE_ENVIAN = ['en_diligenciamiento', 'devuelto'];
+
+/**
+ * Pantalla de cada sección (puntos 2 a 7), por la clave que le da el backend. La revisión del
+ * departamento (RF-18) las reutiliza en solo lectura.
+ */
+export const PANTALLAS: Record<string, ComponentType<PropiedadesSeccion>> = {
   descripcion: SeccionDescripcion,
   rac: SeccionRac,
   estrategias: SeccionEstrategias,
@@ -62,7 +76,13 @@ export function DiligenciamientoProyecto() {
     idProyecto === null ? null : `diligenciamiento-${idProyecto}`,
     (senal) => consultarDiligenciamiento(idProyecto!, senal),
   );
+  const observaciones = useConsulta(
+    idProyecto === null ? null : `observaciones-${idProyecto}`,
+    (senal) => consultarObservaciones(idProyecto!, senal),
+  );
   const [refrescado, setRefrescado] = useState<Diligenciamiento | null>(null);
+  const [observacionesActuales, setObservacionesActuales] =
+    useState<ObservacionesProyecto | null>(null);
   const [activa, setActiva] = useState<string | null>(null);
   const [conCambios, setConCambios] = useState<ReadonlySet<string>>(new Set());
   const ultimaConsulta = useRef(0);
@@ -87,6 +107,41 @@ export function DiligenciamientoProyecto() {
     );
   }, [idProyecto]);
 
+  // HU-07-05: tras marcar una observación o enviar, se actualizan sin «Cargando…».
+  const recargarObservaciones = useCallback(() => {
+    if (idProyecto === null) {
+      return;
+    }
+    consultarObservaciones(idProyecto).then(setObservacionesActuales, () => {
+      // Si falla, quedan las anteriores en pantalla.
+    });
+  }, [idProyecto]);
+
+  const alMarcar = useCallback(
+    (marcada: Observacion) =>
+      setObservacionesActuales((previas) => {
+        const base =
+          previas ??
+          (observaciones.estado === 'lista' ? observaciones.datos : null);
+        if (!base?.devolucion) {
+          return base;
+        }
+        const lista = base.devolucion.observaciones.map((observacion) =>
+          observacion.id === marcada.id ? marcada : observacion,
+        );
+        return {
+          ...base,
+          devolucion: {
+            ...base.devolucion,
+            observaciones: lista,
+            sinResolver: lista.filter((observacion) => !observacion.resuelta)
+              .length,
+          },
+        };
+      }),
+    [observaciones],
+  );
+
   const cambiosDe = useCallback(
     (clave: string) => (hayCambios: boolean) =>
       setConCambios((previas) => {
@@ -107,6 +162,29 @@ export function DiligenciamientoProyecto() {
   const resumen =
     refrescado ?? (consulta.estado === 'lista' ? consulta.datos : null);
   const claveActiva = activa ?? resumen?.secciones[0]?.clave ?? null;
+  const datosObservaciones =
+    observacionesActuales ??
+    (observaciones.estado === 'lista' ? observaciones.datos : null);
+  // Las observaciones se muestran mientras el proyecto está devuelto: después del reenvío
+  // quedan en el historial de la ficha.
+  const devolucion = datosObservaciones?.vigentes
+    ? datosObservaciones.devolucion
+    : null;
+  const observacionesDe = (clave: string) =>
+    devolucion?.observaciones.filter(
+      (observacion) => observacion.seccion === clave,
+    ) ?? [];
+  const puedeEnviar =
+    resumen !== null &&
+    resumen.puedeEditar &&
+    ESTADOS_QUE_SE_ENVIAN.includes(resumen.estado?.codigo ?? '');
+
+  const irASeccion = (clave: string) => {
+    setActiva(clave);
+    document
+      .getElementById('secciones-proyecto')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <section className="space-y-5">
@@ -158,16 +236,38 @@ export function DiligenciamientoProyecto() {
             </div>
           </div>
 
+          {devolucion && (
+            <Advertencia titulo="El departamento académico devolvió el proyecto con observaciones">
+              <p>
+                {devolucion.fecha && `El ${momento(devolucion.fecha)}. `}
+                Cada observación aparece en su sección. Corrija, márquela como
+                resuelta y vuelva a enviarlo a revisión.
+              </p>
+              {devolucion.observacionGeneral && (
+                <p className="italic">«{devolucion.observacionGeneral}»</p>
+              )}
+            </Advertencia>
+          )}
+
           {resumen.motivoNoEditable && (
             <Advertencia titulo="Solo lectura">
               <p>{resumen.motivoNoEditable}</p>
             </Advertencia>
           )}
 
-          <nav aria-label="Secciones del proyecto docente">
-            <ol className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+          <nav
+            id="secciones-proyecto"
+            aria-label="Secciones del proyecto docente"
+            className="scroll-mt-4"
+          >
+            {/* `relative`: los textos `sr-only` de cada pestaña son `absolute`; sin un contenedor
+                posicionado escapan del desplazamiento horizontal y ensanchan la página en el teléfono. */}
+            <ol className="relative -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
               {resumen.secciones.map((seccion) => {
                 const actual = seccion.clave === claveActiva;
+                const sinResolver = observacionesDe(seccion.clave).filter(
+                  (observacion) => !observacion.resuelta,
+                ).length;
                 return (
                   <li key={seccion.clave} className="shrink-0">
                     <button
@@ -192,6 +292,22 @@ export function DiligenciamientoProyecto() {
                       <span className="sr-only">
                         {seccion.completa ? '(completa)' : '(pendiente)'}
                       </span>
+                      {sinResolver > 0 && (
+                        <span
+                          className={`rounded-full px-1.5 text-xs ${
+                            actual
+                              ? 'bg-white text-marca'
+                              : 'bg-amber-100 text-amber-900'
+                          }`}
+                        >
+                          {sinResolver}
+                          <span className="sr-only">
+                            {sinResolver === 1
+                              ? ' observación sin resolver'
+                              : ' observaciones sin resolver'}
+                          </span>
+                        </span>
+                      )}
                     </button>
                   </li>
                 );
@@ -227,6 +343,12 @@ export function DiligenciamientoProyecto() {
                     </p>
                   )}
                 </div>
+                <ObservacionesSeccion
+                  idProyecto={idProyecto}
+                  observaciones={observacionesDe(seccion.clave)}
+                  puedeMarcar={resumen.puedeEditar}
+                  alMarcar={alMarcar}
+                />
                 {Pantalla ? (
                   <Pantalla
                     idProyecto={idProyecto}
@@ -242,6 +364,17 @@ export function DiligenciamientoProyecto() {
               </section>
             );
           })}
+
+          {puedeEnviar && (
+            <PanelEnvio
+              idProyecto={idProyecto}
+              alEnviar={() => {
+                alGuardar();
+                recargarObservaciones();
+              }}
+              irASeccion={irASeccion}
+            />
+          )}
         </>
       )}
     </section>
