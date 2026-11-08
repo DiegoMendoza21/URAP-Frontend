@@ -249,12 +249,12 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
               ? porcentaje(datos.porcentajeEsperado)
               : META_NO_DEFINIDA}
           </dd>
-          <dd className="mt-1">
-            <Juicio
-              alcanzado={datos.alcanzado}
-              metaDefinida={datos.metaDefinida}
-            />
-          </dd>
+          {/* Sin meta, el valor ya dice «Meta no definida por el programa»: no se repite. */}
+          {datos.metaDefinida && (
+            <dd className="mt-1">
+              <Juicio alcanzado={datos.alcanzado} metaDefinida />
+            </dd>
+          )}
         </div>
         <div className="rounded-xl bg-slate-50 p-3">
           <dt className="text-sm text-slate-600">Muestra y cohorte</dt>
@@ -263,8 +263,9 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
             {datos.tamanoMuestra === 1 ? 'estudiante' : 'estudiantes'}
           </dd>
           <dd className="text-xs text-slate-600">
-            Cohorte: {datos.tamanoCohorte}
-            {datos.cohorteRegistrada ? '' : ' (no registrada: la muestra)'}
+            {datos.cohorteRegistrada
+              ? `Cohorte: ${datos.tamanoCohorte}`
+              : `Cohorte no registrada: se usa la muestra (${datos.tamanoMuestra})`}
           </dd>
         </div>
       </dl>

@@ -2,7 +2,13 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { type ComponentType, useCallback, useRef, useState } from 'react';
+import {
+  type ComponentType,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   consultarDiligenciamiento,
   type Diligenciamiento,
@@ -34,9 +40,18 @@ import { useAvisoSalida } from './useAvisoSalida';
 const MENSAJE_SALIDA =
   'Tiene cambios sin guardar. Si sale ahora, se perderán. ¿Desea salir?';
 
+/** Espacio que se deja a la izquierda de la pestaña activa al desplazarla (el `px-4` de la tira). */
+const DESPLAZAMIENTO_MARGEN = 16;
+
 export interface PropiedadesSeccion {
   idProyecto: number;
   puedeEditar: boolean;
+  /**
+   * Si la pestaña de la sección está a la vista. Las secciones quedan montadas al cambiar de
+   * pestaña, así que la que depende de otra (el punto 5 de los RAC del punto 3) lo usa para
+   * consultar de nuevo al volver a mostrarse.
+   */
+  visible?: boolean;
   /** Pide el resumen otra vez: tras guardar, o si el servidor rechazó el cambio. */
   alGuardar: () => void;
   /** Avisa si la sección tiene cambios sin guardar. */
@@ -163,6 +178,30 @@ export function DiligenciamientoProyecto() {
       }),
     [],
   );
+
+  // En el teléfono las pestañas no caben a lo ancho. Al cambiar de sección, también sin tocar la
+  // pestaña (por ejemplo, desde «Ir al punto N»), la activa se desplaza a la vista dentro de su
+  // tira, sin mover la página.
+  useEffect(() => {
+    if (activa === null) {
+      return;
+    }
+    const pestana = document.querySelector<HTMLElement>(
+      'nav[aria-label="Secciones del proyecto docente"] [aria-current="step"]',
+    );
+    const tira = pestana?.closest('ol');
+    if (!pestana || !tira) {
+      return;
+    }
+    const visible = tira.getBoundingClientRect();
+    const caja = pestana.getBoundingClientRect();
+    if (caja.left < visible.left || caja.right > visible.right) {
+      tira.scrollBy({
+        left: caja.left - visible.left - DESPLAZAMIENTO_MARGEN,
+        behavior: 'smooth',
+      });
+    }
+  }, [activa]);
 
   const resumen =
     refrescado ?? (consulta.estado === 'lista' ? consulta.datos : null);
@@ -363,6 +402,7 @@ export function DiligenciamientoProyecto() {
                   <Pantalla
                     idProyecto={idProyecto}
                     puedeEditar={resumen.puedeEditar}
+                    visible={seccion.clave === claveActiva}
                     alGuardar={alGuardar}
                     alCambiar={cambiosDe(seccion.clave)}
                   />

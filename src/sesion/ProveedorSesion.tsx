@@ -56,6 +56,13 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     estado: 'verificando',
   });
   const verificacionEnCurso = useRef(false);
+  /**
+   * El canal por el que esta pestaña escucha. Se avisa por él mismo: un `BroadcastChannel` no
+   * recibe sus propios mensajes, pero sí los de otro objeto con el mismo nombre, aunque esté en
+   * la misma pestaña. Avisar con un canal nuevo hacía que esta pestaña creyera que la sesión se
+   * había cerrado en otra.
+   */
+  const canalSesion = useRef<BroadcastChannel | null>(null);
 
   const verificar = useCallback(() => {
     if (verificacionEnCurso.current) {
@@ -95,11 +102,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       // El servidor de Next borra la cookie aunque el backend no responda; si ni siquiera
       // hubo red, la cookie vence sola con el token.
     }
-    if (typeof BroadcastChannel !== 'undefined') {
-      const canal = new BroadcastChannel(CANAL_SESION);
-      canal.postMessage(MENSAJE_SESION_CERRADA);
-      canal.close();
-    }
+    canalSesion.current?.postMessage(MENSAJE_SESION_CERRADA);
     setSesion({ estado: 'anonimo' });
   }, []);
 
@@ -121,7 +124,11 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
         setSesion({ estado: 'anonimo', aviso: AVISO_CERRADA_EN_OTRA_PESTANA });
       }
     };
-    return () => canal.close();
+    canalSesion.current = canal;
+    return () => {
+      canalSesion.current = null;
+      canal.close();
+    };
   }, []);
 
   const valor = useMemo(
