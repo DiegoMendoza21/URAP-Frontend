@@ -425,6 +425,7 @@ export function AsistenteProyectoDocente() {
                   asignaturas={asignaturas.datos}
                   filtro={filtroAsignatura}
                   idPlan={idPlanFiltro}
+                  variosPlanes={planes.length > 1}
                   elegida={idAsignatura}
                   alElegir={elegirAsignatura}
                 />
@@ -799,6 +800,7 @@ function ListaAsignaturas({
   asignaturas,
   filtro,
   idPlan,
+  variosPlanes,
   elegida,
   alElegir,
 }: {
@@ -807,6 +809,8 @@ function ListaAsignaturas({
   filtro: string;
   /** Plan por el que se filtra; nulo: todos. */
   idPlan: number | null;
+  /** Si el programa tiene más de un plan: entonces la lista se agrupa por plan. */
+  variosPlanes: boolean;
   elegida: number | null;
   alElegir: (id: number) => void;
 }) {
@@ -827,7 +831,6 @@ function ListaAsignaturas({
       </p>
     );
   }
-  const variosPlanes = planesDe(asignaturas).length > 1;
   return (
     <div className="space-y-5">
       {planesDe(visibles).map((plan) => (
