@@ -42,8 +42,12 @@ export function PanelInicial() {
         </ul>
       </div>
       {/* Lo propio del docente: los proyectos que le devolvieron y las sesiones de sus cursos. */}
-      {roles.includes(ROL.docente) && <ProyectosDevueltos idUsuario={id} />}
-      {roles.includes(ROL.docente) && <PendientesDocente />}
+      {roles.includes(ROL.docente) && (
+        <>
+          <ProyectosDevueltos idUsuario={id} />
+          <PendientesDocente />
+        </>
+      )}
       {opciones.length === 0 ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
           Su usuario todavía no tiene opciones habilitadas. Comuníquese con el
