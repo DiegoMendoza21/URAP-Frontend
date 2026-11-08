@@ -38,6 +38,12 @@ const DESPLAZAMIENTO_MARGEN = 16;
 export interface PropiedadesSeccion {
   idProyecto: number;
   puedeEditar: boolean;
+  /**
+   * Si la pestaña de la sección está a la vista. Las secciones quedan montadas al cambiar de
+   * pestaña, así que la que depende de otra (el punto 5 de los RAC del punto 3) lo usa para
+   * consultar de nuevo al volver a mostrarse.
+   */
+  visible?: boolean;
   /** Pide el resumen otra vez: tras guardar, o si el servidor rechazó el cambio. */
   alGuardar: () => void;
   /** Avisa si la sección tiene cambios sin guardar. */
@@ -264,6 +270,7 @@ export function DiligenciamientoProyecto() {
                   <Pantalla
                     idProyecto={idProyecto}
                     puedeEditar={resumen.puedeEditar}
+                    visible={seccion.clave === claveActiva}
                     alGuardar={alGuardar}
                     alCambiar={cambiosDe(seccion.clave)}
                   />
