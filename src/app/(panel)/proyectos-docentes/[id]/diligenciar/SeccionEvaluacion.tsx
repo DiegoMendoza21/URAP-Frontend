@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { mensajeParaUsuario } from '@/api/cliente';
 import {
   type ActividadEvaluacion,
@@ -35,6 +35,7 @@ const peso = (valor: number) => `${formatoPeso.format(valor)} %`;
 export function SeccionEvaluacion({
   idProyecto,
   puedeEditar,
+  visible,
   alGuardar,
   alCambiar,
 }: PropiedadesSeccion) {
@@ -49,6 +50,25 @@ export function SeccionEvaluacion({
       alCambiar(false);
     }
   }, [alCambiar, editando]);
+
+  // Los RAC se registran en el punto 3, otra pestaña que también queda montada. Al volver a
+  // esta, se consultan otra vez para mostrar los nuevos o los cambiados, sin «Cargando…». Si
+  // hay una evaluación a medio editar no se toca, para no perder el borrador: al guardarla,
+  // la respuesta ya trae los RAC al día.
+  const cargada = consulta.estado === 'lista';
+  const estabaVisible = useRef(visible);
+  useEffect(() => {
+    const reaparece = visible === true && !estabaVisible.current;
+    estabaVisible.current = visible;
+    if (!reaparece || !cargada || editando !== null) {
+      return;
+    }
+    const controlador = new AbortController();
+    consultarEvaluacion(idProyecto, controlador.signal).then(setActual, () => {
+      // Si falla, queda en pantalla lo que ya había.
+    });
+    return () => controlador.abort();
+  }, [visible, cargada, editando, idProyecto]);
 
   if (consulta.estado === 'cargando' || consulta.estado === 'inactiva') {
     return <Cargando />;
