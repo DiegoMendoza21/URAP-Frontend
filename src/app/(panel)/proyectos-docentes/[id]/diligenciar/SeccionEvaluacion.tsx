@@ -53,20 +53,29 @@ export function SeccionEvaluacion({
 
   // Los RAC se registran en el punto 3, otra pestaña que también queda montada. Al volver a
   // esta, se consultan otra vez para mostrar los nuevos o los cambiados, sin «Cargando…». Si
-  // hay una evaluación a medio editar no se toca, para no perder el borrador: al guardarla,
-  // la respuesta ya trae los RAC al día.
+  // hay una evaluación a medio editar no se toca, para no perder el borrador: la consulta
+  // queda pendiente hasta que se guarde o se cancele.
   const cargada = consulta.estado === 'lista';
   const estabaVisible = useRef(visible);
+  const porRefrescar = useRef(false);
   useEffect(() => {
-    const reaparece = visible === true && !estabaVisible.current;
+    if (visible === true && !estabaVisible.current) {
+      porRefrescar.current = true;
+    }
     estabaVisible.current = visible;
-    if (!reaparece || !cargada || editando !== null) {
+    if (!porRefrescar.current || !visible || !cargada || editando !== null) {
       return;
     }
     const controlador = new AbortController();
-    consultarEvaluacion(idProyecto, controlador.signal).then(setActual, () => {
-      // Si falla, queda en pantalla lo que ya había.
-    });
+    consultarEvaluacion(idProyecto, controlador.signal).then(
+      (datos) => {
+        porRefrescar.current = false;
+        setActual(datos);
+      },
+      () => {
+        // Si falla o se cancela, queda en pantalla lo que ya había.
+      },
+    );
     return () => controlador.abort();
   }, [visible, cargada, editando, idProyecto]);
 
