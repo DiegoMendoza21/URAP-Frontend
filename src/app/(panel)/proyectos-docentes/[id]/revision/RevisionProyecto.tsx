@@ -13,6 +13,7 @@ import {
   aprobarProyecto,
   devolverProyecto,
   type ObservacionEntrada,
+  type TransicionProyecto,
 } from '@/api/revision';
 import {
   Advertencia,
@@ -31,7 +32,10 @@ const MENSAJE_SIN_OBSERVACIONES =
 
 const nada = () => {};
 
-type Resultado = { tipo: 'aprobado' } | { tipo: 'devuelto'; cantidad: number };
+/** La decisión tomada y el estado en que quedó el proyecto, según el backend. */
+type Resultado = { estado: TransicionProyecto['estado'] } & (
+  { tipo: 'aprobado' } | { tipo: 'devuelto'; cantidad: number }
+);
 
 /**
  * Revisión del proyecto docente por el departamento académico (RF-18, p2 a p4; HU-07-03 y
@@ -71,6 +75,10 @@ export function RevisionProyecto() {
     .filter((observacion) => observacion.observacion !== '');
   const enviado =
     resumen.estado === 'lista' && resumen.datos.estado?.codigo === 'enviado';
+  // Tras decidir, el estado que devolvió el backend: el resumen no se vuelve a pedir.
+  const estado =
+    resultado?.estado ??
+    (resumen.estado === 'lista' ? resumen.datos.estado : null);
 
   async function decidir(accion: 'aprobar' | 'devolver') {
     setError(null);
@@ -91,11 +99,11 @@ export function RevisionProyecto() {
     const nota = general.trim() || undefined;
     try {
       if (accion === 'aprobar') {
-        await aprobarProyecto(idProyecto!, nota);
-        setResultado({ tipo: 'aprobado' });
+        const { estado } = await aprobarProyecto(idProyecto!, nota);
+        setResultado({ tipo: 'aprobado', estado });
       } else {
-        await devolverProyecto(idProyecto!, escritas, nota);
-        setResultado({ tipo: 'devuelto', cantidad: escritas.length });
+        const { estado } = await devolverProyecto(idProyecto!, escritas, nota);
+        setResultado({ tipo: 'devuelto', cantidad: escritas.length, estado });
       }
     } catch (causa) {
       setError({
@@ -139,9 +147,7 @@ export function RevisionProyecto() {
               {proyecto.datos.asignatura}
             </h1>
             <div className="flex flex-wrap gap-1.5">
-              {resumen.datos.estado && (
-                <Insignia tono="marca">{resumen.datos.estado.nombre}</Insignia>
-              )}
+              {estado && <Insignia tono="marca">{estado.nombre}</Insignia>}
               {proyecto.datos.periodo && (
                 <Insignia>Período {proyecto.datos.periodo}</Insignia>
               )}

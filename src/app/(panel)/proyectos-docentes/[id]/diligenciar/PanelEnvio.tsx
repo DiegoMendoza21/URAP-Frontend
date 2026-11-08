@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
 import {
   enviarARevision,
@@ -24,10 +24,13 @@ type Paso =
  */
 export function PanelEnvio({
   idProyecto,
+  cambiosGuardados,
   alEnviar,
   irASeccion,
 }: {
   idProyecto: number;
+  /** Cambia al guardar una sección o marcar una observación. */
+  cambiosGuardados: number;
   /** Tras enviar: el resumen y las observaciones cambian. */
   alEnviar: () => void;
   irASeccion: (clave: string) => void;
@@ -37,8 +40,33 @@ export function PanelEnvio({
     mensaje: string;
     detalles?: string[];
   } | null>(null);
+  const verificadoCon = useRef(cambiosGuardados);
+
+  // Si el resumen de la verificación está a la vista y el docente guarda una sección o marca
+  // una observación, se verifica otra vez sin que tenga que pulsar «Verificar de nuevo».
+  const resumenVisible = paso.tipo === 'resumen';
+  useEffect(() => {
+    if (!resumenVisible || verificadoCon.current === cambiosGuardados) {
+      return;
+    }
+    verificadoCon.current = cambiosGuardados;
+    const controlador = new AbortController();
+    verificarEnvio(idProyecto, controlador.signal).then(
+      (verificacion) =>
+        setPaso((actual) =>
+          actual.tipo === 'resumen'
+            ? { tipo: 'resumen', verificacion }
+            : actual,
+        ),
+      () => {
+        // Si falla, queda la verificación anterior y el botón «Verificar de nuevo».
+      },
+    );
+    return () => controlador.abort();
+  }, [resumenVisible, cambiosGuardados, idProyecto]);
 
   async function verificar() {
+    verificadoCon.current = cambiosGuardados;
     setPaso({ tipo: 'verificando' });
     setError(null);
     try {

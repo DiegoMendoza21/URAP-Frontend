@@ -25,6 +25,11 @@ const ROL_DOCENTE = 'Docente responsable';
  */
 const ROLES_MEDICION = ['Líder RAP', 'Departamento académico'];
 
+const CLASE_BOTON =
+  'inline-block w-full rounded-lg px-4 py-3 text-center font-semibold sm:w-auto sm:py-2';
+const CLASE_PRINCIPAL = 'bg-marca text-white hover:bg-marca-oscuro';
+const CLASE_SECUNDARIO = 'border border-marca text-marca hover:bg-marca/5';
+
 /**
  * Ficha del proyecto docente: la información base con la que lo creó el asistente (RF-08). Las
  * secciones que diligencia el docente (puntos 2 a 7 del formato) están en `diligenciar/`.
@@ -38,22 +43,19 @@ export function FichaProyectoDocente() {
     idProyecto === null ? null : `proyecto-${idProyecto}`,
     (senal) => consultarProyectoDocente(idProyecto!, senal),
   );
+  const esDocenteAsignado =
+    sesion.estado === 'autenticado' &&
+    proyecto.estado === 'lista' &&
+    sesion.usuario.roles.includes(ROL_DOCENTE) &&
+    proyecto.datos.docentes.some((docente) => docente.id === sesion.usuario.id);
   // El Administrador la ve siempre; el docente, solo si dicta el curso (como en el backend).
   const veEstudiantes =
-    sesion.estado === 'autenticado' &&
-    proyecto.estado === 'lista' &&
-    (sesion.usuario.roles.includes(ROL_ADMINISTRADOR) ||
-      (sesion.usuario.roles.includes(ROL_DOCENTE) &&
-        proyecto.datos.docentes.some(
-          (docente) => docente.id === sesion.usuario.id,
-        )));
+    esDocenteAsignado ||
+    (sesion.estado === 'autenticado' &&
+      sesion.usuario.roles.includes(ROL_ADMINISTRADOR));
   const veMediciones =
-    sesion.estado === 'autenticado' &&
-    proyecto.estado === 'lista' &&
-    ((sesion.usuario.roles.includes(ROL_DOCENTE) &&
-      proyecto.datos.docentes.some(
-        (docente) => docente.id === sesion.usuario.id,
-      )) ||
+    esDocenteAsignado ||
+    (sesion.estado === 'autenticado' &&
       sesion.usuario.roles.some((rol) => ROLES_MEDICION.includes(rol)));
 
   // HU-07-02: quien aprueba entra a revisar un proyecto enviado. El backend comprueba además
@@ -97,20 +99,26 @@ export function FichaProyectoDocente() {
               )}
               <Insignia>Período {proyecto.datos.periodo}</Insignia>
             </div>
-            <Link
-              href={`/proyectos-docentes/${proyecto.datos.id}/diligenciar`}
-              className="inline-block w-full rounded-lg bg-marca px-4 py-3 text-center font-semibold text-white hover:bg-marca-oscuro sm:w-auto sm:py-2"
-            >
-              Diligenciar el proyecto
-            </Link>
-            {puedeRevisar && (
+            {/* Con un proyecto enviado, revisarlo es la acción principal de quien aprueba. Los
+                puntos 2 a 7 los diligencia el docente asignado; los demás solo los consultan. */}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {puedeRevisar && (
+                <Link
+                  href={`/proyectos-docentes/${proyecto.datos.id}/revision`}
+                  className={`${CLASE_BOTON} ${CLASE_PRINCIPAL}`}
+                >
+                  Revisar el proyecto
+                </Link>
+              )}
               <Link
-                href={`/proyectos-docentes/${proyecto.datos.id}/revision`}
-                className="inline-block w-full rounded-lg border border-marca px-4 py-3 text-center font-semibold text-marca hover:bg-marca/5 sm:ml-2 sm:w-auto sm:py-2"
+                href={`/proyectos-docentes/${proyecto.datos.id}/diligenciar`}
+                className={`${CLASE_BOTON} ${puedeRevisar ? CLASE_SECUNDARIO : CLASE_PRINCIPAL}`}
               >
-                Revisar el proyecto
+                {esDocenteAsignado
+                  ? 'Diligenciar el proyecto'
+                  : 'Ver los puntos 2 a 7'}
               </Link>
-            )}
+            </div>
           </div>
 
           <section

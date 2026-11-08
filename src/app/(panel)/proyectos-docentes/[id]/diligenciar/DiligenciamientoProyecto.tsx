@@ -84,6 +84,8 @@ export function DiligenciamientoProyecto() {
   const [observacionesActuales, setObservacionesActuales] =
     useState<ObservacionesProyecto | null>(null);
   const [activa, setActiva] = useState<string | null>(null);
+  /** Sube con cada sección guardada u observación marcada: el panel de envío vuelve a verificar. */
+  const [cambiosGuardados, setCambiosGuardados] = useState(0);
   const [conCambios, setConCambios] = useState<ReadonlySet<string>>(new Set());
   const ultimaConsulta = useRef(0);
   useAvisoSalida(conCambios.size > 0);
@@ -99,6 +101,7 @@ export function DiligenciamientoProyecto() {
       (datos) => {
         if (numero === ultimaConsulta.current) {
           setRefrescado(datos);
+          setCambiosGuardados((valor) => valor + 1);
         }
       },
       () => {
@@ -118,7 +121,8 @@ export function DiligenciamientoProyecto() {
   }, [idProyecto]);
 
   const alMarcar = useCallback(
-    (marcada: Observacion) =>
+    (marcada: Observacion) => {
+      setCambiosGuardados((valor) => valor + 1);
       setObservacionesActuales((previas) => {
         const base =
           previas ??
@@ -138,7 +142,8 @@ export function DiligenciamientoProyecto() {
               .length,
           },
         };
-      }),
+      });
+    },
     [observaciones],
   );
 
@@ -239,10 +244,15 @@ export function DiligenciamientoProyecto() {
           {devolucion && (
             <Advertencia titulo="El departamento académico devolvió el proyecto con observaciones">
               <p>
-                {devolucion.fecha && `El ${momento(devolucion.fecha)}. `}
                 Cada observación aparece en su sección. Corrija, márquela como
                 resuelta y vuelva a enviarlo a revisión.
               </p>
+              {/* La hora termina en «a. m.» o «p. m.»: va sin punto final. */}
+              {devolucion.fecha && (
+                <p className="text-sm">
+                  Devuelto el {momento(devolucion.fecha)}
+                </p>
+              )}
               {devolucion.observacionGeneral && (
                 <p className="italic">«{devolucion.observacionGeneral}»</p>
               )}
@@ -368,6 +378,7 @@ export function DiligenciamientoProyecto() {
           {puedeEnviar && (
             <PanelEnvio
               idProyecto={idProyecto}
+              cambiosGuardados={cambiosGuardados}
               alEnviar={() => {
                 alGuardar();
                 recargarObservaciones();
