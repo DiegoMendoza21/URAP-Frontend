@@ -5,12 +5,14 @@ import { useSesion } from '@/sesion/ProveedorSesion';
 import { usePermisos } from '@/sesion/permisos';
 import { ROL } from './menu';
 import { PendientesDocente } from './PendientesDocente';
+import { ProyectosDevueltos } from './ProyectosDevueltos';
 import { useOpcionesMenu } from './useOpcionesMenu';
 
 /**
  * Panel inicial después de iniciar sesión (RF-01, p4): los roles del usuario, un acceso por
- * cada opción que puede abrir (HU-01-03), las mismas del menú, y, para el docente, sus
- * sesiones vencidas y por vencer (RF-23, p5).
+ * cada opción que puede abrir (HU-01-03), las mismas del menú, y, para el docente, los
+ * proyectos que le devolvieron con observaciones (RF-18) y sus sesiones vencidas y por vencer
+ * (RF-23, p5).
  */
 export function PanelInicial() {
   const { sesion } = useSesion();
@@ -19,7 +21,7 @@ export function PanelInicial() {
   if (sesion.estado !== 'autenticado') {
     return null;
   }
-  const { nombres, roles } = sesion.usuario;
+  const { id, nombres, roles } = sesion.usuario;
 
   return (
     <section aria-labelledby="titulo-panel" className="space-y-6">
@@ -39,8 +41,13 @@ export function PanelInicial() {
           ))}
         </ul>
       </div>
-      {/* Las sesiones propias del docente: el backend las busca en sus cursos asignados. */}
-      {roles.includes(ROL.docente) && <PendientesDocente />}
+      {/* Lo propio del docente: los proyectos que le devolvieron y las sesiones de sus cursos. */}
+      {roles.includes(ROL.docente) && (
+        <>
+          <ProyectosDevueltos idUsuario={id} />
+          <PendientesDocente />
+        </>
+      )}
       {opciones.length === 0 ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
           Su usuario todavía no tiene opciones habilitadas. Comuníquese con el
