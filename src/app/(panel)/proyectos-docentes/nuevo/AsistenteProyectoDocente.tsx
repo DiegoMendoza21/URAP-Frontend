@@ -607,9 +607,6 @@ export function AsistenteProyectoDocente() {
                   >
                     Abrir el proyecto existente
                   </Link>
-                  <span className="rounded-lg px-3 py-2 text-center text-amber-900 ring-1 ring-amber-200">
-                    Duplicar: llega con HU-05-04
-                  </span>
                 </div>
               </Advertencia>
             )}
