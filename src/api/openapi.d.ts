@@ -520,6 +520,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{id}/envio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verificación antes de enviar a revisión (RF-17, p2 y p3; HU-07-01)
+         * @description Si el usuario puede enviar el proyecto, las secciones obligatorias con pendientes y las observaciones de la última devolución sin resolver (HU-07-05).
+         */
+        get: operations["RevisionController_verificarEnvio"];
+        put?: never;
+        /**
+         * Envía el proyecto a revisión (RF-17, p4 y p5; HU-07-01)
+         * @description Cambia el estado a «Enviado a revisión», registra la fecha y el usuario, bloquea la edición y notifica a quienes revisan en el programa.
+         */
+        post: operations["RevisionController_enviar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/revisiones/pendientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bandeja de proyectos pendientes de revisión (RF-18, p1; HU-07-02)
+         * @description Proyectos «Enviado a revisión» de los programas donde el usuario aprueba, los que llevan más tiempo esperando primero.
+         */
+        get: operations["RevisionController_pendientes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/aprobacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aprueba el proyecto docente (RF-18, p4 y p5; HU-07-03)
+         * @description Cambia el estado a «Aprobado», registra el usuario y la fecha y notifica a los docentes. Desde ahí se registran las clases (RF-20).
+         */
+        post: operations["RevisionController_aprobar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/devolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Devuelve el proyecto con observaciones por sección (RF-18; HU-07-04)
+         * @description Cambia el estado a «Devuelto con observaciones», que reabre la edición, y notifica a los docentes. Si el responsable está inactivo, avisa también a quienes revisan.
+         */
+        post: operations["RevisionController_devolver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/observaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Observaciones de la última devolución (HU-07-05)
+         * @description Agrupables por sección, en el orden del formato. `vigentes` indica si el proyecto sigue devuelto.
+         */
+        get: operations["RevisionController_observaciones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/observaciones/{idObservacion}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Marca una observación como resuelta o pendiente (HU-07-05)
+         * @description Solo un docente asignado, mientras el proyecto está devuelto con observaciones.
+         */
+        patch: operations["RevisionController_marcarObservacion"];
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/historial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Historial de revisiones del proyecto (HU-07-06)
+         * @description Envíos, devoluciones y aprobaciones con usuario, fecha y estados. Sustituye las firmas «elaboró», «revisó» y «aprobó» del formato; es de solo lectura.
+         */
+        get: operations["RevisionController_historial"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/{idProyecto}/matriculados": {
         parameters: {
             query?: never;
@@ -1911,6 +2055,189 @@ export interface components {
              * @example true
              */
             mismaAsignatura: boolean;
+        };
+        SeccionIncompletaDto: {
+            /**
+             * @description Punto del formato FO-DO/PC-001
+             * @example 3
+             */
+            numero: number;
+            /**
+             * @example rac
+             * @enum {string}
+             */
+            clave: "descripcion" | "rac" | "estrategias" | "evaluacion" | "contenidos" | "bibliografia";
+            /** @example Resultados de aprendizaje del curso */
+            titulo: string;
+            /**
+             * @example [
+             *       "RAP 2 no tiene RAC asociados."
+             *     ]
+             */
+            pendientes: string[];
+        };
+        VerificacionEnvioDto: {
+            /** @example 41 */
+            idProyecto: number;
+            estado: components["schemas"]["EstadoProyectoDto"] | null;
+            /**
+             * @description Si el usuario puede enviar el proyecto ahora (RF-17, p2 a p4)
+             * @example false
+             */
+            puedeEnviar: boolean;
+            /**
+             * @description Por qué no se puede enviar; nulo si se puede
+             * @example El proyecto todavía tiene secciones incompletas. Complételas para enviarlo a revisión.
+             */
+            motivo: string | null;
+            /** @description RF-17, p2: secciones obligatorias con pendientes */
+            seccionesIncompletas: components["schemas"]["SeccionIncompletaDto"][];
+            /**
+             * @description HU-07-05: observaciones de la última devolución sin marcar como resueltas. Es una advertencia: no impide el envío.
+             * @example 1
+             */
+            observacionesSinResolver: number;
+        };
+        TransicionProyectoDto: {
+            /** @example 41 */
+            idProyecto: number;
+            estado: components["schemas"]["EstadoProyectoDto"];
+            /** @example 2026-11-08T15:00:00.000Z */
+            fecha: string;
+        };
+        PendienteRevisionDto: {
+            /** @example 41 */
+            id: number;
+            /** @example 3 */
+            idAsignatura: number;
+            /** @example DEMO-01 */
+            codigoAsignatura: string | null;
+            /** @example Finanzas a corto plazo */
+            asignatura: string | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+            /** @example A */
+            grupo: string | null;
+            estado: components["schemas"]["EstadoProyectoDto"] | null;
+            /** @description Docentes asignados, con el responsable primero */
+            docentes: components["schemas"]["DocenteProyectoDto"][];
+            /**
+             * @description RF-08, p7
+             * @example false
+             */
+            informacionIncompleta: boolean;
+            /** @example 2026-11-06T14:00:00.000Z */
+            fechaCreacion: string | null;
+            /**
+             * @description Desde cuándo está pendiente: el último envío a revisión
+             * @example 2026-11-08T15:00:00.000Z
+             */
+            fechaEnvio: string | null;
+        };
+        PaginaPendientesRevisionDto: {
+            elementos: components["schemas"]["PendienteRevisionDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 3 */
+            total: number;
+        };
+        AprobarProyectoDto: {
+            /** @example Proyecto completo y coherente con los RAP del programa. */
+            observacionGeneral?: string;
+        };
+        ObservacionEntradaDto: {
+            /**
+             * @example rac
+             * @enum {string}
+             */
+            seccion: "descripcion" | "rac" | "estrategias" | "evaluacion" | "contenidos" | "bibliografia";
+            /** @example El RAC 2 no indica cómo contribuye al RAP 3. */
+            observacion: string;
+        };
+        DevolverProyectoDto: {
+            /** @example Proyecto completo y coherente con los RAP del programa. */
+            observacionGeneral?: string;
+            /** @description Al menos una (RF-18, excepción de p4) */
+            observaciones: components["schemas"]["ObservacionEntradaDto"][];
+        };
+        PersonaDto: {
+            /** @example 5 */
+            id: number;
+            /** @example Departamento */
+            nombres: string | null;
+            /** @example Demo */
+            apellidos: string | null;
+        };
+        ObservacionDto: {
+            /** @example 7 */
+            id: number;
+            /**
+             * @example rac
+             * @enum {string}
+             */
+            seccion: "descripcion" | "rac" | "estrategias" | "evaluacion" | "contenidos" | "bibliografia";
+            /** @example 3 */
+            numeroSeccion: number | null;
+            /** @example Resultados de aprendizaje del curso */
+            tituloSeccion: string | null;
+            /** @example El RAC 2 no indica cómo contribuye al RAP 3. */
+            observacion: string;
+            /** @example false */
+            resuelta: boolean;
+        };
+        DevolucionDto: {
+            /** @example 9 */
+            idRevision: number;
+            /** @example 2026-11-08T15:00:00.000Z */
+            fecha: string | null;
+            revisor: components["schemas"]["PersonaDto"] | null;
+            observacionGeneral: string | null;
+            /** @description En el orden del formato */
+            observaciones: components["schemas"]["ObservacionDto"][];
+            /** @example 1 */
+            sinResolver: number;
+        };
+        ObservacionesProyectoDto: {
+            /**
+             * @description Si el proyecto está devuelto con observaciones: las observaciones están por atender
+             * @example true
+             */
+            vigentes: boolean;
+            /** @description La última devolución; nula si el proyecto nunca se ha devuelto */
+            devolucion: components["schemas"]["DevolucionDto"] | null;
+        };
+        MarcarObservacionDto: {
+            /** @example true */
+            resuelta: boolean;
+        };
+        EventoRevisionDto: {
+            /** @example 9 */
+            id: number;
+            /**
+             * @description elaboracion | revision | aprobacion: «elaboró», «revisó» y «aprobó»
+             * @example elaboracion
+             */
+            tipo: string;
+            /**
+             * @description enviado | devuelto | aprobado
+             * @example enviado
+             */
+            resultado: string;
+            /** @example 2026-11-08T15:00:00.000Z */
+            fecha: string | null;
+            usuario: components["schemas"]["PersonaDto"] | null;
+            estadoAnterior: components["schemas"]["EstadoProyectoDto"] | null;
+            estadoNuevo: components["schemas"]["EstadoProyectoDto"] | null;
+            observacionGeneral: string | null;
+            /**
+             * @description Observaciones por sección del evento
+             * @example 2
+             */
+            observaciones: number;
         };
         UltimaCargaDto: {
             /** @example 2026-11-07T15:30:00.000Z */
@@ -4359,7 +4686,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4407,7 +4734,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4525,7 +4852,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4772,7 +5099,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4890,7 +5217,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5009,7 +5336,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5127,7 +5454,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5245,7 +5572,472 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description No es Docente responsable */
+            /** @description Ninguno de los roles del usuario tiene el permiso de editar proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_verificarEnvio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificacionEnvioDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario edita proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_enviar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransicionProyectoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario edita proyectos docentes, o no es el docente responsable del proyecto (RF-17, precondición) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Secciones incompletas, con los pendientes en `detalles` (excepción de p2); período cerrado (excepción de p4), o estado que no se envía */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_pendientes: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+                /** @description Docente asignado */
+                idDocente?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaPendientesRevisionDto"];
+                };
+            };
+            /** @description Filtros o paginación inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario aprueba proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_aprobar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AprobarProyectoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransicionProyectoDto"];
+                };
+            };
+            /** @description Observación general demasiado larga */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, o no los aprueba en el programa del proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no está «Enviado a revisión» (RF-18, precondición) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_devolver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevolverProyectoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransicionProyectoDto"];
+                };
+            };
+            /** @description Sin observaciones (excepción de p4), sección desconocida o texto vacío o demasiado largo */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, o no los aprueba en el programa del proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no está «Enviado a revisión» (RF-18, precondición) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_observaciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservacionesProyectoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_marcarObservacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                idObservacion: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarcarObservacionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservacionDto"];
+                };
+            };
+            /** @description Falta indicar si quedó resuelta */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario edita proyectos docentes, o no es docente asignado */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o no es visible, o la observación no es de su última devolución */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no está devuelto con observaciones */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RevisionController_historial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventoRevisionDto"][];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario tiene el permiso de consultar proyectos docentes */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6742,7 +7534,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            /** @description Ninguno de los roles del usuario consulta documentos, o Líder RAP sin RAP a cargo en el proyecto */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6804,7 +7596,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            /** @description Ninguno de los roles del usuario consulta documentos, o Líder RAP sin RAP a cargo en el proyecto */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6865,7 +7657,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description No es Docente, o no es uno de los docentes del proyecto */
+            /** @description Ninguno de los roles del usuario registra documentos, o no es uno de los docentes del proyecto */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6960,7 +7752,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description Sin un rol que consulte evidencias, o Líder RAP sin RAP a cargo en el proyecto */
+            /** @description Ninguno de los roles del usuario consulta documentos, o Líder RAP sin RAP a cargo en el proyecto */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -7266,7 +8058,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene el rol Docente responsable */
+            /** @description Ninguno de los roles del usuario registra clases (permiso `clases.actualizar`) */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -7306,7 +8098,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            /** @description Ninguno de los roles del usuario consulta el registro de clases */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -7368,7 +8160,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description El usuario no tiene un rol que registre clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            /** @description Ninguno de los roles del usuario registra clases, o ve el proyecto pero no es su docente asignado ni el administrador */
             403: {
                 headers: {
                     [name: string]: unknown;

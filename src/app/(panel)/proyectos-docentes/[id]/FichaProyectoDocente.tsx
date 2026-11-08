@@ -6,10 +6,12 @@ import {
   consultarProyectoDocente,
   nombreDocente,
 } from '@/api/proyectos-docentes';
+import { usePermisos } from '@/sesion/permisos';
 import { useSesion } from '@/sesion/ProveedorSesion';
 import { AvisoError, Cargando, Insignia } from '../_componentes/Estados';
 import { InformacionGeneral } from '../_componentes/InformacionGeneral';
 import { useConsulta } from '../_componentes/useConsulta';
+import { HistorialRevisiones } from './HistorialRevisiones';
 
 /**
  * Roles que ven la lista de estudiantes del curso (RF-22). Es presentación: el backend solo la
@@ -23,35 +25,45 @@ const ROL_DOCENTE = 'Docente responsable';
  */
 const ROLES_MEDICION = ['Líder RAP', 'Departamento académico'];
 
+const CLASE_BOTON =
+  'inline-block w-full rounded-lg px-4 py-3 text-center font-semibold sm:w-auto sm:py-2';
+const CLASE_PRINCIPAL = 'bg-marca text-white hover:bg-marca-oscuro';
+const CLASE_SECUNDARIO = 'border border-marca text-marca hover:bg-marca/5';
+
 /**
  * Ficha del proyecto docente: la información base con la que lo creó el asistente (RF-08). Las
  * secciones que diligencia el docente (puntos 2 a 7 del formato) están en `diligenciar/`.
  */
 export function FichaProyectoDocente() {
   const { sesion } = useSesion();
+  const tiene = usePermisos();
   const { id } = useParams<{ id: string }>();
   const idProyecto = /^\d+$/.test(id) ? Number(id) : null;
   const proyecto = useConsulta(
     idProyecto === null ? null : `proyecto-${idProyecto}`,
     (senal) => consultarProyectoDocente(idProyecto!, senal),
   );
+  const esDocenteAsignado =
+    sesion.estado === 'autenticado' &&
+    proyecto.estado === 'lista' &&
+    sesion.usuario.roles.includes(ROL_DOCENTE) &&
+    proyecto.datos.docentes.some((docente) => docente.id === sesion.usuario.id);
   // El Administrador la ve siempre; el docente, solo si dicta el curso (como en el backend).
   const veEstudiantes =
-    sesion.estado === 'autenticado' &&
-    proyecto.estado === 'lista' &&
-    (sesion.usuario.roles.includes(ROL_ADMINISTRADOR) ||
-      (sesion.usuario.roles.includes(ROL_DOCENTE) &&
-        proyecto.datos.docentes.some(
-          (docente) => docente.id === sesion.usuario.id,
-        )));
+    esDocenteAsignado ||
+    (sesion.estado === 'autenticado' &&
+      sesion.usuario.roles.includes(ROL_ADMINISTRADOR));
   const veMediciones =
-    sesion.estado === 'autenticado' &&
-    proyecto.estado === 'lista' &&
-    ((sesion.usuario.roles.includes(ROL_DOCENTE) &&
-      proyecto.datos.docentes.some(
-        (docente) => docente.id === sesion.usuario.id,
-      )) ||
+    esDocenteAsignado ||
+    (sesion.estado === 'autenticado' &&
       sesion.usuario.roles.some((rol) => ROLES_MEDICION.includes(rol)));
+
+  // HU-07-02: quien aprueba entra a revisar un proyecto enviado. El backend comprueba además
+  // que apruebe en el programa del proyecto.
+  const puedeRevisar =
+    proyecto.estado === 'lista' &&
+    proyecto.datos.estado?.codigo === 'enviado' &&
+    tiene('proyectos.aprobar');
 
   return (
     <section className="space-y-6">
@@ -87,12 +99,26 @@ export function FichaProyectoDocente() {
               )}
               <Insignia>Período {proyecto.datos.periodo}</Insignia>
             </div>
-            <Link
-              href={`/proyectos-docentes/${proyecto.datos.id}/diligenciar`}
-              className="inline-block w-full rounded-lg bg-marca px-4 py-3 text-center font-semibold text-white hover:bg-marca-oscuro sm:w-auto sm:py-2"
-            >
-              Diligenciar el proyecto
-            </Link>
+            {/* Con un proyecto enviado, revisarlo es la acción principal de quien aprueba. Los
+                puntos 2 a 7 los diligencia el docente asignado; los demás solo los consultan. */}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {puedeRevisar && (
+                <Link
+                  href={`/proyectos-docentes/${proyecto.datos.id}/revision`}
+                  className={`${CLASE_BOTON} ${CLASE_PRINCIPAL}`}
+                >
+                  Revisar el proyecto
+                </Link>
+              )}
+              <Link
+                href={`/proyectos-docentes/${proyecto.datos.id}/diligenciar`}
+                className={`${CLASE_BOTON} ${puedeRevisar ? CLASE_SECUNDARIO : CLASE_PRINCIPAL}`}
+              >
+                {esDocenteAsignado
+                  ? 'Diligenciar el proyecto'
+                  : 'Ver los puntos 2 a 7'}
+              </Link>
+            </div>
           </div>
 
           <section
@@ -189,6 +215,8 @@ export function FichaProyectoDocente() {
               ))}
             </ul>
           </section>
+
+          <HistorialRevisiones idProyecto={proyecto.datos.id} />
 
           {/* RF-24: el backend decide quién carga y quién ve cada evidencia. */}
           <Link

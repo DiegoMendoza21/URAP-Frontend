@@ -2,19 +2,33 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { type ComponentType, useCallback, useRef, useState } from 'react';
+import {
+  type ComponentType,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   consultarDiligenciamiento,
   type Diligenciamiento,
 } from '@/api/diligenciamiento';
 import { consultarProyectoDocente } from '@/api/proyectos-docentes';
 import {
+  consultarObservaciones,
+  type Observacion,
+  type ObservacionesProyecto,
+} from '@/api/revision';
+import {
   Advertencia,
   AvisoError,
   Cargando,
   Insignia,
 } from '../../_componentes/Estados';
+import { momento } from '../../_componentes/fechas';
 import { useConsulta } from '../../_componentes/useConsulta';
+import { ObservacionesSeccion } from './ObservacionesSeccion';
+import { PanelEnvio } from './PanelEnvio';
 import { SeccionBibliografia } from './SeccionBibliografia';
 import { SeccionContenidos } from './SeccionContenidos';
 import { SeccionDescripcion } from './SeccionDescripcion';
@@ -26,17 +40,32 @@ import { useAvisoSalida } from './useAvisoSalida';
 const MENSAJE_SALIDA =
   'Tiene cambios sin guardar. Si sale ahora, se perderán. ¿Desea salir?';
 
+/** Espacio que se deja a la izquierda de la pestaña activa al desplazarla (el `px-4` de la tira). */
+const DESPLAZAMIENTO_MARGEN = 16;
+
 export interface PropiedadesSeccion {
   idProyecto: number;
   puedeEditar: boolean;
+  /**
+   * Si la pestaña de la sección está a la vista. Las secciones quedan montadas al cambiar de
+   * pestaña, así que la que depende de otra (el punto 5 de los RAC del punto 3) lo usa para
+   * consultar de nuevo al volver a mostrarse.
+   */
+  visible?: boolean;
   /** Pide el resumen otra vez: tras guardar, o si el servidor rechazó el cambio. */
   alGuardar: () => void;
   /** Avisa si la sección tiene cambios sin guardar. */
   alCambiar: (hayCambios: boolean) => void;
 }
 
-/** Pantalla de cada sección (puntos 2 a 7), por la clave que le da el backend. */
-const PANTALLAS: Record<string, ComponentType<PropiedadesSeccion>> = {
+/** Estados desde los que el docente envía a revisión (RF-17, precondición). */
+const ESTADOS_QUE_SE_ENVIAN = ['en_diligenciamiento', 'devuelto'];
+
+/**
+ * Pantalla de cada sección (puntos 2 a 7), por la clave que le da el backend. La revisión del
+ * departamento (RF-18) las reutiliza en solo lectura.
+ */
+export const PANTALLAS: Record<string, ComponentType<PropiedadesSeccion>> = {
   descripcion: SeccionDescripcion,
   rac: SeccionRac,
   estrategias: SeccionEstrategias,
@@ -62,8 +91,16 @@ export function DiligenciamientoProyecto() {
     idProyecto === null ? null : `diligenciamiento-${idProyecto}`,
     (senal) => consultarDiligenciamiento(idProyecto!, senal),
   );
+  const observaciones = useConsulta(
+    idProyecto === null ? null : `observaciones-${idProyecto}`,
+    (senal) => consultarObservaciones(idProyecto!, senal),
+  );
   const [refrescado, setRefrescado] = useState<Diligenciamiento | null>(null);
+  const [observacionesActuales, setObservacionesActuales] =
+    useState<ObservacionesProyecto | null>(null);
   const [activa, setActiva] = useState<string | null>(null);
+  /** Sube con cada sección guardada u observación marcada: el panel de envío vuelve a verificar. */
+  const [cambiosGuardados, setCambiosGuardados] = useState(0);
   const [conCambios, setConCambios] = useState<ReadonlySet<string>>(new Set());
   const ultimaConsulta = useRef(0);
   useAvisoSalida(conCambios.size > 0);
@@ -79,6 +116,7 @@ export function DiligenciamientoProyecto() {
       (datos) => {
         if (numero === ultimaConsulta.current) {
           setRefrescado(datos);
+          setCambiosGuardados((valor) => valor + 1);
         }
       },
       () => {
@@ -86,6 +124,43 @@ export function DiligenciamientoProyecto() {
       },
     );
   }, [idProyecto]);
+
+  // HU-07-05: tras marcar una observación o enviar, se actualizan sin «Cargando…».
+  const recargarObservaciones = useCallback(() => {
+    if (idProyecto === null) {
+      return;
+    }
+    consultarObservaciones(idProyecto).then(setObservacionesActuales, () => {
+      // Si falla, quedan las anteriores en pantalla.
+    });
+  }, [idProyecto]);
+
+  const alMarcar = useCallback(
+    (marcada: Observacion) => {
+      setCambiosGuardados((valor) => valor + 1);
+      setObservacionesActuales((previas) => {
+        const base =
+          previas ??
+          (observaciones.estado === 'lista' ? observaciones.datos : null);
+        if (!base?.devolucion) {
+          return base;
+        }
+        const lista = base.devolucion.observaciones.map((observacion) =>
+          observacion.id === marcada.id ? marcada : observacion,
+        );
+        return {
+          ...base,
+          devolucion: {
+            ...base.devolucion,
+            observaciones: lista,
+            sinResolver: lista.filter((observacion) => !observacion.resuelta)
+              .length,
+          },
+        };
+      });
+    },
+    [observaciones],
+  );
 
   const cambiosDe = useCallback(
     (clave: string) => (hayCambios: boolean) =>
@@ -104,9 +179,56 @@ export function DiligenciamientoProyecto() {
     [],
   );
 
+  // En el teléfono las pestañas no caben a lo ancho. Al cambiar de sección, también sin tocar la
+  // pestaña (por ejemplo, desde «Ir al punto N»), la activa se desplaza a la vista dentro de su
+  // tira, sin mover la página.
+  useEffect(() => {
+    if (activa === null) {
+      return;
+    }
+    const pestana = document.querySelector<HTMLElement>(
+      'nav[aria-label="Secciones del proyecto docente"] [aria-current="step"]',
+    );
+    const tira = pestana?.closest('ol');
+    if (!pestana || !tira) {
+      return;
+    }
+    const visible = tira.getBoundingClientRect();
+    const caja = pestana.getBoundingClientRect();
+    if (caja.left < visible.left || caja.right > visible.right) {
+      tira.scrollBy({
+        left: caja.left - visible.left - DESPLAZAMIENTO_MARGEN,
+        behavior: 'smooth',
+      });
+    }
+  }, [activa]);
+
   const resumen =
     refrescado ?? (consulta.estado === 'lista' ? consulta.datos : null);
   const claveActiva = activa ?? resumen?.secciones[0]?.clave ?? null;
+  const datosObservaciones =
+    observacionesActuales ??
+    (observaciones.estado === 'lista' ? observaciones.datos : null);
+  // Las observaciones se muestran mientras el proyecto está devuelto: después del reenvío
+  // quedan en el historial de la ficha.
+  const devolucion = datosObservaciones?.vigentes
+    ? datosObservaciones.devolucion
+    : null;
+  const observacionesDe = (clave: string) =>
+    devolucion?.observaciones.filter(
+      (observacion) => observacion.seccion === clave,
+    ) ?? [];
+  const puedeEnviar =
+    resumen !== null &&
+    resumen.puedeEditar &&
+    ESTADOS_QUE_SE_ENVIAN.includes(resumen.estado?.codigo ?? '');
+
+  const irASeccion = (clave: string) => {
+    setActiva(clave);
+    document
+      .getElementById('secciones-proyecto')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <section className="space-y-5">
@@ -158,16 +280,43 @@ export function DiligenciamientoProyecto() {
             </div>
           </div>
 
+          {devolucion && (
+            <Advertencia titulo="El departamento académico devolvió el proyecto con observaciones">
+              <p>
+                Cada observación aparece en su sección. Corrija, márquela como
+                resuelta y vuelva a enviarlo a revisión.
+              </p>
+              {/* La hora termina en «a. m.» o «p. m.»: va sin punto final. */}
+              {devolucion.fecha && (
+                <p className="text-sm">
+                  Devuelto el {momento(devolucion.fecha)}
+                </p>
+              )}
+              {devolucion.observacionGeneral && (
+                <p className="italic">«{devolucion.observacionGeneral}»</p>
+              )}
+            </Advertencia>
+          )}
+
           {resumen.motivoNoEditable && (
             <Advertencia titulo="Solo lectura">
               <p>{resumen.motivoNoEditable}</p>
             </Advertencia>
           )}
 
-          <nav aria-label="Secciones del proyecto docente">
-            <ol className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+          <nav
+            id="secciones-proyecto"
+            aria-label="Secciones del proyecto docente"
+            className="scroll-mt-4"
+          >
+            {/* `relative`: los textos `sr-only` de cada pestaña son `absolute`; sin un contenedor
+                posicionado escapan del desplazamiento horizontal y ensanchan la página en el teléfono. */}
+            <ol className="relative -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
               {resumen.secciones.map((seccion) => {
                 const actual = seccion.clave === claveActiva;
+                const sinResolver = observacionesDe(seccion.clave).filter(
+                  (observacion) => !observacion.resuelta,
+                ).length;
                 return (
                   <li key={seccion.clave} className="shrink-0">
                     <button
@@ -192,6 +341,22 @@ export function DiligenciamientoProyecto() {
                       <span className="sr-only">
                         {seccion.completa ? '(completa)' : '(pendiente)'}
                       </span>
+                      {sinResolver > 0 && (
+                        <span
+                          className={`rounded-full px-1.5 text-xs ${
+                            actual
+                              ? 'bg-white text-marca'
+                              : 'bg-amber-100 text-amber-900'
+                          }`}
+                        >
+                          {sinResolver}
+                          <span className="sr-only">
+                            {sinResolver === 1
+                              ? ' observación sin resolver'
+                              : ' observaciones sin resolver'}
+                          </span>
+                        </span>
+                      )}
                     </button>
                   </li>
                 );
@@ -227,10 +392,17 @@ export function DiligenciamientoProyecto() {
                     </p>
                   )}
                 </div>
+                <ObservacionesSeccion
+                  idProyecto={idProyecto}
+                  observaciones={observacionesDe(seccion.clave)}
+                  puedeMarcar={resumen.puedeEditar}
+                  alMarcar={alMarcar}
+                />
                 {Pantalla ? (
                   <Pantalla
                     idProyecto={idProyecto}
                     puedeEditar={resumen.puedeEditar}
+                    visible={seccion.clave === claveActiva}
                     alGuardar={alGuardar}
                     alCambiar={cambiosDe(seccion.clave)}
                   />
@@ -242,6 +414,18 @@ export function DiligenciamientoProyecto() {
               </section>
             );
           })}
+
+          {puedeEnviar && (
+            <PanelEnvio
+              idProyecto={idProyecto}
+              cambiosGuardados={cambiosGuardados}
+              alEnviar={() => {
+                alGuardar();
+                recargarObservaciones();
+              }}
+              irASeccion={irASeccion}
+            />
+          )}
         </>
       )}
     </section>

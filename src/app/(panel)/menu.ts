@@ -57,6 +57,15 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
     permiso: 'proyectos.leer',
   },
   {
+    // RF-18, HU-07-02: quien aprueba proyectos en la matriz (el Departamento).
+    ruta: '/revision',
+    etiqueta: 'Revisión de proyectos docentes',
+    etiquetaMenu: 'Revisión',
+    descripcion:
+      'Proyectos enviados a revisión: apruébelos o devuélvalos con observaciones.',
+    permiso: 'proyectos.aprobar',
+  },
+  {
     // RF-25: el backend lo abre con @Roles.
     ruta: '/seguimiento',
     etiqueta: 'Seguimiento del diligenciamiento',
