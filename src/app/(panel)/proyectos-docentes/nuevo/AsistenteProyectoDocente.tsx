@@ -406,7 +406,7 @@ export function AsistenteProyectoDocente() {
                         htmlFor={`${id}-filtro`}
                         className="block text-sm font-medium"
                       >
-                        Buscar por nombre o código
+                        Buscar por nombre, código o plan
                       </label>
                       <input
                         id={`${id}-filtro`}
@@ -464,8 +464,8 @@ export function AsistenteProyectoDocente() {
                   {datosInformacion.informacion.planEstudio
                     ? ` en el plan ${datosInformacion.informacion.planEstudio}`
                     : ''}
-                  , así que no hay ninguno propuesto. Elija los RAP del programa a
-                  los que contribuye.
+                  , así que no hay ninguno propuesto. Elija los RAP del programa
+                  a los que contribuye.
                 </p>
               )}
             {datosInformacion?.raps.map((rap) => (
