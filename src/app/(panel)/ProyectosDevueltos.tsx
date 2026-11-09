@@ -65,6 +65,13 @@ export function ProyectosDevueltos({ idUsuario }: { idUsuario: number }) {
     return null;
   }
   const devueltos = consulta.datos;
+  // Solo el docente responsable envía el proyecto (RF-17). Los demás docentes asignados
+  // corrigen, pero no se les pide reenviarlo.
+  const esResponsable = (proyecto: ProyectoDocenteResumen) =>
+    proyecto.docentes.some(
+      (docente) => docente.id === idUsuario && docente.responsable,
+    );
+  const todosPropios = devueltos.every(esResponsable);
 
   return (
     <section
@@ -78,8 +85,9 @@ export function ProyectosDevueltos({ idUsuario }: { idUsuario: number }) {
             : `Le devolvieron ${devueltos.length} proyectos docentes`}
         </h2>
         <p className="text-sm text-amber-950">
-          El departamento académico dejó observaciones. Corríjalas, márquelas
-          como resueltas y envíe el proyecto de nuevo a revisión.
+          {todosPropios
+            ? 'El departamento académico dejó observaciones. Corríjalas, márquelas como resueltas y envíe el proyecto de nuevo a revisión.'
+            : 'El departamento académico dejó observaciones. Corríjalas y márquelas como resueltas. El docente responsable de cada proyecto es quien lo envía de nuevo a revisión.'}
         </p>
       </div>
       <ul className="divide-y divide-amber-200">
@@ -94,9 +102,16 @@ export function ProyectosDevueltos({ idUsuario }: { idUsuario: number }) {
                   {nombreCurso(proyecto)}
                 </span>
                 <span className="block text-sm">
-                  {proyecto.periodo
-                    ? `Período ${proyecto.periodo} · ver las observaciones`
-                    : 'Ver las observaciones'}
+                  {[
+                    proyecto.periodo
+                      ? `Período ${proyecto.periodo} · ver las observaciones`
+                      : 'Ver las observaciones',
+                    esResponsable(proyecto)
+                      ? null
+                      : 'lo envía el docente responsable',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </span>
               </span>
               <span aria-hidden="true" className="text-marca">

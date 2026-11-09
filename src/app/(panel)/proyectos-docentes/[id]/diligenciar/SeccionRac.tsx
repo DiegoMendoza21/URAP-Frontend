@@ -118,10 +118,14 @@ export function SeccionRac({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        Registre los RAC del curso bajo cada RAP del programa al que
-        contribuyen. Un mismo RAC puede contribuir a varios RAP.
-      </p>
+      {/* La instrucción es para quien diligencia: en solo lectura (la revisión, la ficha de
+          quien no es docente asignado) no se le pide nada al lector (URAP-125). */}
+      {puedeEditar && (
+        <p className="text-sm text-slate-600">
+          Registre los RAC del curso bajo cada RAP del programa al que
+          contribuyen. Un mismo RAC puede contribuir a varios RAP.
+        </p>
+      )}
       {seccion.rapsSinRac.length > 0 && (
         <p role="status" className="text-sm font-medium text-amber-900">
           {seccion.rapsSinRac.length === 1

@@ -42,6 +42,40 @@ const ROLES_SEGUIMIENTO = [
 const ROLES_REPORTES_RAP = [...ROLES_SEGUIMIENTO, ROL.liderRap] as const;
 
 /**
+ * Los reportes académicos (RF-28, RF-32), en el orden de la página índice `/reportes`. El
+ * backend los abre con `@Roles`, así que cada uno declara los mismos roles.
+ */
+export const REPORTES: readonly OpcionMenu[] = [
+  {
+    // RF-32: el backend lo abre con @Roles.
+    ruta: '/reportes/logro-rap',
+    etiqueta: 'Reporte de logro de los RAP',
+    etiquetaMenu: 'Logro de los RAP',
+    descripcion:
+      'Porcentaje alcanzado por RAP frente al esperado, con exportación a Excel y PDF.',
+    roles: ROLES_REPORTES_RAP,
+  },
+  {
+    // RF-28: el backend lo abre con @Roles.
+    ruta: '/reportes/cumplimiento',
+    etiqueta: 'Reporte de cumplimiento',
+    etiquetaMenu: 'Cumplimiento',
+    descripcion:
+      'Proyectos docentes del período, su estado y su diligenciamiento, con exportación a Excel y PDF.',
+    roles: ROLES_SEGUIMIENTO,
+  },
+  {
+    // RF-28: el backend lo abre con @Roles.
+    ruta: '/reportes/contribucion-rac-rap',
+    etiqueta: 'Contribución de los RAC a los RAP',
+    etiquetaMenu: 'Contribución RAC-RAP',
+    descripcion:
+      'Asignaturas, docentes, RAC y evidencias que aportan a cada RAP.',
+    roles: ROLES_REPORTES_RAP,
+  },
+];
+
+/**
  * Opciones del menú del panel, en su orden. Cada pantalla nueva agrega aquí su opción, con el
  * permiso de la matriz que la habilita o, si el backend usa `@Roles`, los mismos roles.
  */
@@ -82,30 +116,13 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
     roles: [ROL.docente, ROL.liderRap, ROL.departamento],
   },
   {
-    // RF-32: el backend lo abre con @Roles.
-    ruta: '/reportes/logro-rap',
-    etiqueta: 'Reporte de logro de los RAP',
-    etiquetaMenu: 'Logro de los RAP',
+    // RF-28 y RF-32: una sola opción para los tres reportes (URAP-126), que en el teléfono
+    // ocupaban tres líneas del menú. La ve quien puede abrir al menos uno; la página índice
+    // muestra solo los suyos.
+    ruta: '/reportes',
+    etiqueta: 'Reportes',
     descripcion:
-      'Porcentaje alcanzado por RAP frente al esperado, con exportación a Excel y PDF.',
-    roles: ROLES_REPORTES_RAP,
-  },
-  {
-    // RF-28: el backend lo abre con @Roles.
-    ruta: '/reportes/cumplimiento',
-    etiqueta: 'Reporte de cumplimiento',
-    etiquetaMenu: 'Cumplimiento',
-    descripcion:
-      'Proyectos docentes del período, su estado y su diligenciamiento, con exportación a Excel y PDF.',
-    roles: ROLES_SEGUIMIENTO,
-  },
-  {
-    // RF-28: el backend lo abre con @Roles.
-    ruta: '/reportes/contribucion-rac-rap',
-    etiqueta: 'Contribución de los RAC a los RAP',
-    etiquetaMenu: 'Contribución RAC-RAP',
-    descripcion:
-      'Asignaturas, docentes, RAC y evidencias que aportan a cada RAP.',
-    roles: ROLES_REPORTES_RAP,
+      'Logro de los RAP, cumplimiento y contribución de los RAC a los RAP, con exportación a Excel y PDF.',
+    roles: [...new Set(REPORTES.flatMap((reporte) => reporte.roles ?? []))],
   },
 ];

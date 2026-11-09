@@ -52,10 +52,10 @@ export function ReporteContribucion() {
     <section aria-labelledby="titulo-contribucion" className="space-y-6">
       <div className="space-y-1">
         <Link
-          href="/"
+          href="/reportes"
           className="text-sm font-medium text-marca hover:underline print:hidden"
         >
-          ← Inicio
+          ← Reportes
         </Link>
         <h1 id="titulo-contribucion" className="text-2xl font-bold sm:text-3xl">
           Contribución de los RAC a los RAP
