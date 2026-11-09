@@ -553,9 +553,29 @@ export interface paths {
         };
         /**
          * Bandeja de proyectos pendientes de revisión (RF-18, p1; HU-07-02)
-         * @description Proyectos «Enviado a revisión» de los programas donde el usuario aprueba, los que llevan más tiempo esperando primero.
+         * @description Proyectos «Enviado a revisión» de los programas donde el usuario aprueba, los que llevan más tiempo esperando primero. Incluye aquellos en los que es docente, con `puedeRevisar` en falso y el `motivo`, cuando la separación de funciones está encendida.
          */
         get: operations["RevisionController_pendientes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{id}/revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verificación antes de aprobar o devolver (RF-18; HU-07-03 y HU-07-04)
+         * @description Si el usuario puede aprobar o devolver el proyecto ahora y, si no, por qué: es docente del proyecto con la separación de funciones encendida (`revision_bloquear_autoaprobacion`) o el proyecto no está enviado a revisión. El alcance se comprueba como en la aprobación y la devolución: 404 si no ve el proyecto y 403 si no lo aprueba en su programa.
+         */
+        get: operations["RevisionController_verificarRevision"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2189,6 +2209,16 @@ export interface components {
              * @example 2026-11-08T15:00:00.000Z
              */
             fechaEnvio: string | null;
+            /**
+             * @description Si el usuario puede aprobarlo o devolverlo (RF-18). Es falso cuando es docente del proyecto y el parámetro `revision_bloquear_autoaprobacion` está encendido (separación de funciones): debe revisarlo otra persona del Departamento.
+             * @example true
+             */
+            puedeRevisar: boolean;
+            /**
+             * @description Por qué no puede revisarlo, en lenguaje del usuario; nulo si puede. Ejemplo: «Usted es docente de este proyecto: debe revisarlo otra persona del Departamento.»
+             * @example null
+             */
+            motivo: string | null;
         };
         PaginaPendientesRevisionDto: {
             elementos: components["schemas"]["PendienteRevisionDto"][];
@@ -2198,6 +2228,21 @@ export interface components {
             tamano: number;
             /** @example 3 */
             total: number;
+        };
+        VerificacionRevisionDto: {
+            /** @example 41 */
+            idProyecto: number;
+            estado: components["schemas"]["EstadoProyectoDto"] | null;
+            /**
+             * @description Si el usuario puede aprobar o devolver el proyecto ahora (RF-18). Es verdadero solo si el proyecto está «Enviado a revisión» y el usuario no es docente de él mientras `revision_bloquear_autoaprobacion` esté encendido (separación de funciones). Es la única señal para mostrar las decisiones.
+             * @example false
+             */
+            puedeRevisar: boolean;
+            /**
+             * @description Cuál de las dos condiciones falla, en lenguaje del usuario: es docente del proyecto, o el proyecto no está enviado a revisión. Si fallan las dos, la primera. Nulo si puede.
+             * @example Usted es docente de este proyecto: debe revisarlo otra persona del Departamento.
+             */
+            motivo: string | null;
         };
         AprobarProyectoDto: {
             /** @example Proyecto completo y coherente con los RAP del programa. */
@@ -5814,6 +5859,54 @@ export interface operations {
             };
         };
     };
+    RevisionController_verificarRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificacionRevisionDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, o no los aprueba en el programa del proyecto */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
     RevisionController_aprobar: {
         parameters: {
             query?: never;
@@ -5855,7 +5948,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, o no los aprueba en el programa del proyecto */
+            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, no los aprueba en el programa del proyecto, o es docente del proyecto y el parámetro `revision_bloquear_autoaprobacion` está encendido (separación de funciones) */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5925,7 +6018,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, o no los aprueba en el programa del proyecto */
+            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, no los aprueba en el programa del proyecto, o es docente del proyecto y el parámetro `revision_bloquear_autoaprobacion` está encendido (separación de funciones) */
             403: {
                 headers: {
                     [name: string]: unknown;

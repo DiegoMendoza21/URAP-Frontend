@@ -12,8 +12,10 @@ import {
 import {
   aprobarProyecto,
   devolverProyecto,
+  MOTIVO_NO_REVISABLE,
   type ObservacionEntrada,
   type TransicionProyecto,
+  verificarRevision,
 } from '@/api/revision';
 import {
   Advertencia,
@@ -40,7 +42,9 @@ type Resultado = { estado: TransicionProyecto['estado'] } & (
 /**
  * Revisión del proyecto docente por el departamento académico (RF-18, p2 a p4; HU-07-03 y
  * HU-07-04): las secciones en solo lectura, con un campo de observación debajo de cada una, y
- * las decisiones de aprobar o devolver. El backend comprueba el permiso y el programa.
+ * las decisiones de aprobar o devolver. El backend comprueba el permiso y el programa, y dice
+ * antes si este usuario puede decidir: quien es docente del proyecto ve el aviso en lugar de
+ * las decisiones, porque debe revisarlo otra persona (separación de funciones).
  */
 export function RevisionProyecto() {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +56,10 @@ export function RevisionProyecto() {
   const resumen = useConsulta(
     idProyecto === null ? null : `diligenciamiento-${idProyecto}`,
     (senal) => consultarDiligenciamiento(idProyecto!, senal),
+  );
+  const verificacion = useConsulta(
+    idProyecto === null ? null : `revision-${idProyecto}`,
+    (senal) => verificarRevision(idProyecto!, senal),
   );
   const [observaciones, setObservaciones] = useState<Record<string, string>>(
     {},
@@ -75,6 +83,19 @@ export function RevisionProyecto() {
     .filter((observacion) => observacion.observacion !== '');
   const enviado =
     resumen.estado === 'lista' && resumen.datos.estado?.codigo === 'enviado';
+  // RF-18: `puedeRevisar` es la única señal para mostrar las decisiones. Sin respuesta, o si la
+  // verificación responde 403 (no aprueba en este programa, como el Administrador), no hay.
+  const puedeDecidir =
+    !resultado &&
+    verificacion.estado === 'lista' &&
+    verificacion.datos.puedeRevisar;
+  // El aviso de quien no puede revisar un proyecto enviado: por ejemplo, es docente de él.
+  const impedimento =
+    enviado &&
+    verificacion.estado === 'lista' &&
+    !verificacion.datos.puedeRevisar
+      ? (verificacion.datos.motivo ?? MOTIVO_NO_REVISABLE)
+      : null;
   // Tras decidir, el estado que devolvió el backend: el resumen no se vuelve a pedir.
   const estado =
     resultado?.estado ??
@@ -127,9 +148,9 @@ export function RevisionProyecto() {
       {idProyecto === null && (
         <AvisoError mensaje="El proyecto docente no existe o no tiene acceso a él." />
       )}
-      {(proyecto.estado === 'cargando' || resumen.estado === 'cargando') && (
-        <Cargando />
-      )}
+      {(proyecto.estado === 'cargando' ||
+        resumen.estado === 'cargando' ||
+        verificacion.estado === 'cargando') && <Cargando />}
       {proyecto.estado === 'fallida' && (
         <AvisoError
           mensaje={proyecto.mensaje}
@@ -173,14 +194,24 @@ export function RevisionProyecto() {
 
           {resultado ? (
             <ResultadoRevision resultado={resultado} />
+          ) : !enviado ? (
+            <Advertencia titulo="Este proyecto no está pendiente de revisión">
+              <p>
+                Está «{resumen.datos.estado?.nombre ?? 'sin estado'}». Solo se
+                aprueban o devuelven los proyectos enviados a revisión.
+              </p>
+            </Advertencia>
+          ) : impedimento ? (
+            <Advertencia titulo={impedimento} />
           ) : (
-            !enviado && (
-              <Advertencia titulo="Este proyecto no está pendiente de revisión">
-                <p>
-                  Está «{resumen.datos.estado?.nombre ?? 'sin estado'}». Solo se
-                  aprueban o devuelven los proyectos enviados a revisión.
-                </p>
-              </Advertencia>
+            // Un 403 o un 404 no es un error que el usuario pueda resolver: solo no hay
+            // decisiones. Si la consulta falló por la red o el servidor, se puede reintentar.
+            verificacion.estado === 'fallida' &&
+            verificacion.reintentable && (
+              <AvisoError
+                mensaje={verificacion.mensaje}
+                reintentar={verificacion.reintentar}
+              />
             )
           )}
 
@@ -212,7 +243,7 @@ export function RevisionProyecto() {
                     alCambiar={nada}
                   />
                 )}
-                {enviado && !resultado && (
+                {puedeDecidir && (
                   <div className="space-y-1 border-t border-slate-200 pt-3">
                     <label
                       htmlFor={campo}
@@ -240,7 +271,7 @@ export function RevisionProyecto() {
             );
           })}
 
-          {enviado && !resultado && (
+          {puedeDecidir && (
             <section
               aria-labelledby="titulo-decision"
               className="space-y-3 rounded-2xl border border-marca/30 bg-white p-4 shadow-sm sm:p-6"

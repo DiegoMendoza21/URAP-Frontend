@@ -6,6 +6,7 @@ import { nombreDocente } from '@/api/proyectos-docentes';
 import {
   consultarPendientesRevision,
   type FiltroRevision,
+  MOTIVO_NO_REVISABLE,
   type PendienteRevision,
 } from '@/api/revision';
 import {
@@ -146,6 +147,11 @@ export function BandejaRevision() {
   );
 }
 
+/**
+ * Un proyecto de la bandeja. Si el usuario es docente del proyecto, el backend lo marca como no
+ * revisable (RF-18, separación de funciones) y la tarjeta muestra el motivo en vez de invitar a
+ * revisarlo: debe hacerlo otra persona del Departamento.
+ */
 function TarjetaPendiente({ proyecto }: { proyecto: PendienteRevision }) {
   const responsable = proyecto.docentes.find((docente) => docente.responsable);
   return (
@@ -175,13 +181,20 @@ function TarjetaPendiente({ proyecto }: { proyecto: PendienteRevision }) {
           Responsable: {nombreDocente(responsable)}
         </p>
       )}
+      {!proyecto.puedeRevisar && (
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+          {proyecto.motivo ?? MOTIVO_NO_REVISABLE}
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         {proyecto.fechaEnvio && (
           <span className="text-slate-600">
             Enviado el {momento(proyecto.fechaEnvio)}
           </span>
         )}
-        <span className="font-semibold text-marca">Revisar →</span>
+        <span className="font-semibold text-marca">
+          {proyecto.puedeRevisar ? 'Revisar →' : 'Ver el proyecto →'}
+        </span>
       </div>
     </Link>
   );
