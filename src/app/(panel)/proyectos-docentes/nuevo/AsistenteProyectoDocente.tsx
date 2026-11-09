@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
 import {
+  type AsignaturaOpcion,
   consultarAsignaturas,
   consultarDocentes,
   consultarInformacionAsignatura,
   consultarProgramas,
   consultarProyectoExistente,
   crearProyectoDocente,
+  etiquetaPlan,
   MAXIMO_DOCENTES,
   nombreDocente,
   type ProyectoDocenteDetalle,
@@ -56,6 +58,8 @@ export function AsistenteProyectoDocente() {
   const [idPrograma, setIdPrograma] = useState<number | null>(null);
   const [idAsignatura, setIdAsignatura] = useState<number | null>(null);
   const [filtroAsignatura, setFiltroAsignatura] = useState('');
+  /** Plan de estudios por el que se filtra la lista de asignaturas; nulo: todos. */
+  const [idPlanFiltro, setIdPlanFiltro] = useState<number | null>(null);
   /** Nulo mientras el usuario no toque la selección: se proponen los RAP del mapeo. */
   const [rapsElegidos, setRapsElegidos] = useState<number[] | null>(null);
   const [docentes, setDocentes] = useState<DocenteElegido[]>([]);
@@ -76,6 +80,10 @@ export function AsistenteProyectoDocente() {
   const asignaturas = useConsulta(
     programa === null ? null : `asignaturas-${programa}`,
     (senal) => consultarAsignaturas(programa!, senal),
+  );
+  const planes = useMemo(
+    () => (asignaturas.estado === 'lista' ? planesDe(asignaturas.datos) : []),
+    [asignaturas],
   );
   const informacion = useConsulta(
     idAsignatura === null ? null : `informacion-${idAsignatura}`,
@@ -122,6 +130,7 @@ export function AsistenteProyectoDocente() {
   function elegirPrograma(nuevo: number) {
     if (nuevo !== programa) {
       setIdAsignatura(null);
+      setIdPlanFiltro(null);
       setRapsElegidos(null);
       setDocentes([]);
     }
@@ -356,28 +365,67 @@ export function AsistenteProyectoDocente() {
                     </p>
                   </Advertencia>
                 ) : (
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor={`${id}-filtro`}
-                      className="block text-sm font-medium"
-                    >
-                      Buscar por nombre o código
-                    </label>
-                    <input
-                      id={`${id}-filtro`}
-                      type="search"
-                      value={filtroAsignatura}
-                      onChange={(evento) =>
-                        setFiltroAsignatura(evento.target.value)
-                      }
-                      className="block w-full rounded-lg border border-slate-300 px-3 py-3 text-base focus:border-marca focus:outline-2 focus:outline-marca/30"
-                    />
+                  <div
+                    className={
+                      planes.length > 1
+                        ? 'grid gap-3 sm:grid-cols-[minmax(0,14rem)_1fr]'
+                        : undefined
+                    }
+                  >
+                    {planes.length > 1 && (
+                      <div className="space-y-1.5">
+                        <label
+                          htmlFor={`${id}-plan`}
+                          className="block text-sm font-medium"
+                        >
+                          Plan de estudios
+                        </label>
+                        <select
+                          id={`${id}-plan`}
+                          value={idPlanFiltro ?? ''}
+                          onChange={(evento) =>
+                            setIdPlanFiltro(
+                              evento.target.value
+                                ? Number(evento.target.value)
+                                : null,
+                            )
+                          }
+                          className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-base focus:border-marca focus:outline-2 focus:outline-marca/30"
+                        >
+                          <option value="">Todos los planes</option>
+                          {planes.map((plan) => (
+                            <option key={plan.id} value={plan.id}>
+                              {etiquetaPlan(plan)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor={`${id}-filtro`}
+                        className="block text-sm font-medium"
+                      >
+                        Buscar por nombre, código o plan
+                      </label>
+                      <input
+                        id={`${id}-filtro`}
+                        type="search"
+                        value={filtroAsignatura}
+                        onChange={(evento) =>
+                          setFiltroAsignatura(evento.target.value)
+                        }
+                        className="block w-full rounded-lg border border-slate-300 px-3 py-3 text-base focus:border-marca focus:outline-2 focus:outline-marca/30"
+                      />
+                    </div>
                   </div>
                 )}
                 <ListaAsignaturas
                   nombreGrupo={`${id}-asignatura`}
                   asignaturas={asignaturas.datos}
                   filtro={filtroAsignatura}
+                  idPlan={idPlanFiltro}
+                  variosPlanes={planes.length > 1}
                   elegida={idAsignatura}
                   alElegir={elegirAsignatura}
                 />
@@ -409,6 +457,18 @@ export function AsistenteProyectoDocente() {
                 </p>
               </Advertencia>
             )}
+            {datosInformacion &&
+              datosInformacion.raps.length > 0 &&
+              !datosInformacion.raps.some((rap) => rap.mapeado) && (
+                <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-700">
+                  La asignatura todavía no tiene mapeo curricular a los RAP
+                  {datosInformacion.informacion.planEstudio
+                    ? ` en el plan ${datosInformacion.informacion.planEstudio}`
+                    : ''}
+                  , así que no hay ninguno propuesto. Elija los RAP del programa
+                  a los que contribuye.
+                </p>
+              )}
             {datosInformacion?.raps.map((rap) => (
               <label key={rap.id} className={claseOpcion}>
                 <input
@@ -719,31 +779,50 @@ function IndicadorPasos({ paso }: { paso: Paso }) {
   );
 }
 
+/** Planes de estudio de las asignaturas, sin repetir y en el orden en que llegan. */
+function planesDe(
+  asignaturas: AsignaturaOpcion[],
+): AsignaturaOpcion['planEstudio'][] {
+  return [
+    ...new Map(
+      asignaturas.map(({ planEstudio }) => [planEstudio.id, planEstudio]),
+    ).values(),
+  ];
+}
+
+/**
+ * Asignaturas del programa. Un programa puede tener varios planes de estudio vigentes y la
+ * misma asignatura aparece en cada uno con su código (modelo v2.5): cada opción muestra su
+ * plan y, si hay más de uno, la lista se agrupa por plan.
+ */
 function ListaAsignaturas({
   nombreGrupo,
   asignaturas,
   filtro,
+  idPlan,
+  variosPlanes,
   elegida,
   alElegir,
 }: {
   nombreGrupo: string;
-  asignaturas: {
-    id: number;
-    codigo: string | null;
-    nombre: string;
-    semestre: number | null;
-  }[];
+  asignaturas: AsignaturaOpcion[];
   filtro: string;
+  /** Plan por el que se filtra; nulo: todos. */
+  idPlan: number | null;
+  /** Si el programa tiene más de un plan: entonces la lista se agrupa por plan. */
+  variosPlanes: boolean;
   elegida: number | null;
   alElegir: (id: number) => void;
 }) {
   const termino = normalizar(filtro);
   const visibles = asignaturas.filter(
     (asignatura) =>
-      !termino ||
-      normalizar(asignatura.nombre).includes(termino) ||
-      normalizar(asignatura.codigo ?? '').includes(termino) ||
-      asignatura.id === elegida,
+      asignatura.id === elegida ||
+      ((idPlan === null || asignatura.planEstudio.id === idPlan) &&
+        (!termino ||
+          normalizar(asignatura.nombre).includes(termino) ||
+          normalizar(asignatura.codigo ?? '').includes(termino) ||
+          normalizar(etiquetaPlan(asignatura.planEstudio)).includes(termino))),
   );
   if (asignaturas.length > 0 && visibles.length === 0) {
     return (
@@ -753,28 +832,44 @@ function ListaAsignaturas({
     );
   }
   return (
-    <div className="space-y-3">
-      {visibles.map((asignatura) => (
-        <label key={asignatura.id} className={claseOpcion}>
-          <input
-            type="radio"
-            name={nombreGrupo}
-            checked={elegida === asignatura.id}
-            onChange={() => alElegir(asignatura.id)}
-            className={claseControl}
-          />
-          <span>
-            <span className="block font-semibold">{asignatura.nombre}</span>
-            <span className="block text-sm text-slate-600">
-              {[
-                asignatura.codigo,
-                asignatura.semestre ? `Semestre ${asignatura.semestre}` : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </span>
-          </span>
-        </label>
+    <div className="space-y-5">
+      {planesDe(visibles).map((plan) => (
+        <div key={plan.id} className="space-y-3">
+          {variosPlanes && (
+            <h3 className="text-sm font-semibold text-slate-700">
+              {plan.nombre ?? etiquetaPlan(plan)}
+            </h3>
+          )}
+          {visibles
+            .filter((asignatura) => asignatura.planEstudio.id === plan.id)
+            .map((asignatura) => (
+              <label key={asignatura.id} className={claseOpcion}>
+                <input
+                  type="radio"
+                  name={nombreGrupo}
+                  checked={elegida === asignatura.id}
+                  onChange={() => alElegir(asignatura.id)}
+                  className={claseControl}
+                />
+                <span>
+                  <span className="block font-semibold">
+                    {asignatura.nombre}
+                  </span>
+                  <span className="block text-sm text-slate-600">
+                    {[
+                      etiquetaPlan(asignatura.planEstudio),
+                      asignatura.codigo,
+                      asignatura.semestre
+                        ? `Semestre ${asignatura.semestre}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </span>
+              </label>
+            ))}
+        </div>
       ))}
     </div>
   );
@@ -803,6 +898,7 @@ function ProyectoCreado({ proyecto }: { proyecto: ProyectoDocenteDetalle }) {
       </h1>
       <p className="text-slate-700">
         <strong>{proyecto.asignatura}</strong>
+        {proyecto.planEstudio ? ` (plan ${proyecto.planEstudio})` : ''}
         {proyecto.grupo ? `, grupo ${proyecto.grupo}` : ''}, período{' '}
         {proyecto.periodo}, quedó en estado «{proyecto.estado?.nombre}».
         {proyecto.docentes.length > 0 && (

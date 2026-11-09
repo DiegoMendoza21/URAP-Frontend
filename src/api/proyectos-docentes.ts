@@ -100,3 +100,16 @@ export function nombreDocente(docente: {
     'Sin nombre'
   );
 }
+
+/**
+ * Nombre corto de un plan de estudios para mostrarlo junto a la asignatura: «Plan 2502». La
+ * misma asignatura puede estar en dos planes con códigos distintos (modelo v2.5).
+ */
+export function etiquetaPlan(plan: {
+  codigo: string | null;
+  nombre: string | null;
+}): string {
+  return plan.codigo
+    ? `Plan ${plan.codigo}`
+    : (plan.nombre ?? 'Plan sin código');
+}
