@@ -68,6 +68,9 @@ export function InformacionGeneral({
       <dl className="grid gap-x-6 sm:grid-cols-2 sm:gap-y-4 lg:grid-cols-3">
         <Fila etiqueta="Facultad">{valor(informacion.facultad)}</Fila>
         <Fila etiqueta="Programa">{valor(informacion.programa)}</Fila>
+        <Fila etiqueta="Plan de estudios">
+          {valor(informacion.planEstudio)}
+        </Fila>
         <Fila etiqueta="Asignatura">{valor(informacion.asignatura)}</Fila>
         <Fila etiqueta="Código">{valor(informacion.codigo)}</Fila>
         <Fila etiqueta="Semestre">{valor(informacion.semestre)}</Fila>

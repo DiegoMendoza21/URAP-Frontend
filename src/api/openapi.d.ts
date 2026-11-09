@@ -1447,15 +1447,30 @@ export interface components {
             /** @example Facultad de Ciencias Económicas */
             facultad: string | null;
         };
+        PlanEstudioDto: {
+            /** @example 2 */
+            id: number;
+            /**
+             * @description Código del plan en el sistema académico (SMA)
+             * @example 2502
+             */
+            codigo: string | null;
+            /** @example Plan de estudios 2502 */
+            nombre: string | null;
+        };
         AsignaturaOpcionDto: {
             /** @example 3 */
             id: number;
-            /** @example DEMO-01 */
+            /** @example IX24193 */
             codigo: string | null;
-            /** @example Finanzas a corto plazo */
+            /** @example Comportamiento organizacional */
             nombre: string;
-            /** @example 6 */
+            /**
+             * @description Semestre dentro de su plan de estudios
+             * @example 5
+             */
             semestre: number | null;
+            planEstudio: components["schemas"]["PlanEstudioDto"];
         };
         AsignaturaRequisitoDto: {
             /** @example 2 */
@@ -1470,6 +1485,11 @@ export interface components {
             facultad: string | null;
             /** @example Administración Industrial */
             programa: string | null;
+            /**
+             * @description Código del plan de estudios al que pertenece la asignatura
+             * @example 2502
+             */
+            planEstudio: string | null;
             /** @example 3 */
             idAsignatura: number;
             /** @example DEMO-01 */
@@ -1594,6 +1614,11 @@ export interface components {
             asignatura: string | null;
             /** @example Administración Industrial */
             programa: string | null;
+            /**
+             * @description Código del plan de estudios al que pertenece la asignatura
+             * @example 1702
+             */
+            planEstudio: string | null;
             /** @example 2026-2 */
             periodo: string | null;
             /** @example A */
@@ -1668,6 +1693,11 @@ export interface components {
             asignatura: string | null;
             /** @example Administración Industrial */
             programa: string | null;
+            /**
+             * @description Código del plan de estudios al que pertenece la asignatura
+             * @example 1702
+             */
+            planEstudio: string | null;
             /** @example 2026-2 */
             periodo: string | null;
             /** @example A */
@@ -2116,6 +2146,11 @@ export interface components {
             asignatura: string | null;
             /** @example Administración Industrial */
             programa: string | null;
+            /**
+             * @description Código del plan de estudios al que pertenece la asignatura
+             * @example 1702
+             */
+            planEstudio: string | null;
             /** @example 2026-2 */
             periodo: string | null;
             /** @example A */
@@ -3047,6 +3082,11 @@ export interface components {
             grupo: string | null;
             /** @example Administración Industrial */
             programa: string | null;
+            /**
+             * @description Código del plan de estudios de la asignatura
+             * @example 1702
+             */
+            planEstudio: string | null;
             /** @example 2026-2 */
             periodo: string | null;
             /**
@@ -3149,6 +3189,11 @@ export interface components {
             nombre: string;
             /** @example 1 */
             idPrograma: number | null;
+            /**
+             * @description Código del plan de estudios: distingue la misma asignatura en dos planes
+             * @example 1702
+             */
+            planEstudio: string | null;
         };
         FiltrosSeguimientoDto: {
             programas: components["schemas"]["OpcionDto"][];
