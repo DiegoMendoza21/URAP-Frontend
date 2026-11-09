@@ -1873,10 +1873,29 @@ export interface components {
             /** @example Aprendizaje basado en problemas */
             descripcion: string;
         };
+        CatalogoEstrategiasDto: {
+            /**
+             * @description Estrategias de enseñanza del MEN, que propone y conduce el docente. Salen del parámetro `catalogo_estrategias_ensenanza`, en su orden.
+             * @example [
+             *       "Lluvia de ideas",
+             *       "Matriz C-Q-A"
+             *     ]
+             */
+            ensenanza: string[];
+            /**
+             * @description Estrategias de aprendizaje del MEN, que ejecuta el estudiante. Salen del parámetro `catalogo_estrategias_aprendizaje`, en su orden.
+             * @example [
+             *       "Portafolio"
+             *     ]
+             */
+            aprendizaje: string[];
+        };
         SeccionEstrategiasDto: {
             /** @description En orden */
             estrategias: components["schemas"]["EstrategiaDto"][];
-            /** @description Catálogo sugerido (RF-13, p2): estrategias que se pueden agregar con un toque. No incluye las que ya están en el proyecto. */
+            /** @description Catálogo sugerido del MEN (RF-13, p2): estrategias que se pueden agregar con un toque. No incluye las que ya están en el proyecto, y una que esté en los dos grupos sale solo en el de enseñanza. Si falta uno de los parámetros, su grupo llega vacío. */
+            catalogo: components["schemas"]["CatalogoEstrategiasDto"];
+            /** @description Estrategias que usan otros proyectos docentes del programa, de la más usada a la menos usada. No incluye las que ya están en el proyecto ni las del catálogo del MEN. */
             sugeridas: string[];
         };
         GuardarEstrategiasDto: {
