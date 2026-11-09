@@ -14,6 +14,7 @@ export type SeccionIncompleta = Esquemas['SeccionIncompletaDto'];
 export type TransicionProyecto = Esquemas['TransicionProyectoDto'];
 export type PaginaPendientesRevision = Esquemas['PaginaPendientesRevisionDto'];
 export type PendienteRevision = Esquemas['PendienteRevisionDto'];
+export type VerificacionRevision = Esquemas['VerificacionRevisionDto'];
 export type ObservacionEntrada = Esquemas['ObservacionEntradaDto'];
 export type Observacion = Esquemas['ObservacionDto'];
 export type ObservacionesProyecto = Esquemas['ObservacionesProyectoDto'];
@@ -34,6 +35,13 @@ export function enviarARevision(idProyecto: number) {
 }
 
 /* RF-18 · Revisión (HU-07-02 a HU-07-04) */
+
+/**
+ * Por si el backend marca un proyecto como no revisable sin decir por qué. Hoy siempre lo dice:
+ * con la separación de funciones encendida, quien es docente del proyecto no lo revisa.
+ */
+export const MOTIVO_NO_REVISABLE =
+  'Usted no puede revisar este proyecto: debe revisarlo otra persona del Departamento.';
 
 export interface FiltroRevision {
   idPrograma?: number;
@@ -60,6 +68,16 @@ export function consultarPendientesRevision(
     `/revisiones/pendientes?${consulta}`,
     { senal },
   );
+}
+
+/**
+ * Si el usuario puede aprobar o devolver el proyecto ahora y, si no, por qué: por ejemplo, es
+ * docente del proyecto y debe revisarlo otra persona del Departamento.
+ */
+export function verificarRevision(idProyecto: number, senal?: AbortSignal) {
+  return obtener<VerificacionRevision>(`${base(idProyecto)}/revision`, {
+    senal,
+  });
 }
 
 export function aprobarProyecto(
