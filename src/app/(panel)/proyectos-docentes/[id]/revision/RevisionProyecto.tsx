@@ -83,18 +83,19 @@ export function RevisionProyecto() {
     .filter((observacion) => observacion.observacion !== '');
   const enviado =
     resumen.estado === 'lista' && resumen.datos.estado?.codigo === 'enviado';
-  // RF-18: con el proyecto enviado, el backend dice si este usuario puede decidir.
+  // RF-18: `puedeRevisar` es la única señal para mostrar las decisiones. Sin respuesta, o si la
+  // verificación responde 403 (no aprueba en este programa, como el Administrador), no hay.
+  const puedeDecidir =
+    !resultado &&
+    verificacion.estado === 'lista' &&
+    verificacion.datos.puedeRevisar;
+  // El aviso de quien no puede revisar un proyecto enviado: por ejemplo, es docente de él.
   const impedimento =
     enviado &&
     verificacion.estado === 'lista' &&
     !verificacion.datos.puedeRevisar
       ? (verificacion.datos.motivo ?? MOTIVO_NO_REVISABLE)
       : null;
-  const puedeDecidir =
-    enviado &&
-    !resultado &&
-    verificacion.estado === 'lista' &&
-    verificacion.datos.puedeRevisar;
   // Tras decidir, el estado que devolvió el backend: el resumen no se vuelve a pedir.
   const estado =
     resultado?.estado ??
@@ -203,14 +204,13 @@ export function RevisionProyecto() {
           ) : impedimento ? (
             <Advertencia titulo={impedimento} />
           ) : (
-            verificacion.estado === 'fallida' && (
+            // Un 403 o un 404 no es un error que el usuario pueda resolver: solo no hay
+            // decisiones. Si la consulta falló por la red o el servidor, se puede reintentar.
+            verificacion.estado === 'fallida' &&
+            verificacion.reintentable && (
               <AvisoError
                 mensaje={verificacion.mensaje}
-                reintentar={
-                  verificacion.reintentable
-                    ? verificacion.reintentar
-                    : undefined
-                }
+                reintentar={verificacion.reintentar}
               />
             )
           )}

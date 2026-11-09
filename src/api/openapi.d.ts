@@ -573,7 +573,7 @@ export interface paths {
         };
         /**
          * Verificación antes de aprobar o devolver (RF-18; HU-07-03 y HU-07-04)
-         * @description Si el usuario puede aprobar o devolver el proyecto ahora y, si no, por qué: no lo aprueba en el programa, es docente del proyecto con la separación de funciones encendida (`revision_bloquear_autoaprobacion`) o el proyecto no está enviado a revisión.
+         * @description Si el usuario puede aprobar o devolver el proyecto ahora y, si no, por qué: es docente del proyecto con la separación de funciones encendida (`revision_bloquear_autoaprobacion`) o el proyecto no está enviado a revisión. El alcance se comprueba como en la aprobación y la devolución: 404 si no ve el proyecto y 403 si no lo aprueba en su programa.
          */
         get: operations["RevisionController_verificarRevision"];
         put?: never;
@@ -2215,12 +2215,12 @@ export interface components {
             idProyecto: number;
             estado: components["schemas"]["EstadoProyectoDto"] | null;
             /**
-             * @description Si el usuario puede aprobar o devolver el proyecto ahora (RF-18): lo aprueba en el programa, no es docente del proyecto mientras `revision_bloquear_autoaprobacion` esté encendido (separación de funciones) y el proyecto está «Enviado a revisión».
+             * @description Si el usuario puede aprobar o devolver el proyecto ahora (RF-18). Es verdadero solo si el proyecto está «Enviado a revisión» y el usuario no es docente de él mientras `revision_bloquear_autoaprobacion` esté encendido (separación de funciones). Es la única señal para mostrar las decisiones.
              * @example false
              */
             puedeRevisar: boolean;
             /**
-             * @description Por qué no puede revisarlo, en lenguaje del usuario; nulo si puede
+             * @description Cuál de las dos condiciones falla, en lenguaje del usuario: es docente del proyecto, o el proyecto no está enviado a revisión. Si fallan las dos, la primera. Nulo si puede.
              * @example Usted es docente de este proyecto: debe revisarlo otra persona del Departamento.
              */
             motivo: string | null;
@@ -5868,7 +5868,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description Ninguno de los roles del usuario aprueba proyectos docentes */
+            /** @description Ninguno de los roles del usuario aprueba proyectos docentes, o no los aprueba en el programa del proyecto */
             403: {
                 headers: {
                     [name: string]: unknown;
