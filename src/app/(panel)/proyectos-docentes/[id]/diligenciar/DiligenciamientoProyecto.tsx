@@ -14,6 +14,7 @@ import {
   type Diligenciamiento,
 } from '@/api/diligenciamiento';
 import { consultarProyectoDocente } from '@/api/proyectos-docentes';
+import { porcentaje } from '@/componentes/formato';
 import {
   consultarObservaciones,
   type Observacion,
@@ -28,6 +29,7 @@ import {
 import { momento } from '../../_componentes/fechas';
 import { useConsulta } from '../../_componentes/useConsulta';
 import { ObservacionesSeccion } from './ObservacionesSeccion';
+import { ESTADOS_SECCION } from './estadosSeccion';
 import { PanelEnvio } from './PanelEnvio';
 import { SeccionBibliografia } from './SeccionBibliografia';
 import { SeccionContenidos } from './SeccionContenidos';
@@ -304,6 +306,8 @@ export function DiligenciamientoProyecto() {
             </Advertencia>
           )}
 
+          <ResumenSecciones resumen={resumen} />
+
           <nav
             id="secciones-proyecto"
             aria-label="Secciones del proyecto docente"
@@ -335,11 +339,11 @@ export function DiligenciamientoProyecto() {
                       <span
                         aria-hidden="true"
                         className={`inline-block size-2.5 rounded-full ${
-                          seccion.completa ? 'bg-emerald-500' : 'bg-amber-400'
+                          ESTADOS_SECCION[seccion.estado].punto
                         }`}
                       />
                       <span className="sr-only">
-                        {seccion.completa ? '(completa)' : '(pendiente)'}
+                        ({ESTADOS_SECCION[seccion.estado].texto})
                       </span>
                       {sinResolver > 0 && (
                         <span
@@ -429,5 +433,36 @@ export function DiligenciamientoProyecto() {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * HU-06-09: cuántas secciones están completas, con la misma cuenta del tablero de seguimiento,
+ * y qué significa cada color de las pestañas. Se actualiza al guardar, porque el resumen se
+ * vuelve a pedir en cada guardado.
+ */
+function ResumenSecciones({ resumen }: { resumen: Diligenciamiento }) {
+  const { completas, total } = resumen.completitud;
+  return (
+    <div className="space-y-1">
+      <p role="status" className="text-sm font-medium text-slate-800">
+        Secciones completas: {completas} de {total} (
+        {porcentaje(resumen.completitud.porcentaje)})
+      </p>
+      <ul
+        aria-label="Qué significa cada color"
+        className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600"
+      >
+        {Object.values(ESTADOS_SECCION).map(({ texto, punto }) => (
+          <li key={texto} className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className={`inline-block size-2.5 rounded-full ${punto}`}
+            />
+            {texto.charAt(0).toUpperCase() + texto.slice(1)}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

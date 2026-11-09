@@ -231,8 +231,19 @@ export function RevisionProyecto() {
                   >
                     {seccion.numero}. {seccion.titulo}
                   </h2>
-                  <Insignia tono={seccion.completa ? 'neutro' : 'advertencia'}>
-                    {seccion.completa ? 'Completa' : 'Con pendientes'}
+                  {/* HU-06-09: el mismo estado que ve el docente en sus pestañas. */}
+                  <Insignia
+                    tono={
+                      seccion.estado === 'completa' ? 'neutro' : 'advertencia'
+                    }
+                  >
+                    {
+                      {
+                        completa: 'Completa',
+                        incompleta: 'Incompleta',
+                        vacia: 'Vacía',
+                      }[seccion.estado]
+                    }
                   </Insignia>
                 </div>
                 {Pantalla && (
