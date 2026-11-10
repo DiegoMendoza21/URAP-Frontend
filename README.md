@@ -45,6 +45,9 @@ responde. El puerto 3000 es fijo: si está ocupado, `dev` se detiene en vez de p
   Con `PROXIES_CONFIABLES=0`, todos los usuarios llegarían al backend con la IP de Next:
   compartirían el límite de intentos y la auditoría guardaría esa IP. Sin balanceador delante
   de Next, el usuario podría falsificar su IP con ese encabezado.
+- El despliegue está en URAP-Backend (`docs/despliegue.md` y `despliegue/`): Caddy con HTTPS
+  delante de Next (`PROXIES_CONFIABLES=1`), y el `Dockerfile` de este repositorio construye la
+  imagen del frontend. `URL_API` apunta al backend por la red interna de Docker.
 
 ## Comandos
 
