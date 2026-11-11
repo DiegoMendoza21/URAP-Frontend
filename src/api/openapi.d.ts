@@ -272,6 +272,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/usuarios/{id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Asigna un rol al usuario sobre un programa (HU-02-07)
+         * @description Queda registrado quién lo asignó y cuándo. Un usuario puede tener varios roles vigentes. Si ya tuvo ese rol y se le revocó, vuelve a quedar vigente.
+         */
+        post: operations["UsuariosController_asignarRol"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/usuarios/{id}/roles/{idAsignacion}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoca un rol del usuario (HU-02-07)
+         * @description La revocación es lógica: la asignación queda inactiva, con su fecha. Nadie se quita a sí mismo el rol con el que administra usuarios.
+         */
+        delete: operations["UsuariosController_revocarRol"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/usuarios/{id}/roles/historial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Historial de roles del usuario: quién tuvo qué rol y cuándo (HU-02-07)
+         * @description Sale de la auditoría. Solo para quien administra usuarios: dice quién hizo cada cambio.
+         */
+        get: operations["UsuariosController_historialRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/asistente/programas": {
         parameters: {
             query?: never;
@@ -1717,6 +1777,40 @@ export interface components {
              * @example Kp7m-Xw3q-Rt9z-Hn4c
              */
             contrasenaTemporal: string;
+        };
+        EventoRolDto: {
+            /**
+             * @description Identificador de la asignación
+             * @example 41
+             */
+            idAsignacion: number;
+            /**
+             * @example asignacion
+             * @enum {string}
+             */
+            tipo: "asignacion" | "revocacion";
+            /** @example 3 */
+            idRol: number;
+            /** @example Docente responsable */
+            rol: string;
+            /** @example 1 */
+            idPrograma: number | null;
+            /**
+             * @description Vacío: el rol alcanza a todos los programas
+             * @example Administración Industrial
+             */
+            programa: string | null;
+            /** Format: date-time */
+            fecha: string | null;
+            /**
+             * @description Quién asignó o revocó el rol. Vacío si no quedó registrado (roles de la carga inicial)
+             * @example Administrador Demo
+             */
+            realizadoPor: string | null;
+        };
+        HistorialRolesDto: {
+            /** @description Del más reciente al más antiguo, hasta 200 eventos */
+            eventos: components["schemas"]["EventoRolDto"][];
         };
         ProgramaOpcionDto: {
             /** @example 1 */
@@ -4993,6 +5087,180 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContrasenaTemporalDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_asignarRol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolParaAsignarDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleUsuarioDto"];
+                };
+            };
+            /** @description Rol o programa inexistente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario ya tiene ese rol vigente sobre ese programa */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_revocarRol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                idAsignacion: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleUsuarioDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no existe o no tiene ese rol vigente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Es su propio rol de administración, o no quedaría nadie administrando usuarios y roles */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_historialRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistorialRolesDto"];
                 };
             };
             /** @description Sin sesión válida */

@@ -12,6 +12,9 @@ export type UsuarioCreado = Esquemas['UsuarioCreadoDto'];
 export type ContrasenaTemporal = Esquemas['ContrasenaTemporalDto'];
 export type DatosNuevoUsuario = Esquemas['CrearUsuarioDto'];
 export type CambiosUsuario = Esquemas['EditarUsuarioDto'];
+export type EventoRol = Esquemas['EventoRolDto'];
+export type HistorialRoles = Esquemas['HistorialRolesDto'];
+export type RolPorAsignar = Esquemas['RolParaAsignarDto'];
 export type EstadoUsuario = 'activo' | 'inactivo';
 
 /*
@@ -79,6 +82,22 @@ export function cambiarEstadoUsuario(id: number, activo: boolean) {
 
 export function generarContrasenaTemporal(id: number) {
   return enviar<ContrasenaTemporal>(`/usuarios/${id}/contrasena-temporal`);
+}
+
+/** HU-02-07: asigna un rol sobre un programa; sin programa, sobre todos. */
+export function asignarRol(id: number, rol: RolPorAsignar) {
+  return enviar<DetalleUsuario>(`/usuarios/${id}/roles`, rol);
+}
+
+/** HU-02-07: revocación lógica; el rol queda en el historial. */
+export function revocarRol(id: number, idAsignacion: number) {
+  return solicitar<DetalleUsuario>(`/usuarios/${id}/roles/${idAsignacion}`, {
+    metodo: 'DELETE',
+  });
+}
+
+export function consultarHistorialRoles(id: number, senal?: AbortSignal) {
+  return obtener<HistorialRoles>(`/usuarios/${id}/roles/historial`, { senal });
 }
 
 export function nombreCompleto(

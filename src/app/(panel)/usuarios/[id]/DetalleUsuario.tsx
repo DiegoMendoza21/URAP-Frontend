@@ -12,7 +12,6 @@ import {
   nombreCompleto,
   PERMISO_ADMINISTRAR_USUARIOS,
   PERMISO_CONSULTAR_USUARIOS,
-  textoRol,
 } from '@/api/usuarios';
 import { useSesion } from '@/sesion/ProveedorSesion';
 import { usePermisos } from '@/sesion/permisos';
@@ -24,24 +23,16 @@ import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
 import { Estado } from '../ListaUsuarios';
 import { Confirmacion } from '../_componentes/Confirmacion';
 import { ContrasenaTemporal } from '../_componentes/ContrasenaTemporal';
-
-const formatoMomento = new Intl.DateTimeFormat('es-CO', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-  timeZone: 'America/Bogota',
-});
-const momento = (fecha: string | null) =>
-  fecha ? formatoMomento.format(new Date(fecha)) : null;
+import { momento } from '../_componentes/momento';
+import { RolesUsuario } from './RolesUsuario';
 
 type Accion = 'estado' | 'contrasena';
 
 /**
- * Página de un usuario (RF-02): sus datos, su estado y sus roles vigentes. Quien administra
- * puede editarlo (HU-02-02), inactivarlo o reactivarlo (HU-02-03) y generarle una contraseña
- * temporal. Quien solo consulta ve los datos, sin el documento y sin acciones.
+ * Página de un usuario (RF-02): sus datos, su estado y sus roles. Quien administra puede
+ * editarlo (HU-02-02), inactivarlo o reactivarlo (HU-02-03), generarle una contraseña
+ * temporal y asignarle o revocarle roles, con su historial (HU-02-07). Quien solo consulta ve
+ * los datos y los roles vigentes, sin el documento y sin acciones.
  */
 export function DetalleUsuario() {
   const tiene = usePermisos();
@@ -162,35 +153,14 @@ export function DetalleUsuario() {
             )}
           </div>
 
-          <section
-            aria-labelledby="titulo-roles"
-            className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
-          >
-            <h2 id="titulo-roles" className="text-lg font-semibold">
-              Roles vigentes
-            </h2>
-            {usuario.roles.length === 0 ? (
-              <p className="text-slate-700">
-                No tiene roles vigentes: no puede iniciar sesión hasta que se le
-                asigne uno.
-              </p>
-            ) : (
-              <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200">
-                {usuario.roles.map((rol) => (
-                  <li key={rol.id} className="px-3 py-2">
-                    <p className="font-medium text-slate-900">
-                      {textoRol(rol)}
-                    </p>
-                    {rol.fechaAsignacion && (
-                      <p className="text-sm text-slate-600">
-                        Desde el {momento(rol.fechaAsignacion)}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <RolesUsuario
+            usuario={usuario}
+            puedeAdministrar={puedeAdministrar}
+            alCambiar={(nuevo) => {
+              setActualizado(nuevo);
+              setVersion((valor) => valor + 1);
+            }}
+          />
 
           {puedeAdministrar && (
             <section
