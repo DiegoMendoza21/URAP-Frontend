@@ -6,6 +6,10 @@ coverage
 .env*
 !.env.example
 .git
+# Lo mismo que .gitignore trata como local: certificados de `next dev --experimental-https` y registros.
+*.pem
+certificates
+*.log
 .github
 .claude
 docs
