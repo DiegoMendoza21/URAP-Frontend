@@ -167,6 +167,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/parametros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista los parámetros del sistema con su valor (HU-03-07)
+         * @description Son los parámetros de negocio que el sistema lee. El secreto y la vigencia del token no aparecen: son variables de entorno del despliegue (NFR-003).
+         */
+        get: operations["ParametrosController_listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parametros/{clave}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambia el valor de un parámetro (HU-03-07)
+         * @description Rige desde la siguiente petición, sin redesplegar. No crea parámetros nuevos ni los borra. El cambio queda en la auditoría con el valor anterior y el nuevo.
+         */
+        patch: operations["ParametrosController_cambiar"];
+        trace?: never;
+    };
     "/api/proyectos-docentes/asistente/programas": {
         parameters: {
             query?: never;
@@ -1458,6 +1498,77 @@ export interface components {
         ReemplazarPermisosDto: {
             /** @description Permisos del rol por módulo. Debe incluir al menos un permiso de lectura (RF-03, p4). */
             permisos: components["schemas"]["PermisoAsignadoDto"][];
+        };
+        ParametroDto: {
+            /** @example alerta_dias_anticipacion */
+            clave: string;
+            /**
+             * @example entero
+             * @enum {string}
+             */
+            tipoDato: "entero" | "booleano" | "lista";
+            /**
+             * @description El valor tal como está guardado: el número, «si» o «no», o los elementos separados por coma. `null` si el parámetro todavía no está en la base (falta sembrar los datos base).
+             * @example 2
+             */
+            valor: string | null;
+            /**
+             * @description Los elementos del valor, si el parámetro es una lista; si no, vacío.
+             * @example []
+             */
+            elementos: string[];
+            /** @example Días antes del vencimiento en que una sesión se marca «Por vencer». */
+            descripcion: string | null;
+            /**
+             * @description Valor mínimo, si el parámetro es un entero.
+             * @example 0
+             */
+            minimo: number | null;
+            /**
+             * @description Valor máximo, si el parámetro es un entero.
+             * @example 365
+             */
+            maximo: number | null;
+            /**
+             * @description Si el parámetro es una lista, si puede quedar sin elementos; si no, `false`.
+             * @example false
+             */
+            admiteVacia: boolean;
+            /**
+             * @description Si el parámetro es una lista cerrada, los únicos elementos que admite.
+             * @example null
+             */
+            elementosPermitidos: string[] | null;
+            /**
+             * Format: date-time
+             * @description Cuándo se guardó el valor por última vez.
+             * @example 2026-11-10T15:20:00.000Z
+             */
+            actualizadoEn: string | null;
+            /**
+             * @description Quién lo cambió por última vez. `null` si conserva el valor inicial.
+             * @example Administrador Demostración
+             */
+            actualizadoPor: string | null;
+        };
+        ListaParametrosDto: {
+            elementos: components["schemas"]["ParametroDto"][];
+        };
+        CambiarParametroDto: {
+            /**
+             * @description Para los parámetros de tipo entero (el número, en texto) y de sí/no («si» o «no»).
+             * @example 3
+             */
+            valor?: string;
+            /**
+             * @description Para los parámetros de tipo lista: sus elementos, en el orden en que deben quedar.
+             * @example [
+             *       "jpg",
+             *       "png",
+             *       "pdf"
+             *     ]
+             */
+            elementos?: string[];
         };
         ProgramaOpcionDto: {
             /** @example 1 */
@@ -4388,6 +4499,104 @@ export interface operations {
             };
             /** @description Se retiraría la administración de usuarios y roles al último usuario que la tiene */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ParametrosController_listar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaParametrosDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ParametrosController_cambiar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clave: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarParametroDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDto"];
+                };
+            };
+            /** @description El valor no cumple las reglas del parámetro: tipo, rango, elementos vacíos o repetidos, tipo de archivo que no se sabe verificar, o no cabe en el valor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La clave no es un parámetro del sistema */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

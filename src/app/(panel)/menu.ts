@@ -125,4 +125,13 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
       'Logro de los RAP, cumplimiento y contribución de los RAC a los RAP, con exportación a Excel y PDF.',
     roles: [...new Set(REPORTES.flatMap((reporte) => reporte.roles ?? []))],
   },
+  {
+    // HU-03-07: quien administra la estructura académica en la matriz (el Administrador).
+    ruta: '/parametros',
+    etiqueta: 'Parámetros del sistema',
+    etiquetaMenu: 'Parámetros',
+    descripcion:
+      'Ajuste las reglas y los límites del sistema: alertas, inicio de sesión, archivos, revisión y catálogos.',
+    permiso: 'estructura.administrar',
+  },
 ];
