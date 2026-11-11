@@ -1,4 +1,8 @@
-import type { AccionAuditoria, RegistroAuditoria } from '@/api/auditoria';
+import type {
+  AccionAuditoria,
+  EventoAuditoria,
+  RegistroAuditoria,
+} from '@/api/auditoria';
 
 /*
  * La auditoría guarda códigos del modelo de datos (`proyecto_docente`, `fechaEnvio`). Aquí se
@@ -10,27 +14,129 @@ import type { AccionAuditoria, RegistroAuditoria } from '@/api/auditoria';
 /** Permiso de la matriz que abre la consulta completa: en la matriz inicial, el Administrador. */
 export const PERMISO_AUDITORIA = 'auditoria.administrar';
 
-export const ACCIONES: Record<
-  AccionAuditoria,
-  { nombre: string; verbo: string }
-> = {
-  crear: { nombre: 'Creación', verbo: 'creó' },
-  actualizar: { nombre: 'Modificación', verbo: 'modificó' },
-  eliminar: { nombre: 'Eliminación', verbo: 'eliminó' },
-  aprobar: { nombre: 'Aprobación', verbo: 'aprobó' },
-  consulta_sensible: { nombre: 'Consulta sensible', verbo: 'consultó' },
+type Tono = 'neutro' | 'marca' | 'advertencia' | 'peligro' | 'informativo';
+
+interface Evento {
+  /** La etiqueta del registro y la opción del filtro «Acción»: «Inicio de sesión». */
+  nombre: string;
+  /** Color de la insignia. El nombre siempre va escrito. */
+  tono: Tono;
+  /** Para completar «Fulano …» cuando «verbo + entidad» no lo dice bien: «inició sesión». */
+  frase?: string;
+  /** El número del registro no le dice nada a quien lee (el de la sesión, el de la asignación). */
+  sinNumero?: true;
+}
+
+/**
+ * Lo que pasó, con palabras del dominio. La auditoría guarda un inicio de sesión como la
+ * creación de una fila de `sesion` y una devolución como un cambio de `estado`; el backend
+ * los entrega ya nombrados (`evento`), y aquí está cómo se leen. Los cinco primeros son los
+ * generales: lo que no tiene nombre propio.
+ */
+export const EVENTOS: Record<EventoAuditoria, Evento> = {
+  creacion: { nombre: 'Creación', tono: 'neutro' },
+  modificacion: { nombre: 'Modificación', tono: 'advertencia' },
+  eliminacion: { nombre: 'Eliminación', tono: 'peligro' },
+  aprobacion: { nombre: 'Aprobación', tono: 'marca' },
+  consulta_sensible: { nombre: 'Consulta sensible', tono: 'informativo' },
+  inicio_sesion: {
+    nombre: 'Inicio de sesión',
+    tono: 'neutro',
+    frase: 'inició sesión',
+    sinNumero: true,
+  },
+  cierre_sesion: {
+    nombre: 'Cierre de sesión',
+    tono: 'neutro',
+    frase: 'cerró sesión',
+    sinNumero: true,
+  },
+  envio_revision: {
+    nombre: 'Envío a revisión',
+    tono: 'informativo',
+    frase: 'envió a revisión el proyecto docente',
+  },
+  devolucion: {
+    nombre: 'Devolución',
+    tono: 'advertencia',
+    frase: 'devolvió el proyecto docente',
+  },
+  registro_clase: {
+    nombre: 'Registro de clase',
+    tono: 'neutro',
+    frase: 'registró la clase',
+  },
+  registro_inasistencias: {
+    nombre: 'Registro de inasistencias',
+    tono: 'neutro',
+    frase: 'registró las inasistencias de la clase',
+  },
+  carga_matriculados: {
+    nombre: 'Carga de matriculados',
+    tono: 'neutro',
+    frase: 'cargó la lista de matriculados del proyecto docente',
+  },
+  carga_evidencia: {
+    nombre: 'Carga de evidencia',
+    tono: 'neutro',
+    frase: 'subió la evidencia',
+  },
+  generacion_reporte: {
+    nombre: 'Generación de reporte',
+    tono: 'neutro',
+    frase: 'generó el reporte académico',
+  },
+  cierre_medicion: {
+    nombre: 'Cierre de medición',
+    tono: 'marca',
+    frase: 'cerró la medición de RAP',
+  },
+  reapertura_medicion: {
+    nombre: 'Reapertura de medición',
+    tono: 'advertencia',
+    frase: 'reabrió la medición de RAP',
+  },
+  bloqueo_usuario: {
+    nombre: 'Bloqueo de usuario',
+    tono: 'peligro',
+    frase: 'bloqueó por intentos fallidos al usuario',
+  },
+  inactivacion_usuario: {
+    nombre: 'Inactivación de usuario',
+    tono: 'peligro',
+    frase: 'inactivó al usuario',
+  },
+  reactivacion_usuario: {
+    nombre: 'Reactivación de usuario',
+    tono: 'neutro',
+    frase: 'reactivó al usuario',
+  },
+  restablecimiento_contrasena: {
+    nombre: 'Contraseña nueva',
+    tono: 'advertencia',
+    frase: 'generó una contraseña nueva para el usuario',
+  },
+  asignacion_rol: {
+    nombre: 'Asignación de rol',
+    tono: 'neutro',
+    frase: 'asignó un rol a un usuario',
+    sinNumero: true,
+  },
+  revocacion_rol: {
+    nombre: 'Revocación de rol',
+    tono: 'advertencia',
+    frase: 'revocó un rol de un usuario',
+    sinNumero: true,
+  },
 };
 
-/** Color de la insignia de cada acción. El nombre de la acción siempre va escrito. */
-export const TONO_ACCION: Record<
-  AccionAuditoria,
-  'neutro' | 'marca' | 'advertencia' | 'peligro' | 'informativo'
-> = {
-  crear: 'neutro',
-  actualizar: 'advertencia',
-  eliminar: 'peligro',
-  aprobar: 'marca',
-  consulta_sensible: 'informativo',
+/** Para los eventos generales, que se dicen con «verbo + entidad»: «creó el rol n.º 4». */
+const VERBOS: Record<AccionAuditoria, string> = {
+  crear: 'creó',
+  actualizar: 'modificó',
+  eliminar: 'eliminó',
+  aprobar: 'aprobó',
+  consulta_sensible: 'consultó',
 };
 
 interface Entidad {
@@ -90,21 +196,13 @@ export const ENTIDADES: Record<string, Entidad> = {
   },
   rol: { nombre: 'Rol', enFrase: 'el rol' },
   usuario: { nombre: 'Usuario', enFrase: 'el usuario' },
+  usuario_rol: { nombre: 'Rol de un usuario', enFrase: 'el rol de un usuario' },
   sesion: { nombre: 'Sesión de usuario', enFrase: 'la sesión de usuario' },
   parametro_sistema: {
     nombre: 'Parámetro del sistema',
     enFrase: 'el parámetro del sistema',
   },
   auditoria: { nombre: 'Auditoría', enFrase: 'la auditoría' },
-};
-
-/** Acciones que se dicen mejor con su propia frase que con «verbo + entidad». */
-const FRASES: Record<string, string> = {
-  'crear:sesion': 'inició sesión',
-  'actualizar:sesion': 'cerró sesión',
-  'actualizar:sesion_clase': 'registró la clase',
-  'crear:reporte_academico': 'generó el reporte académico',
-  'actualizar:matricula': 'cargó la lista de matriculados del proyecto docente',
 };
 
 const CAMPOS: Record<string, string> = {
@@ -162,8 +260,23 @@ function enPalabras(codigo: string): string {
   return palabras ? palabras[0].toUpperCase() + palabras.slice(1) : codigo;
 }
 
-export function nombreAccion(accion: string): string {
-  return ACCIONES[accion as AccionAuditoria]?.nombre ?? enPalabras(accion);
+/** La etiqueta de lo que pasó. Un evento que esta pantalla aún no conoce sale con su código en palabras. */
+export function nombreEvento(evento: string): string {
+  return EVENTOS[evento as EventoAuditoria]?.nombre ?? enPalabras(evento);
+}
+
+export function tonoEvento(evento: string): Tono {
+  return EVENTOS[evento as EventoAuditoria]?.tono ?? 'neutro';
+}
+
+/** Las opciones del filtro «Acción»: las mismas palabras de las etiquetas, en orden alfabético. */
+export function opcionesDeEvento(): {
+  codigo: EventoAuditoria;
+  nombre: string;
+}[] {
+  return (Object.keys(EVENTOS) as EventoAuditoria[])
+    .map((codigo) => ({ codigo, nombre: EVENTOS[codigo].nombre }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 }
 
 export function nombreEntidad(entidad: string): string {
@@ -197,18 +310,19 @@ export function quien(registro: Pick<RegistroAuditoria, 'usuario'>): string {
 
 /** Qué hizo y sobre qué, para completar «Fulano …»: «aprobó el proyecto docente n.º 12». */
 export function queHizo(
-  registro: Pick<RegistroAuditoria, 'accion' | 'entidad' | 'idRegistro'>,
+  registro: Pick<
+    RegistroAuditoria,
+    'accion' | 'evento' | 'entidad' | 'idRegistro'
+  >,
 ): string {
   const { accion, entidad, idRegistro } = registro;
   const numero = idRegistro === null ? '' : ` n.º ${idRegistro}`;
-  const frase = FRASES[`${accion}:${entidad}`];
-  if (frase) {
-    // «inició sesión» no lleva número: el de la sesión no le dice nada a quien lee.
-    return entidad === 'sesion' ? frase : `${frase}${numero}`;
+  const propio = EVENTOS[registro.evento];
+  if (propio?.frase) {
+    return propio.sinNumero ? propio.frase : `${propio.frase}${numero}`;
   }
   const verbo =
-    ACCIONES[accion]?.verbo ??
-    `hizo «${enPalabras(accion).toLowerCase()}» sobre`;
+    VERBOS[accion] ?? `hizo «${enPalabras(accion).toLowerCase()}» sobre`;
   const objeto =
     ENTIDADES[entidad]?.enFrase ?? `«${enPalabras(entidad).toLowerCase()}»`;
   return `${verbo} ${objeto}${numero}`;

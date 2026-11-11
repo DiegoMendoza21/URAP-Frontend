@@ -7,6 +7,8 @@ export type RegistroAuditoria = Esquemas['RegistroAuditoriaDto'];
 export type DetalleAuditoria = Esquemas['DetalleAuditoriaDto'];
 export type PaginaAuditoria = Esquemas['PaginaAuditoriaDto'];
 export type AccionAuditoria = RegistroAuditoria['accion'];
+/** Lo que pasó, con palabras del dominio: `inicio_sesion`, `devolucion`, `modificacion`… */
+export type EventoAuditoria = RegistroAuditoria['evento'];
 
 /*
  * Consulta de la auditoría (RF-29, p4; HU-14-02 y HU-14-03). Es la consulta completa: el
@@ -21,7 +23,8 @@ export interface FiltroAuditoria {
   hasta?: string;
   /** Parte del nombre o del correo de quien hizo la acción. */
   usuario?: string;
-  accion?: AccionAuditoria;
+  /** Lo que pasó, con el mismo código que trae cada registro. */
+  evento?: EventoAuditoria;
   /** Código de la entidad, como llega en cada registro. */
   entidad?: string;
   /** Con `entidad`: el historial completo de ese registro (HU-14-03). */

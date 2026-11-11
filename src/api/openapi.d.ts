@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Registros de auditoría, del más reciente al más antiguo, con filtros (HU-14-02)
-         * @description Filtra por rango de fechas, usuario, acción y entidad. Con la entidad y el identificador del registro devuelve el historial completo de ese registro (HU-14-03). La consulta deja su propia constancia en auditoría, como mucho una por persona y por hora.
+         * @description Filtra por rango de fechas, usuario, acción y entidad. La acción se pide con `evento`, en palabras del dominio (inicio_sesion, devolucion…), que es como llega en cada registro, o con `accion`, en las del modelo de datos. Con la entidad y el identificador del registro devuelve el historial completo de ese registro (HU-14-03). La consulta deja su propia constancia en auditoría, como mucho una por persona y por hora.
          */
         get: operations["AuditoriaController_listar"];
         put?: never;
@@ -1378,6 +1378,12 @@ export interface components {
              */
             accion: "crear" | "actualizar" | "eliminar" | "aprobar" | "consulta_sensible";
             /**
+             * @description Lo que pasó, con palabras del dominio: un inicio de sesión se guarda como la creación de una sesión, y aquí llega como inicio_sesion
+             * @example aprobacion
+             * @enum {string}
+             */
+            evento: "creacion" | "modificacion" | "eliminacion" | "aprobacion" | "consulta_sensible" | "inicio_sesion" | "cierre_sesion" | "envio_revision" | "devolucion" | "registro_clase" | "registro_inasistencias" | "carga_matriculados" | "carga_evidencia" | "generacion_reporte" | "cierre_medicion" | "reapertura_medicion" | "bloqueo_usuario" | "inactivacion_usuario" | "reactivacion_usuario" | "restablecimiento_contrasena" | "asignacion_rol" | "revocacion_rol";
+            /**
              * @description Código de la entidad afectada
              * @example proyecto_docente
              */
@@ -1425,6 +1431,12 @@ export interface components {
              * @enum {string}
              */
             accion: "crear" | "actualizar" | "eliminar" | "aprobar" | "consulta_sensible";
+            /**
+             * @description Lo que pasó, con palabras del dominio: un inicio de sesión se guarda como la creación de una sesión, y aquí llega como inicio_sesion
+             * @example aprobacion
+             * @enum {string}
+             */
+            evento: "creacion" | "modificacion" | "eliminacion" | "aprobacion" | "consulta_sensible" | "inicio_sesion" | "cierre_sesion" | "envio_revision" | "devolucion" | "registro_clase" | "registro_inasistencias" | "carga_matriculados" | "carga_evidencia" | "generacion_reporte" | "cierre_medicion" | "reapertura_medicion" | "bloqueo_usuario" | "inactivacion_usuario" | "reactivacion_usuario" | "restablecimiento_contrasena" | "asignacion_rol" | "revocacion_rol";
             /**
              * @description Código de la entidad afectada
              * @example proyecto_docente
@@ -4042,6 +4054,8 @@ export interface operations {
                 /** @description Texto que debe aparecer en el nombre, los apellidos o el correo de quien hizo la acción */
                 usuario?: string;
                 accion?: "crear" | "actualizar" | "eliminar" | "aprobar" | "consulta_sensible";
+                /** @description Lo que pasó, con palabras del dominio, como llega en cada registro. Los eventos generales (creacion, modificacion…) no incluyen los que tienen nombre propio */
+                evento?: "creacion" | "modificacion" | "eliminacion" | "aprobacion" | "consulta_sensible" | "inicio_sesion" | "cierre_sesion" | "envio_revision" | "devolucion" | "registro_clase" | "registro_inasistencias" | "carga_matriculados" | "carga_evidencia" | "generacion_reporte" | "cierre_medicion" | "reapertura_medicion" | "bloqueo_usuario" | "inactivacion_usuario" | "reactivacion_usuario" | "restablecimiento_contrasena" | "asignacion_rol" | "revocacion_rol";
                 /** @description Código de la entidad afectada, como llega en cada registro */
                 entidad?: string;
                 /** @description Identificador del registro afectado. Junto con la entidad da el historial completo de ese registro (HU-14-03) */

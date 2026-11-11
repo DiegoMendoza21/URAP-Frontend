@@ -13,6 +13,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint",
+    "test": "node --test \"src/**/*.test.mjs\"",
     "format": "prettier --write src next.config.ts eslint.config.mjs",
     "format:revisar": "prettier --check src next.config.ts eslint.config.mjs",
     "tipos:generar": "openapi-typescript http://localhost:3001/api/openapi.json --output src/api/openapi.d.ts"

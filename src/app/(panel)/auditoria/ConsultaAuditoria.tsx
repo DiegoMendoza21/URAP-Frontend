@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useState, type FormEvent } from 'react';
 import {
-  type AccionAuditoria,
   consultarAuditoria,
+  type EventoAuditoria,
   type FiltroAuditoria,
   type RegistroAuditoria,
 } from '@/api/auditoria';
@@ -18,17 +18,18 @@ import {
 import { useConsulta } from '../proyectos-docentes/_componentes/useConsulta';
 import { guardarConsulta } from './consultaGuardada';
 import {
-  ACCIONES,
   cuando,
   ENTIDADES,
-  nombreAccion,
+  EVENTOS,
   nombreCampo,
   nombreEntidad,
+  nombreEvento,
+  opcionesDeEvento,
   PERMISO_AUDITORIA,
   queHizo,
   quien,
   sobreQue,
-  TONO_ACCION,
+  tonoEvento,
 } from './textos';
 
 const TAMANO_PAGINA = 20;
@@ -41,14 +42,14 @@ function leerFiltro(parametros: URLSearchParams): FiltroAuditoria {
     const valor = texto(clave);
     return valor && PATRON_FECHA.test(valor) ? valor : undefined;
   };
-  const accion = texto('accion');
+  const evento = texto('evento');
   const idRegistro = texto('idRegistro');
   return {
     desde: fecha('desde'),
     hasta: fecha('hasta'),
     usuario: texto('usuario'),
-    accion:
-      accion && accion in ACCIONES ? (accion as AccionAuditoria) : undefined,
+    evento:
+      evento && evento in EVENTOS ? (evento as EventoAuditoria) : undefined,
     entidad: texto('entidad'),
     idRegistro:
       idRegistro && /^\d+$/.test(idRegistro) ? Number(idRegistro) : undefined,
@@ -237,8 +238,8 @@ export function ConsultaAuditoria() {
                           </td>
                           <td className="px-3 py-2">{quien(registro)}</td>
                           <td className="px-3 py-2">
-                            <Insignia tono={TONO_ACCION[registro.accion]}>
-                              {nombreAccion(registro.accion)}
+                            <Insignia tono={tonoEvento(registro.evento)}>
+                              {nombreEvento(registro.evento)}
                             </Insignia>
                           </td>
                           <td className="px-3 py-2">
@@ -318,8 +319,8 @@ function Tarjeta({ registro }: { registro: RegistroAuditoria }) {
       className="block space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Insignia tono={TONO_ACCION[registro.accion]}>
-          {nombreAccion(registro.accion)}
+        <Insignia tono={tonoEvento(registro.evento)}>
+          {nombreEvento(registro.evento)}
         </Insignia>
         <span className="text-sm text-slate-600">{cuando(registro.fecha)}</span>
       </div>
@@ -357,14 +358,15 @@ function Filtros({
   const [desde, setDesde] = useState(filtro.desde ?? '');
   const [hasta, setHasta] = useState(filtro.hasta ?? '');
   const [usuario, setUsuario] = useState(filtro.usuario ?? '');
-  const [accion, setAccion] = useState<string>(filtro.accion ?? '');
+  // La acción del filtro es el evento: las mismas palabras que llevan las etiquetas.
+  const [accion, setAccion] = useState<string>(filtro.evento ?? '');
   const [entidad, setEntidad] = useState(filtro.entidad ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const activos = [
     filtro.desde ?? filtro.hasta,
     filtro.usuario,
-    filtro.accion,
+    filtro.evento,
     filtro.entidad,
   ].filter(Boolean).length;
   // Una entidad que llegó en la dirección y no está en la lista también se puede ver elegida.
@@ -387,7 +389,7 @@ function Filtros({
       desde: desde || undefined,
       hasta: hasta || undefined,
       usuario: usuario.trim() || undefined,
-      accion: (accion || undefined) as AccionAuditoria | undefined,
+      evento: (accion || undefined) as EventoAuditoria | undefined,
       entidad: entidad || undefined,
       // El historial de un registro solo tiene sentido con su misma entidad.
       idRegistro: entidad === filtro.entidad ? filtro.idRegistro : undefined,
@@ -475,7 +477,7 @@ function Filtros({
             className={clase}
           >
             <option value="">Todas</option>
-            {Object.entries(ACCIONES).map(([codigo, { nombre }]) => (
+            {opcionesDeEvento().map(({ codigo, nombre }) => (
               <option key={codigo} value={codigo}>
                 {nombre}
               </option>

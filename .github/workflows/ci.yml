@@ -38,6 +38,10 @@ jobs:
       - name: Lint (ESLint)
         run: npm run lint
 
+      # Pruebas de los textos que no dependen del navegador, con el corredor de Node.
+      - name: Pruebas
+        run: npm test
+
       # La compilación no necesita URL_API: solo `dev` y `start` la exigen.
       - name: Compilación
         run: npm run build

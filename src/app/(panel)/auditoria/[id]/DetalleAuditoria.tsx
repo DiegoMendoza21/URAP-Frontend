@@ -20,13 +20,13 @@ import {
   type CampoComparado,
   compararValores,
   cuando,
-  nombreAccion,
+  nombreEvento,
   PERMISO_AUDITORIA,
   queHizo,
   quien,
   rutaDelRegistro,
   sobreQue,
-  TONO_ACCION,
+  tonoEvento,
 } from '../textos';
 
 /**
@@ -94,8 +94,8 @@ function Contenido({ registro }: { registro: Detalle }) {
               : 'El sistema, sin intervención de una persona'}
           </Dato>
           <Dato termino="Qué hizo">
-            <Insignia tono={TONO_ACCION[registro.accion]}>
-              {nombreAccion(registro.accion)}
+            <Insignia tono={tonoEvento(registro.evento)}>
+              {nombreEvento(registro.evento)}
             </Insignia>
           </Dato>
           <Dato termino="Sobre qué">
