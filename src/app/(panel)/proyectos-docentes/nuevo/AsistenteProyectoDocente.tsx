@@ -263,7 +263,7 @@ export function AsistenteProyectoDocente() {
       <div className="space-y-1">
         <Link
           href="/proyectos-docentes"
-          className="text-sm font-medium text-marca hover:underline"
+          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
         >
           ← Proyectos docentes
         </Link>
