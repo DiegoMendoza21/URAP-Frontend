@@ -66,7 +66,7 @@ export function RegistroSesion() {
     <section className="space-y-5">
       <Link
         href={calendario}
-        className="text-sm font-medium text-marca hover:underline"
+        className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
       >
         ← Calendario de sesiones
       </Link>
@@ -388,11 +388,18 @@ function FormularioRegistro({
         ))}
         {otros.length > 0 && (
           <details
-            className="rounded-xl border border-slate-200 bg-white"
+            className="group rounded-xl border border-slate-200 bg-white"
             open={destacados.length === 0}
           >
-            <summary className="flex min-h-12 cursor-pointer items-center px-3 font-medium">
-              Otros temas del contenido programático ({otros.length})
+            {/* En el teléfono el texto ocupa dos líneas: sin relleno vertical tocaba el borde. */}
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 font-medium [&::-webkit-details-marker]:hidden">
+              <span>
+                Otros temas del contenido programático ({otros.length})
+              </span>
+              <span className="shrink-0 text-sm font-semibold text-marca">
+                <span className="group-open:hidden">Ver</span>
+                <span className="hidden group-open:inline">Ocultar</span>
+              </span>
             </summary>
             <div className="space-y-2 p-2">
               {otros.map((tema) => (

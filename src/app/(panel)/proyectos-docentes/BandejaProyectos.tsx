@@ -37,7 +37,7 @@ export function BandejaProyectos() {
         <div className="space-y-1">
           <Link
             href="/"
-            className="text-sm font-medium text-marca hover:underline"
+            className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
           >
             ← Inicio
           </Link>

@@ -104,7 +104,7 @@ function Cabecera({ medicion }: { medicion: MedicionDetalle }) {
       <div className="space-y-1">
         <Link
           href={`/proyectos-docentes/${medicion.proyecto.id}/mediciones`}
-          className="text-sm font-medium text-marca hover:underline"
+          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
         >
           ← Mediciones del curso
         </Link>
@@ -149,8 +149,10 @@ function Cabecera({ medicion }: { medicion: MedicionDetalle }) {
       {medicion.estado === 'cerrada' && (
         <Advertencia titulo="La medición está cerrada.">
           <p>
-            Sus valoraciones ya no se pueden modificar. Solo el departamento
-            académico puede reabrirla.
+            Sus valoraciones ya no se pueden modificar.{' '}
+            {medicion.puedeReabrir
+              ? 'Si hay que corregirla, puede reabrirla al final de esta página.'
+              : 'Solo el departamento académico puede reabrirla.'}
           </p>
         </Advertencia>
       )}

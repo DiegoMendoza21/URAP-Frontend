@@ -46,7 +46,7 @@ export function MedicionesProyecto() {
               ? '/proyectos-docentes'
               : `/proyectos-docentes/${idProyecto}`
           }
-          className="text-sm font-medium text-marca hover:underline"
+          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
         >
           ← Proyecto docente
         </Link>
@@ -176,6 +176,7 @@ function FormularioInicio({
   const router = useRouter();
   const ids = {
     rap: useId(),
+    ayudaRap: useId(),
     anio: useId(),
     cohorte: useId(),
     ayudaCohorte: useId(),
@@ -193,6 +194,9 @@ function FormularioInicio({
   );
   const [cohorte, setCohorte] = useState('');
   const [envio, setEnvio] = useState<EstadoEnvio>({ estado: 'inactivo' });
+
+  const rubrica =
+    datos.raps.find((rap) => String(rap.id) === idRap)?.rubricaVigente ?? null;
 
   const bloqueado =
     !datos.requisitos.proyectoAprobado ||
@@ -240,7 +244,7 @@ function FormularioInicio({
   };
 
   const claseOpcion = (activa: boolean) =>
-    `flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-center font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marca ${
+    `flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-2 py-2 text-center font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marca ${
       activa
         ? 'border-marca bg-marca text-white'
         : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
@@ -268,6 +272,7 @@ function FormularioInicio({
               id={ids.rap}
               value={idRap}
               onChange={(evento) => setIdRap(evento.target.value)}
+              aria-describedby={rubrica ? ids.ayudaRap : undefined}
               className="block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
             >
               <option value="">Seleccione…</option>
@@ -278,12 +283,17 @@ function FormularioInicio({
                   disabled={rap.rubricaVigente === null}
                 >
                   {nombreRap(rap)}
-                  {rap.rubricaVigente === null
-                    ? ' (sin rúbrica vigente)'
-                    : ` · rúbrica versión ${rap.rubricaVigente.version ?? 1}, ${rap.rubricaVigente.indicadores} indicadores`}
+                  {rap.rubricaVigente === null ? ' (sin rúbrica vigente)' : ''}
                 </option>
               ))}
             </select>
+            {/* La rúbrica va debajo: dentro de la opción, en el teléfono salía cortada. */}
+            {rubrica && (
+              <p id={ids.ayudaRap} className="text-sm text-slate-600">
+                Rúbrica versión {rubrica.version ?? 1}, {rubrica.indicadores}{' '}
+                {rubrica.indicadores === 1 ? 'indicador' : 'indicadores'}.
+              </p>
+            )}
           </div>
 
           <fieldset className="space-y-1">
@@ -308,9 +318,9 @@ function FormularioInicio({
             </div>
           </fieldset>
 
-          <fieldset className="space-y-1">
+          <fieldset className="space-y-2">
             <legend className="font-medium">Toma de datos</legend>
-            <div className="grid gap-2 sm:grid-cols-[1fr_1fr_8rem]">
+            <div className="grid grid-cols-2 gap-2">
               {PERIODOS_TOMA.map((opcion) => (
                 <label
                   key={opcion.valor}
@@ -327,21 +337,22 @@ function FormularioInicio({
                   {opcion.etiqueta}
                 </label>
               ))}
-              <div>
-                <label htmlFor={ids.anio} className="sr-only">
-                  Año de toma de datos
-                </label>
-                <input
-                  id={ids.anio}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  maxLength={4}
-                  value={anio}
-                  onChange={(evento) => setAnio(evento.target.value)}
-                  placeholder="Año"
-                  className="block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-center"
-                />
-              </div>
+            </div>
+            {/* El año va aparte y con su etiqueta: debajo de los dos períodos y con el mismo
+                ancho parecía un tercer botón. */}
+            <div className="flex items-center gap-3">
+              <label htmlFor={ids.anio} className="text-sm font-medium">
+                Año de toma de datos
+              </label>
+              <input
+                id={ids.anio}
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={4}
+                value={anio}
+                onChange={(evento) => setAnio(evento.target.value)}
+                className="block min-h-11 w-24 rounded-lg border border-slate-300 bg-white px-3 py-2 text-center"
+              />
             </div>
           </fieldset>
 

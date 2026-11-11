@@ -18,6 +18,22 @@ import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
 export const META_NO_DEFINIDA = 'Meta no definida por el programa';
 
 /**
+ * Sin porcentaje esperado, se dice una sola vez arriba del resultado. Repetido en cada indicador
+ * llenaba la pantalla del teléfono con la misma insignia. Es para el reporte de logro; en el
+ * consolidado de una medición ya lo dice la advertencia que manda el backend.
+ */
+export function AvisoSinMeta() {
+  return (
+    <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
+      <strong className="font-semibold text-slate-900">
+        {META_NO_DEFINIDA}.
+      </strong>{' '}
+      Los resultados se presentan sin juicio de cumplimiento.
+    </p>
+  );
+}
+
+/**
  * Consolidado de la medición (RF-31, HU-11-04 y HU-11-05; hoja «Evaluación» del formato
  * FO-DO/PC-023). Lo calcula el backend desde las valoraciones; `version` cambia cada vez que se
  * guardan valoraciones, para volver a pedirlo.
@@ -83,6 +99,7 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
   const cumplimiento = datos.nivelesCumplimiento.join(' o ');
   return (
     <div className="space-y-4">
+      {/* Sin meta, el backend lo avisa aquí, una sola vez: los indicadores no lo repiten. */}
       {datos.advertencias.length > 0 && (
         <ul
           role="status"
@@ -247,9 +264,8 @@ function Resultado({ datos }: { datos: DatosConsolidado }) {
           <dd className="text-lg font-bold">
             {datos.metaDefinida
               ? porcentaje(datos.porcentajeEsperado)
-              : META_NO_DEFINIDA}
+              : 'Sin definir'}
           </dd>
-          {/* Sin meta, el valor ya dice «Meta no definida por el programa»: no se repite. */}
           {datos.metaDefinida && (
             <dd className="mt-1">
               <Juicio alcanzado={datos.alcanzado} metaDefinida />
@@ -286,18 +302,21 @@ function Barra({ indicador }: { indicador: IndicadorConsolidado }) {
 }
 
 /**
- * Juicio frente a la meta. Sin porcentaje esperado dice «Meta no definida por el programa»,
- * en cada indicador y en el logro del RAP; sin valoraciones no dice nada.
+ * Juicio frente a la meta. Sin porcentaje esperado no dice nada: la pantalla lo avisa una sola
+ * vez arriba (`AvisoSinMeta` en el reporte, la advertencia del backend en el consolidado). `avisarSinMeta` es para un resultado sin meta entre otros que sí
+ * la tienen, donde ese aviso general no aparece. Sin valoraciones tampoco dice nada.
  */
 export function Juicio({
   alcanzado,
   metaDefinida,
+  avisarSinMeta = false,
 }: {
   alcanzado: boolean | null;
   metaDefinida: boolean;
+  avisarSinMeta?: boolean;
 }) {
   if (!metaDefinida) {
-    return <Insignia>{META_NO_DEFINIDA}</Insignia>;
+    return avisarSinMeta ? <Insignia>{META_NO_DEFINIDA}</Insignia> : null;
   }
   if (alcanzado === null) {
     return null;
