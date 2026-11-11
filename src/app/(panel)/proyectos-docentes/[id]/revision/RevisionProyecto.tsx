@@ -25,6 +25,7 @@ import {
 } from '../../_componentes/Estados';
 import { useConsulta } from '../../_componentes/useConsulta';
 import { PANTALLAS } from '../diligenciar/DiligenciamientoProyecto';
+import { tituloEstadoSeccion } from '../diligenciar/estadosSeccion';
 
 /** Mismo límite que el backend para cada observación (RF-18). */
 const OBSERVACION_MAXIMA = 2000;
@@ -244,8 +245,13 @@ export function RevisionProyecto() {
                   >
                     {seccion.numero}. {seccion.titulo}
                   </h2>
-                  <Insignia tono={seccion.completa ? 'neutro' : 'advertencia'}>
-                    {seccion.completa ? 'Completa' : 'Con pendientes'}
+                  {/* HU-06-09: el mismo estado que ve el docente en sus pestañas. */}
+                  <Insignia
+                    tono={
+                      seccion.estado === 'completa' ? 'neutro' : 'advertencia'
+                    }
+                  >
+                    {tituloEstadoSeccion(seccion.estado)}
                   </Insignia>
                 </div>
                 {Pantalla && (
