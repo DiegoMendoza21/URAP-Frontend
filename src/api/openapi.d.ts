@@ -167,6 +167,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/usuarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usuarios con filtros por programa, rol y estado, paginados (HU-02-04)
+         * @description No trae el documento de identidad. Quien consulta con un rol limitado a un programa ve solo a los usuarios de ese programa.
+         */
+        get: operations["UsuariosController_listar"];
+        put?: never;
+        /**
+         * Crea un usuario activo con uno o varios roles (HU-02-01)
+         * @description Devuelve una contraseña temporal una sola vez: el sistema guarda su hash y no la puede volver a mostrar.
+         */
+        post: operations["UsuariosController_crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/usuarios/opciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Programas y roles para los filtros y el formulario de usuarios */
+        get: operations["UsuariosController_opciones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/usuarios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Un usuario con sus roles vigentes
+         * @description El documento de identidad solo llega a quien tiene `usuarios.administrar`.
+         */
+        get: operations["UsuariosController_obtener"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edita los datos de un usuario (HU-02-02)
+         * @description Solo llegan los campos que cambian.
+         */
+        patch: operations["UsuariosController_editar"];
+        trace?: never;
+    };
+    "/api/usuarios/{id}/estado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Inactiva o reactiva un usuario (HU-02-03)
+         * @description Un usuario inactivo no puede iniciar sesión y sus sesiones abiertas dejan de servir. Nadie se inactiva a sí mismo.
+         */
+        patch: operations["UsuariosController_cambiarEstado"];
+        trace?: never;
+    };
+    "/api/usuarios/{id}/contrasena-temporal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Genera una contraseña temporal nueva para el usuario
+         * @description Se devuelve una sola vez. Cierra las demás sesiones del usuario y levanta el bloqueo por intentos fallidos.
+         */
+        post: operations["UsuariosController_generarContrasena"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/asistente/programas": {
         parameters: {
             query?: never;
@@ -1458,6 +1563,160 @@ export interface components {
         ReemplazarPermisosDto: {
             /** @description Permisos del rol por módulo. Debe incluir al menos un permiso de lectura (RF-03, p4). */
             permisos: components["schemas"]["PermisoAsignadoDto"][];
+        };
+        RolVigenteDto: {
+            /**
+             * @description Identificador de la asignación
+             * @example 41
+             */
+            id: number;
+            /** @example 3 */
+            idRol: number;
+            /** @example Docente responsable */
+            rol: string;
+            /** @example 1 */
+            idPrograma: number | null;
+            /**
+             * @description Vacío: el rol alcanza a todos los programas
+             * @example Administración Industrial
+             */
+            programa: string | null;
+            /** Format: date-time */
+            fechaAsignacion: string | null;
+        };
+        UsuarioDto: {
+            /** @example 15 */
+            id: number;
+            /** @example Persona */
+            nombres: string;
+            /** @example De Prueba */
+            apellidos: string;
+            /** @example persona.prueba@urap.local */
+            correo: string;
+            /** @example 1 */
+            idPrograma: number | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /** @example true */
+            activo: boolean;
+            /** @description Roles vigentes: activos, sin revocar y de un rol activo */
+            roles: components["schemas"]["RolVigenteDto"][];
+        };
+        PaginaUsuariosDto: {
+            elementos: components["schemas"]["UsuarioDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 42 */
+            total: number;
+        };
+        OpcionDto: {
+            /** @example 1 */
+            id: number;
+            /** @example Administración Industrial */
+            nombre: string;
+        };
+        OpcionesUsuariosDto: {
+            /** @description Programas activos que el usuario alcanza */
+            programas: components["schemas"]["OpcionDto"][];
+            /** @description Roles activos */
+            roles: components["schemas"]["OpcionDto"][];
+        };
+        DetalleUsuarioDto: {
+            /** @example 15 */
+            id: number;
+            /** @example Persona */
+            nombres: string;
+            /** @example De Prueba */
+            apellidos: string;
+            /** @example persona.prueba@urap.local */
+            correo: string;
+            /** @example 1 */
+            idPrograma: number | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /** @example true */
+            activo: boolean;
+            /** @description Roles vigentes: activos, sin revocar y de un rol activo */
+            roles: components["schemas"]["RolVigenteDto"][];
+            /**
+             * @description Documento de identidad. Solo llega a quien administra usuarios; a los demás, vacío
+             * @example 1000000001
+             */
+            identificacion: string | null;
+            /** Format: date-time */
+            ultimoAcceso: string | null;
+            /**
+             * Format: date-time
+             * @description Si la cuenta está bloqueada por intentos fallidos, hasta cuándo
+             */
+            bloqueadoHasta: string | null;
+            /** Format: date-time */
+            fechaCreacion: string | null;
+        };
+        RolParaAsignarDto: {
+            /** @example 3 */
+            idRol: number;
+            /**
+             * @description Programa sobre el que se ejerce el rol. Vacío: el rol alcanza a todos los programas, como el del Administrador
+             * @example 1
+             */
+            idPrograma?: number | null;
+        };
+        CrearUsuarioDto: {
+            /** @example Persona */
+            nombres: string;
+            /** @example De Prueba */
+            apellidos: string;
+            /**
+             * @description Documento de identidad. Dato personal: solo lo ve quien administra
+             * @example 1000000001
+             */
+            identificacion: string;
+            /** @example persona.prueba@urap.local */
+            correo: string;
+            /**
+             * @description Programa al que pertenece
+             * @example 1
+             */
+            idPrograma: number;
+            /** @description Uno o varios roles, cada uno con su programa (RF-02, p4) */
+            roles: components["schemas"]["RolParaAsignarDto"][];
+        };
+        UsuarioCreadoDto: {
+            usuario: components["schemas"]["DetalleUsuarioDto"];
+            /**
+             * @description Contraseña temporal. Se devuelve solo esta vez: no se guarda en claro y no se puede volver a consultar
+             * @example Kp7m-Xw3q-Rt9z-Hn4c
+             */
+            contrasenaTemporal: string;
+        };
+        EditarUsuarioDto: {
+            /** @example Persona */
+            nombres?: string;
+            /** @example De Prueba */
+            apellidos?: string;
+            /** @example 1000000001 */
+            identificacion?: string;
+            /** @example persona.prueba@urap.local */
+            correo?: string;
+            /** @example 1 */
+            idPrograma?: number;
+        };
+        CambiarEstadoUsuarioDto: {
+            /**
+             * @description `false` inactiva al usuario; `true` lo reactiva
+             * @example false
+             */
+            activo: boolean;
+        };
+        ContrasenaTemporalDto: {
+            /**
+             * @description Se devuelve solo esta vez
+             * @example Kp7m-Xw3q-Rt9z-Hn4c
+             */
+            contrasenaTemporal: string;
         };
         ProgramaOpcionDto: {
             /** @example 1 */
@@ -3254,12 +3513,6 @@ export interface components {
             /** @description Solo los RAP que el usuario puede consultar: el líder RAP, los que lidera en el período */
             raps: components["schemas"]["RapContribucionDto"][];
         };
-        OpcionDto: {
-            /** @example 1 */
-            id: number;
-            /** @example Administración Industrial */
-            nombre: string;
-        };
         PeriodoOpcionSeguimientoDto: {
             /** @example 1 */
             id: number;
@@ -4388,6 +4641,379 @@ export interface operations {
             };
             /** @description Se retiraría la administración de usuarios y roles al último usuario que la tiene */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Usuarios del programa o con un rol vigente en él */
+                idPrograma?: number;
+                /** @description Con ese rol vigente */
+                idRol?: number;
+                estado?: "activo" | "inactivo";
+                /** @description Texto que debe aparecer en el nombre, los apellidos o el correo */
+                buscar?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaUsuariosDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearUsuarioDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioCreadoDto"];
+                };
+            };
+            /** @description Datos no válidos, o programa o rol inexistente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya existe un usuario con ese correo o ese documento */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_opciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpcionesUsuariosDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleUsuarioDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_editar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarUsuarioDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleUsuarioDto"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya existe otro usuario con ese correo o ese documento */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_cambiarEstado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarEstadoUsuarioDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleUsuarioDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Es su propio usuario, o no quedaría nadie administrando usuarios y roles */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_generarContrasena: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContrasenaTemporalDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso que exige la operación */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
