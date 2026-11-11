@@ -1767,12 +1767,35 @@ export interface components {
             /** @example false */
             completa: boolean;
             /**
+             * @description HU-06-09: «completa» (sin pendientes), «incompleta» (tiene algo, pero le falta) o «vacia» (el docente no ha registrado nada)
+             * @example incompleta
+             * @enum {string}
+             */
+            estado: "completa" | "incompleta" | "vacia";
+            /**
              * @description Lo que le falta a la sección. Vacío si está completa.
              * @example [
              *       "Redacte la descripción del curso."
              *     ]
              */
             pendientes: string[];
+        };
+        CompletitudDto: {
+            /**
+             * @description Secciones completas
+             * @example 4
+             */
+            completas: number;
+            /**
+             * @description Secciones del formato (puntos 2 a 7)
+             * @example 6
+             */
+            total: number;
+            /**
+             * @description Porcentaje de secciones completas, con dos decimales. Es la misma cuenta del tablero de seguimiento (RF-25).
+             * @example 66.67
+             */
+            porcentaje: number;
         };
         DiligenciamientoDto: {
             /** @example 7 */
@@ -1796,6 +1819,8 @@ export interface components {
             fechaActualizacion: string | null;
             /** @description Secciones en el orden del formato */
             secciones: components["schemas"]["SeccionResumenDto"][];
+            /** @description HU-06-09: cuántas secciones están completas */
+            completitud: components["schemas"]["CompletitudDto"];
         };
         DescripcionDto: {
             texto: string | null;
