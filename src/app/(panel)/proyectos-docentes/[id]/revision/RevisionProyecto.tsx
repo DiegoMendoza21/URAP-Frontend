@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
 import { consultarDiligenciamiento } from '@/api/diligenciamiento';
 import {
@@ -70,6 +70,19 @@ export function RevisionProyecto() {
   const [decidiendo, setDecidiendo] = useState<Decision | null>(null);
   /** La decisión que espera confirmación; nula mientras no se pulse ninguna. */
   const [porConfirmar, setPorConfirmar] = useState<Decision | null>(null);
+  // Al cancelar, el foco vuelve al botón que abrió la confirmación (teclado y lector de pantalla).
+  const botonAprobar = useRef<HTMLButtonElement>(null);
+  const botonDevolver = useRef<HTMLButtonElement>(null);
+  const volverA = useRef<Decision | null>(null);
+  useEffect(() => {
+    if (porConfirmar === null && volverA.current !== null) {
+      (volverA.current === 'aprobar'
+        ? botonAprobar
+        : botonDevolver
+      ).current?.focus();
+      volverA.current = null;
+    }
+  }, [porConfirmar]);
   const [error, setError] = useState<{
     mensaje: string;
     detalles?: string[];
@@ -308,6 +321,7 @@ export function RevisionProyecto() {
               {porConfirmar === null ? (
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
+                    ref={botonAprobar}
                     type="button"
                     onClick={() => pedirConfirmacion('aprobar')}
                     className="w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro sm:w-auto sm:py-2"
@@ -315,6 +329,7 @@ export function RevisionProyecto() {
                     Aprobar el proyecto
                   </button>
                   <button
+                    ref={botonDevolver}
                     type="button"
                     onClick={() => pedirConfirmacion('devolver')}
                     className="w-full rounded-lg border border-amber-400 bg-white px-4 py-3 font-semibold text-amber-950 hover:bg-amber-50 sm:w-auto sm:py-2"
@@ -328,7 +343,10 @@ export function RevisionProyecto() {
                   observaciones={escritas.length}
                   decidiendo={decidiendo !== null}
                   alConfirmar={() => void decidir(porConfirmar)}
-                  alCancelar={() => setPorConfirmar(null)}
+                  alCancelar={() => {
+                    volverA.current = porConfirmar;
+                    setPorConfirmar(null);
+                  }}
                 />
               )}
             </section>
@@ -367,6 +385,11 @@ function ConfirmarDecision({
   alCancelar: () => void;
 }) {
   const id = useId();
+  // El botón pulsado desaparece al abrir la confirmación: el foco pasa al «Sí, …».
+  const botonSi = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    botonSi.current?.focus();
+  }, []);
   return (
     <div
       role="alertdialog"
@@ -378,6 +401,7 @@ function ConfirmarDecision({
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
+          ref={botonSi}
           type="button"
           disabled={decidiendo}
           onClick={alConfirmar}

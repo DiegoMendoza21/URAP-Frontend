@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
 import {
   cerrarMedicion,
@@ -63,6 +63,19 @@ export function Analisis({
   }));
   const [estado, setEstado] = useState<Estado>({ estado: 'inactivo' });
   const [confirmando, setConfirmando] = useState(false);
+  // Al abrir la confirmación, el foco pasa al «Sí, cerrar»; al cancelar, vuelve a «Cerrar la
+  // medición» (teclado y lector de pantalla).
+  const botonCerrar = useRef<HTMLButtonElement>(null);
+  const botonSi = useRef<HTMLButtonElement>(null);
+  const volverAlBoton = useRef(false);
+  useEffect(() => {
+    if (confirmando) {
+      botonSi.current?.focus();
+    } else if (volverAlBoton.current) {
+      volverAlBoton.current = false;
+      botonCerrar.current?.focus();
+    }
+  }, [confirmando]);
 
   const ejecutar = async (
     accion: 'guardar' | 'cerrar' | 'reabrir',
@@ -181,6 +194,7 @@ export function Analisis({
             </button>
             {!confirmando ? (
               <button
+                ref={botonCerrar}
                 type="button"
                 disabled={enviando}
                 onClick={() => setConfirmando(true)}
@@ -201,6 +215,7 @@ export function Analisis({
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
+                    ref={botonSi}
                     type="button"
                     disabled={enviando}
                     onClick={() => void cerrar()}
@@ -213,7 +228,10 @@ export function Analisis({
                   <button
                     type="button"
                     disabled={enviando}
-                    onClick={() => setConfirmando(false)}
+                    onClick={() => {
+                      volverAlBoton.current = true;
+                      setConfirmando(false);
+                    }}
                     className="rounded-lg border border-slate-300 bg-white px-4 py-3 font-semibold"
                   >
                     Cancelar
