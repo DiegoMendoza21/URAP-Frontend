@@ -80,7 +80,22 @@ function validar(correo: string, contrasena: string): ErroresCampos {
  * (HU-01-04) se muestra como aviso, con los minutos que indica el backend.
  */
 export function FormularioInicioSesion() {
+  const { sesion } = useSesion();
+  // Next conserva esta página montada al salir de ella (`cacheComponents`), con su estado. Sin
+  // la clave, quien cerraba la sesión encontraba el formulario como lo dejó al entrar: con su
+  // correo, su contraseña y el botón deshabilitado en «Ingresando…». La clave cambia al
+  // iniciar la sesión y otra vez al salir, así que el formulario siempre empieza en blanco.
+  return (
+    <Formulario
+      key={sesion.estado === 'autenticado' ? 'con-sesion' : 'sin-sesion'}
+    />
+  );
+}
+
+function Formulario() {
   const { sesion, iniciar } = useSesion();
+  // Con la sesión ya iniciada solo falta que cargue el panel.
+  const entrando = sesion.estado === 'autenticado';
   const router = useRouter();
   const id = useId();
   const refCorreo = useRef<HTMLInputElement>(null);
@@ -291,10 +306,14 @@ export function FormularioInicioSesion() {
 
       <button
         type="submit"
-        disabled={!hidratado || enviando || bloqueado}
+        disabled={!hidratado || enviando || entrando || bloqueado}
         className="w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {!hidratado ? 'Cargando…' : enviando ? 'Ingresando…' : 'Ingresar'}
+        {!hidratado
+          ? 'Cargando…'
+          : enviando || entrando
+            ? 'Ingresando…'
+            : 'Ingresar'}
       </button>
     </form>
   );
