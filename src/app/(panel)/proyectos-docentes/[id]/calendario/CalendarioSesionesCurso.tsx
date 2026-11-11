@@ -100,7 +100,7 @@ export function CalendarioSesionesCurso() {
             ? '/proyectos-docentes'
             : `/proyectos-docentes/${idProyecto}`
         }
-        className="text-sm font-medium text-marca hover:underline"
+        className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
       >
         ← Proyecto docente
       </Link>
