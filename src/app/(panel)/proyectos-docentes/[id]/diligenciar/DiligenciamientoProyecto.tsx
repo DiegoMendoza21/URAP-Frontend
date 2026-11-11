@@ -29,7 +29,11 @@ import {
 import { momento } from '../../_componentes/fechas';
 import { useConsulta } from '../../_componentes/useConsulta';
 import { ObservacionesSeccion } from './ObservacionesSeccion';
-import { ESTADOS_SECCION } from './estadosSeccion';
+import {
+  ESTADOS_SECCION,
+  ORDEN_ESTADOS_SECCION,
+  tituloEstadoSeccion,
+} from './estadosSeccion';
 import { PanelEnvio } from './PanelEnvio';
 import { SeccionBibliografia } from './SeccionBibliografia';
 import { SeccionContenidos } from './SeccionContenidos';
@@ -453,13 +457,13 @@ function ResumenSecciones({ resumen }: { resumen: Diligenciamiento }) {
         aria-label="Qué significa cada color"
         className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600"
       >
-        {Object.values(ESTADOS_SECCION).map(({ texto, punto }) => (
-          <li key={texto} className="flex items-center gap-1.5">
+        {ORDEN_ESTADOS_SECCION.map((estado) => (
+          <li key={estado} className="flex items-center gap-1.5">
             <span
               aria-hidden="true"
-              className={`inline-block size-2.5 rounded-full ${punto}`}
+              className={`inline-block size-2.5 rounded-full ${ESTADOS_SECCION[estado].punto}`}
             />
-            {texto.charAt(0).toUpperCase() + texto.slice(1)}
+            {tituloEstadoSeccion(estado)}
           </li>
         ))}
       </ul>

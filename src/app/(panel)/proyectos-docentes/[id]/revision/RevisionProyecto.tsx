@@ -25,6 +25,7 @@ import {
 } from '../../_componentes/Estados';
 import { useConsulta } from '../../_componentes/useConsulta';
 import { PANTALLAS } from '../diligenciar/DiligenciamientoProyecto';
+import { tituloEstadoSeccion } from '../diligenciar/estadosSeccion';
 
 /** Mismo límite que el backend para cada observación (RF-18). */
 const OBSERVACION_MAXIMA = 2000;
@@ -237,13 +238,7 @@ export function RevisionProyecto() {
                       seccion.estado === 'completa' ? 'neutro' : 'advertencia'
                     }
                   >
-                    {
-                      {
-                        completa: 'Completa',
-                        incompleta: 'Incompleta',
-                        vacia: 'Vacía',
-                      }[seccion.estado]
-                    }
+                    {tituloEstadoSeccion(seccion.estado)}
                   </Insignia>
                 </div>
                 {Pantalla && (

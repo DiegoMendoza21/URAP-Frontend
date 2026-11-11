@@ -13,3 +13,16 @@ export const ESTADOS_SECCION: Record<
   incompleta: { texto: 'incompleta', punto: 'bg-amber-400' },
   vacia: { texto: 'vacía', punto: 'bg-slate-300' },
 };
+
+/** Los estados en el orden de la leyenda. */
+export const ORDEN_ESTADOS_SECCION: SeccionResumen['estado'][] = [
+  'completa',
+  'incompleta',
+  'vacia',
+];
+
+/** El texto del estado con mayúscula inicial, para la leyenda y las insignias. */
+export function tituloEstadoSeccion(estado: SeccionResumen['estado']): string {
+  const { texto } = ESTADOS_SECCION[estado];
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
