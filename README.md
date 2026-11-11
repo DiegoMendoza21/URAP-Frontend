@@ -57,6 +57,7 @@ responde. El puerto 3000 es fijo: si está ocupado, `dev` se detiene en vez de p
 | `npm run build` | Compilación de producción |
 | `npm run start` | Sirve la compilación en el puerto 3000 |
 | `npm run lint` | ESLint |
+| `npm test` | Pruebas de los textos (`*.test.mjs`), con el corredor de pruebas de Node |
 | `npm run format` | Prettier sobre `src/` y los archivos de configuración |
 | `npm run tipos:generar` | Regenera `src/api/openapi.d.ts` desde el OpenAPI del backend |
 
