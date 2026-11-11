@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+    "/api/auditoria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Registros de auditoría, del más reciente al más antiguo, con filtros (HU-14-02)
+         * @description Filtra por rango de fechas, usuario, acción y entidad. La acción se pide con `evento`, en palabras del dominio (inicio_sesion, devolucion…), que es como llega en cada registro, o con `accion`, en las del modelo de datos. Con la entidad y el identificador del registro devuelve el historial completo de ese registro (HU-14-03). La consulta deja su propia constancia en auditoría, como mucho una por persona y por hora.
+         */
+        get: operations["AuditoriaController_listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auditoria/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un registro de auditoría con su valor anterior y su valor nuevo (HU-14-03) */
+        get: operations["AuditoriaController_obtener"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/iniciar-sesion": {
         parameters: {
             query?: never;
@@ -849,6 +886,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/parametros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista los parámetros del sistema con su valor (HU-03-07)
+         * @description Son los parámetros de negocio que el sistema lee. El secreto y la vigencia del token no aparecen: son variables de entorno del despliegue (NFR-003).
+         */
+        get: operations["ParametrosController_listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/parametros/{clave}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambia el valor de un parámetro (HU-03-07)
+         * @description Rige desde la siguiente petición, sin redesplegar. No crea parámetros nuevos ni los borra. El cambio queda en la auditoría con el valor anterior y el nuevo.
+         */
+        patch: operations["ParametrosController_cambiar"];
+        trace?: never;
+    };
     "/api/proyectos-docentes/{idProyecto}/matriculados": {
         parameters: {
             query?: never;
@@ -1458,6 +1535,154 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RespuestaErrorDto: {
+            /**
+             * @description Código de estado HTTP
+             * @example 404
+             */
+            estado: number;
+            /**
+             * @description Nombre del tipo de error
+             * @example No encontrado
+             */
+            error: string;
+            /**
+             * @description Mensaje en español, apto para mostrarlo al usuario
+             * @example El recurso solicitado no existe.
+             */
+            mensaje: string;
+            /**
+             * @description Detalle por campo cuando los datos enviados no son válidos
+             * @example [
+             *       "El correo institucional no es válido."
+             *     ]
+             */
+            detalles?: string[];
+            /** @example /api/usuarios/15 */
+            ruta: string;
+            /** @example 2026-11-03T21:15:00.000Z */
+            fecha: string;
+        };
+        UsuarioAuditoriaDto: {
+            /** @example 7 */
+            id: number;
+            /** @example Usuario Demo */
+            nombre: string;
+        };
+        RegistroAuditoriaDto: {
+            /** @example 1543 */
+            id: number;
+            /**
+             * Format: date-time
+             * @example 2026-11-10T15:04:05.000Z
+             */
+            fecha: string | null;
+            /**
+             * @example aprobar
+             * @enum {string}
+             */
+            accion: "crear" | "actualizar" | "eliminar" | "aprobar" | "consulta_sensible";
+            /**
+             * @description Lo que pasó, con palabras del dominio: un inicio de sesión se guarda como la creación de una sesión, y aquí llega como inicio_sesion
+             * @example aprobacion
+             * @enum {string}
+             */
+            evento: "creacion" | "modificacion" | "eliminacion" | "aprobacion" | "consulta_sensible" | "inicio_sesion" | "cierre_sesion" | "envio_revision" | "devolucion" | "registro_clase" | "registro_inasistencias" | "carga_matriculados" | "carga_evidencia" | "generacion_reporte" | "cierre_medicion" | "reapertura_medicion" | "bloqueo_usuario" | "inactivacion_usuario" | "reactivacion_usuario" | "restablecimiento_contrasena" | "asignacion_rol" | "revocacion_rol";
+            /**
+             * @description Código de la entidad afectada
+             * @example proyecto_docente
+             */
+            entidad: string;
+            /**
+             * @description Identificador del registro afectado; vacío si la acción no recae sobre uno solo
+             * @example 12
+             */
+            idRegistro: number | null;
+            /** @description Quién hizo la acción; vacío si la hizo el sistema (por ejemplo, un bloqueo automático) */
+            usuario: components["schemas"]["UsuarioAuditoriaDto"] | null;
+            /** @example 190.0.2.15 */
+            ip: string | null;
+            /**
+             * @description Nombres de los campos que guarda el registro en sus valores anterior y nuevo
+             * @example [
+             *       "estado",
+             *       "fechaAprobacion"
+             *     ]
+             */
+            campos: string[];
+        };
+        PaginaAuditoriaDto: {
+            elementos: components["schemas"]["RegistroAuditoriaDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /**
+             * @description Registros que cumplen los filtros
+             * @example 134
+             */
+            total: number;
+        };
+        DetalleAuditoriaDto: {
+            /** @example 1543 */
+            id: number;
+            /**
+             * Format: date-time
+             * @example 2026-11-10T15:04:05.000Z
+             */
+            fecha: string | null;
+            /**
+             * @example aprobar
+             * @enum {string}
+             */
+            accion: "crear" | "actualizar" | "eliminar" | "aprobar" | "consulta_sensible";
+            /**
+             * @description Lo que pasó, con palabras del dominio: un inicio de sesión se guarda como la creación de una sesión, y aquí llega como inicio_sesion
+             * @example aprobacion
+             * @enum {string}
+             */
+            evento: "creacion" | "modificacion" | "eliminacion" | "aprobacion" | "consulta_sensible" | "inicio_sesion" | "cierre_sesion" | "envio_revision" | "devolucion" | "registro_clase" | "registro_inasistencias" | "carga_matriculados" | "carga_evidencia" | "generacion_reporte" | "cierre_medicion" | "reapertura_medicion" | "bloqueo_usuario" | "inactivacion_usuario" | "reactivacion_usuario" | "restablecimiento_contrasena" | "asignacion_rol" | "revocacion_rol";
+            /**
+             * @description Código de la entidad afectada
+             * @example proyecto_docente
+             */
+            entidad: string;
+            /**
+             * @description Identificador del registro afectado; vacío si la acción no recae sobre uno solo
+             * @example 12
+             */
+            idRegistro: number | null;
+            /** @description Quién hizo la acción; vacío si la hizo el sistema (por ejemplo, un bloqueo automático) */
+            usuario: components["schemas"]["UsuarioAuditoriaDto"] | null;
+            /** @example 190.0.2.15 */
+            ip: string | null;
+            /**
+             * @description Nombres de los campos que guarda el registro en sus valores anterior y nuevo
+             * @example [
+             *       "estado",
+             *       "fechaAprobacion"
+             *     ]
+             */
+            campos: string[];
+            /**
+             * @description Campos antes del cambio. Vacío cuando no aplica (una creación o una consulta). Nunca trae contraseñas ni tokens
+             * @example {
+             *       "estado": "enviado"
+             *     }
+             */
+            valorAnterior: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * @description Campos después del cambio. Vacío cuando no aplica (una eliminación o una consulta). Nunca trae contraseñas ni tokens
+             * @example {
+             *       "estado": "aprobado"
+             *     }
+             */
+            valorNuevo: {
+                [key: string]: unknown;
+            } | null;
+        };
         IniciarSesionDto: {
             /**
              * @description Correo institucional con el que está registrado el usuario
@@ -1509,34 +1734,6 @@ export interface components {
              */
             expiraEn: string;
             usuario: components["schemas"]["UsuarioAutenticadoDto"];
-        };
-        RespuestaErrorDto: {
-            /**
-             * @description Código de estado HTTP
-             * @example 404
-             */
-            estado: number;
-            /**
-             * @description Nombre del tipo de error
-             * @example No encontrado
-             */
-            error: string;
-            /**
-             * @description Mensaje en español, apto para mostrarlo al usuario
-             * @example El recurso solicitado no existe.
-             */
-            mensaje: string;
-            /**
-             * @description Detalle por campo cuando los datos enviados no son válidos
-             * @example [
-             *       "El correo institucional no es válido."
-             *     ]
-             */
-            detalles?: string[];
-            /** @example /api/usuarios/15 */
-            ruta: string;
-            /** @example 2026-11-03T21:15:00.000Z */
-            fecha: string;
         };
         EstadoSaludDto: {
             /**
@@ -2715,6 +2912,77 @@ export interface components {
              * @example 2
              */
             observaciones: number;
+        };
+        ParametroDto: {
+            /** @example alerta_dias_anticipacion */
+            clave: string;
+            /**
+             * @example entero
+             * @enum {string}
+             */
+            tipoDato: "entero" | "booleano" | "lista";
+            /**
+             * @description El valor tal como está guardado: el número, «si» o «no», o los elementos separados por coma. `null` si el parámetro todavía no está en la base (falta sembrar los datos base).
+             * @example 2
+             */
+            valor: string | null;
+            /**
+             * @description Los elementos del valor, si el parámetro es una lista; si no, vacío.
+             * @example []
+             */
+            elementos: string[];
+            /** @example Días antes del vencimiento en que una sesión se marca «Por vencer». */
+            descripcion: string | null;
+            /**
+             * @description Valor mínimo, si el parámetro es un entero.
+             * @example 0
+             */
+            minimo: number | null;
+            /**
+             * @description Valor máximo, si el parámetro es un entero.
+             * @example 365
+             */
+            maximo: number | null;
+            /**
+             * @description Si el parámetro es una lista, si puede quedar sin elementos; si no, `false`.
+             * @example false
+             */
+            admiteVacia: boolean;
+            /**
+             * @description Si el parámetro es una lista cerrada, los únicos elementos que admite.
+             * @example null
+             */
+            elementosPermitidos: string[] | null;
+            /**
+             * Format: date-time
+             * @description Cuándo se guardó el valor por última vez.
+             * @example 2026-11-10T15:20:00.000Z
+             */
+            actualizadoEn: string | null;
+            /**
+             * @description Quién lo cambió por última vez. `null` si conserva el valor inicial.
+             * @example Administrador Demostración
+             */
+            actualizadoPor: string | null;
+        };
+        ListaParametrosDto: {
+            elementos: components["schemas"]["ParametroDto"][];
+        };
+        CambiarParametroDto: {
+            /**
+             * @description Para los parámetros de tipo entero (el número, en texto) y de sí/no («si» o «no»).
+             * @example 3
+             */
+            valor?: string;
+            /**
+             * @description Para los parámetros de tipo lista: sus elementos, en el orden en que deben quedar.
+             * @example [
+             *       "jpg",
+             *       "png",
+             *       "pdf"
+             *     ]
+             */
+            elementos?: string[];
         };
         UltimaCargaDto: {
             /** @example 2026-11-07T15:30:00.000Z */
@@ -4232,6 +4500,115 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AuditoriaController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Primer día del rango (AAAA-MM-DD), en la hora de la institución (America/Bogota) */
+                desde?: string;
+                /** @description Último día del rango (AAAA-MM-DD), incluido */
+                hasta?: string;
+                /** @description Texto que debe aparecer en el nombre, los apellidos o el correo de quien hizo la acción */
+                usuario?: string;
+                accion?: "crear" | "actualizar" | "eliminar" | "aprobar" | "consulta_sensible";
+                /** @description Lo que pasó, con palabras del dominio, como llega en cada registro. Los eventos generales (creacion, modificacion…) no incluyen los que tienen nombre propio */
+                evento?: "creacion" | "modificacion" | "eliminacion" | "aprobacion" | "consulta_sensible" | "inicio_sesion" | "cierre_sesion" | "envio_revision" | "devolucion" | "registro_clase" | "registro_inasistencias" | "carga_matriculados" | "carga_evidencia" | "generacion_reporte" | "cierre_medicion" | "reapertura_medicion" | "bloqueo_usuario" | "inactivacion_usuario" | "reactivacion_usuario" | "restablecimiento_contrasena" | "asignacion_rol" | "revocacion_rol";
+                /** @description Código de la entidad afectada, como llega en cada registro */
+                entidad?: string;
+                /** @description Identificador del registro afectado. Junto con la entidad da el historial completo de ese registro (HU-14-03) */
+                idRegistro?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaAuditoriaDto"];
+                };
+            };
+            /** @description Filtro no válido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la auditoría */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    AuditoriaController_obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleAuditoriaDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la auditoría */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
     AuthController_iniciarSesion: {
         parameters: {
             query?: never;
@@ -7123,6 +7500,104 @@ export interface operations {
                 };
             };
             /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ParametrosController_listar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaParametrosDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ParametrosController_cambiar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clave: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarParametroDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroDto"];
+                };
+            };
+            /** @description El valor no cumple las reglas del parámetro: tipo, rango, elementos vacíos o repetidos, tipo de archivo que no se sabe verificar, o no cabe en el valor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La clave no es un parámetro del sistema */
             404: {
                 headers: {
                     [name: string]: unknown;
