@@ -126,6 +126,15 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
     roles: [...new Set(REPORTES.flatMap((reporte) => reporte.roles ?? []))],
   },
   {
+    // HU-03-07: quien administra la estructura académica en la matriz (el Administrador).
+    ruta: '/parametros',
+    etiqueta: 'Parámetros del sistema',
+    etiquetaMenu: 'Parámetros',
+    descripcion:
+      'Ajuste las reglas y los límites del sistema: alertas, inicio de sesión, archivos, revisión y catálogos.',
+    permiso: 'estructura.administrar',
+  },
+  {
     // RF-29, HU-14-02: la consulta completa de la auditoría. En la matriz inicial solo el
     // Administrador tiene `auditoria.administrar`; el `auditoria.leer` del Departamento y de
     // la Dirección es una consulta restringida que el programa aún no define, y no abre esta.
