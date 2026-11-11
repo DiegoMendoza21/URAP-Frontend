@@ -54,10 +54,10 @@ export function ReporteCumplimiento() {
     <section aria-labelledby="titulo-cumplimiento" className="space-y-6">
       <div className="space-y-1">
         <Link
-          href="/"
+          href="/reportes"
           className="text-sm font-medium text-marca hover:underline print:hidden"
         >
-          ← Inicio
+          ← Reportes
         </Link>
         <h1 id="titulo-cumplimiento" className="text-2xl font-bold sm:text-3xl">
           Reporte de cumplimiento
