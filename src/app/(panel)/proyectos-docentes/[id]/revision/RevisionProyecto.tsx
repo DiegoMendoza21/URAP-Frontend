@@ -439,10 +439,20 @@ function ConfirmarDecision({
 }
 
 function ResultadoRevision({ resultado }: { resultado: Resultado }) {
+  // La decisión se toma al final de una página larga y el resultado sale arriba: sin llevar
+  // el foco hasta él, en el teléfono la pantalla quedaba en medio de los contenidos y parecía
+  // que no había pasado nada (URAP-134). El foco también desplaza la vista.
+  const recuadro = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    recuadro.current?.focus();
+  }, []);
+
   return (
     <div
+      ref={recuadro}
+      tabIndex={-1}
       role="status"
-      className="space-y-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950"
+      className="scroll-mt-4 space-y-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950 focus:outline-none"
     >
       <p className="font-semibold">
         {resultado.tipo === 'aprobado'

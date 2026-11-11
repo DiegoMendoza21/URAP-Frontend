@@ -134,4 +134,14 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
       'Ajuste las reglas y los límites del sistema: alertas, inicio de sesión, archivos, revisión y catálogos.',
     permiso: 'estructura.administrar',
   },
+  {
+    // RF-29, HU-14-02: la consulta completa de la auditoría. En la matriz inicial solo el
+    // Administrador tiene `auditoria.administrar`; el `auditoria.leer` del Departamento y de
+    // la Dirección es una consulta restringida que el programa aún no define, y no abre esta.
+    ruta: '/auditoria',
+    etiqueta: 'Auditoría',
+    descripcion:
+      'Quién hizo qué, cuándo y sobre qué: cambios, aprobaciones y consultas sensibles.',
+    permiso: 'auditoria.administrar',
+  },
 ];
