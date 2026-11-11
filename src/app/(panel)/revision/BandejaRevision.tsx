@@ -22,6 +22,8 @@ import { momento } from '../proyectos-docentes/_componentes/fechas';
 import { useConsulta } from '../proyectos-docentes/_componentes/useConsulta';
 
 const TAMANO_PAGINA = 20;
+/** El máximo que acepta el backend: para saber qué asignaturas tienen proyectos pendientes. */
+const TAMANO_TODOS = 100;
 const DIA_MS = 24 * 60 * 60 * 1000;
 
 /** «Llegó hoy», «Espera hace 5 días»: desde cuándo espera el proyecto (HU-07-02). */
@@ -49,6 +51,17 @@ export function BandejaRevision() {
   // Las opciones de los filtros son las del tablero de seguimiento. Si el usuario no lo abre
   // (un rol que aprueba sin consultar el tablero), la bandeja funciona sin filtros.
   const opciones = useConsulta('filtros-revision', consultarFiltrosSeguimiento);
+  // Esas opciones traen todas las asignaturas con proyecto docente. El filtro lista solo las
+  // que tienen alguno pendiente: elegir otra daba siempre una bandeja vacía. Si los pendientes
+  // no caben en una consulta, se listan todas.
+  const todos = useConsulta('revision-todos', (senal) =>
+    consultarPendientesRevision({}, 1, TAMANO_TODOS, senal),
+  );
+  const asignaturasPendientes =
+    todos.estado === 'lista' &&
+    todos.datos.total <= todos.datos.elementos.length
+      ? new Set(todos.datos.elementos.map((proyecto) => proyecto.idAsignatura))
+      : null;
   const totalPaginas =
     pendientes.estado === 'lista'
       ? Math.max(1, Math.ceil(pendientes.datos.total / TAMANO_PAGINA))
@@ -60,7 +73,7 @@ export function BandejaRevision() {
       <div className="space-y-1">
         <Link
           href="/"
-          className="text-sm font-medium text-marca hover:underline"
+          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
         >
           ← Inicio
         </Link>
@@ -76,6 +89,7 @@ export function BandejaRevision() {
       {opciones.estado === 'lista' && (
         <Filtros
           opciones={opciones.datos}
+          asignaturasPendientes={asignaturasPendientes}
           filtro={filtro}
           alCambiar={(cambio) => {
             setFiltro((previo) => ({ ...previo, ...cambio }));
@@ -202,17 +216,24 @@ function TarjetaPendiente({ proyecto }: { proyecto: PendienteRevision }) {
 
 function Filtros({
   opciones,
+  asignaturasPendientes,
   filtro,
   alCambiar,
 }: {
   opciones: FiltrosSeguimiento;
+  /** Asignaturas con algún proyecto pendiente; nulo si no se sabe: se listan todas. */
+  asignaturasPendientes: ReadonlySet<number> | null;
   filtro: FiltroRevision;
   alCambiar: (cambio: FiltroRevision) => void;
 }) {
   const ids = { programa: useId(), asignatura: useId(), docente: useId() };
   const asignaturas = opciones.asignaturas.filter(
     (asignatura) =>
-      !filtro.idPrograma || asignatura.idPrograma === filtro.idPrograma,
+      (!filtro.idPrograma || asignatura.idPrograma === filtro.idPrograma) &&
+      // La elegida sigue en la lista aunque su último pendiente ya se haya revisado.
+      (asignaturasPendientes === null ||
+        asignaturasPendientes.has(asignatura.id) ||
+        asignatura.id === filtro.idAsignatura),
   );
   const numero = (valor: string) => (valor ? Number(valor) : undefined);
   const clase =
