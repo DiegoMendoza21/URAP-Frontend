@@ -108,6 +108,8 @@ export function DiligenciamientoProyecto() {
   /** Sube con cada sección guardada u observación marcada: el panel de envío vuelve a verificar. */
   const [cambiosGuardados, setCambiosGuardados] = useState(0);
   const [conCambios, setConCambios] = useState<ReadonlySet<string>>(new Set());
+  /** El docente acaba de enviarlo desde esta pantalla: se le confirma arriba. */
+  const [recienEnviado, setRecienEnviado] = useState(false);
   const ultimaConsulta = useRef(0);
   useAvisoSalida(conCambios.size > 0);
 
@@ -249,7 +251,7 @@ export function DiligenciamientoProyecto() {
             evento.preventDefault();
           }
         }}
-        className="text-sm font-medium text-marca hover:underline"
+        className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
       >
         ← Ficha del proyecto
       </Link>
@@ -302,6 +304,12 @@ export function DiligenciamientoProyecto() {
                 <p className="italic">«{devolucion.observacionGeneral}»</p>
               )}
             </Advertencia>
+          )}
+
+          {/* Solo mientras siga enviado: Next conserva la pantalla montada al salir de ella, y
+              al volver después de una devolución el aviso ya no aplica. */}
+          {recienEnviado && resumen.estado?.codigo === 'enviado' && (
+            <EnvioConfirmado idProyecto={idProyecto} />
           )}
 
           {resumen.motivoNoEditable && (
@@ -428,6 +436,7 @@ export function DiligenciamientoProyecto() {
               idProyecto={idProyecto}
               cambiosGuardados={cambiosGuardados}
               alEnviar={() => {
+                setRecienEnviado(true);
                 alGuardar();
                 recargarObservaciones();
               }}
@@ -437,6 +446,39 @@ export function DiligenciamientoProyecto() {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * Confirmación del envío a revisión (RF-17, p5). El botón de enviar está al final de una página
+ * larga y, al enviar, el panel de envío desaparece porque el proyecto queda en solo lectura:
+ * sin este aviso, en el teléfono solo cambiaba la insignia del estado, arriba y fuera de la
+ * vista. El foco lo lleva a la pantalla, como al aprobar o devolver (URAP-134).
+ */
+function EnvioConfirmado({ idProyecto }: { idProyecto: number }) {
+  const recuadro = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    recuadro.current?.focus();
+  }, []);
+  return (
+    <div
+      ref={recuadro}
+      tabIndex={-1}
+      role="status"
+      className="scroll-mt-4 space-y-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950 focus:outline-none"
+    >
+      <p className="font-semibold">Proyecto enviado a revisión.</p>
+      <p className="text-sm">
+        El departamento académico ya lo tiene en su bandeja, para aprobarlo o
+        devolverlo con observaciones.
+      </p>
+      <Link
+        href={`/proyectos-docentes/${idProyecto}`}
+        className="inline-block font-semibold text-marca hover:underline"
+      >
+        Volver a la ficha del proyecto
+      </Link>
+    </div>
   );
 }
 

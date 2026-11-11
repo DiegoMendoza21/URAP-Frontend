@@ -161,9 +161,20 @@ export function Instrumentos({
                   {indicador.descripcion}
                 </p>
               )}
-              <label className="block space-y-1">
-                <span className="block text-sm font-medium">Instrumento</span>
+              <div className="space-y-1">
+                <label
+                  htmlFor={`${idFormulario}-instrumento-${indicador.idIndicador}`}
+                  className="block text-sm font-medium"
+                >
+                  Instrumento
+                  <span className="sr-only">
+                    {' '}
+                    del indicador {indicador.numero ?? i + 1}
+                  </span>
+                </label>
                 <input
+                  id={`${idFormulario}-instrumento-${indicador.idIndicador}`}
+                  type="text"
                   value={campos[i].instrumento}
                   maxLength={INSTRUMENTO_MAXIMO}
                   aria-describedby={idAyuda}
@@ -176,12 +187,21 @@ export function Instrumentos({
                   }
                   className="block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
                 />
-              </label>
-              <label className="block space-y-1">
-                <span className="block text-sm font-medium">
-                  Descripción <span className="font-normal">(opcional)</span>
-                </span>
+              </div>
+              <div className="space-y-1">
+                <label
+                  htmlFor={`${idFormulario}-descripcion-${indicador.idIndicador}`}
+                  className="block text-sm font-medium"
+                >
+                  Descripción
+                  <span className="sr-only">
+                    {' '}
+                    del instrumento del indicador {indicador.numero ?? i + 1}
+                  </span>{' '}
+                  <span className="font-normal">(opcional)</span>
+                </label>
                 <textarea
+                  id={`${idFormulario}-descripcion-${indicador.idIndicador}`}
                   rows={2}
                   value={campos[i].descripcion}
                   onChange={(evento) =>
@@ -193,7 +213,7 @@ export function Instrumentos({
                   }
                   className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
                 />
-              </label>
+              </div>
             </fieldset>
           ))}
           <div className="flex flex-wrap items-center gap-3">

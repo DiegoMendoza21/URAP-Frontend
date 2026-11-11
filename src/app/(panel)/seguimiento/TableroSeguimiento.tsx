@@ -66,7 +66,7 @@ export function TableroSeguimiento() {
       <div className="space-y-1">
         <Link
           href="/"
-          className="text-sm font-medium text-marca hover:underline"
+          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
         >
           ← Inicio
         </Link>
@@ -157,11 +157,30 @@ function Filtros({
   alCambiar: (cambios: Partial<FiltroSeguimiento>) => void;
 }) {
   const ids = {
+    formulario: useId(),
     periodo: useId(),
     programa: useId(),
     asignatura: useId(),
     docente: useId(),
   };
+  // En el teléfono los cuatro filtros llenaban la primera pantalla y los contadores quedaban
+  // debajo: llegan plegados, con el período y cuántos filtros más hay puestos. En pantallas
+  // anchas siempre se ven.
+  const [abiertos, setAbiertos] = useState(false);
+  const periodo = opciones.periodos.find(
+    (fila) => fila.id === filtro.idPeriodo,
+  );
+  const otros = [
+    filtro.idPrograma,
+    filtro.idAsignatura,
+    filtro.idDocente,
+  ].filter(Boolean).length;
+  const resumen = [
+    periodo ? `Período ${periodo.codigo}` : null,
+    otros === 1 ? '1 filtro más' : otros > 1 ? `${otros} filtros más` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const asignaturas = opciones.asignaturas.filter(
     (asignatura) =>
       !filtro.idPrograma || asignatura.idPrograma === filtro.idPrograma,
@@ -170,94 +189,112 @@ function Filtros({
   const clase =
     'block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2';
   return (
-    <form
-      onSubmit={(evento) => evento.preventDefault()}
-      className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-6 lg:grid-cols-4"
-    >
-      <div className="space-y-1">
-        <label htmlFor={ids.periodo} className="block font-medium">
-          Período académico
-        </label>
-        <select
-          id={ids.periodo}
-          value={filtro.idPeriodo ?? ''}
-          onChange={(evento) =>
-            alCambiar({ idPeriodo: numero(evento.target.value) })
-          }
-          className={clase}
-        >
-          {opciones.periodos.map((periodo) => (
-            <option key={periodo.id} value={periodo.id}>
-              {periodo.codigo}
-              {periodo.vigente ? ' (vigente)' : ''}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-1">
-        <label htmlFor={ids.programa} className="block font-medium">
-          Programa
-        </label>
-        <select
-          id={ids.programa}
-          value={filtro.idPrograma ?? ''}
-          onChange={(evento) =>
-            alCambiar({
-              idPrograma: numero(evento.target.value),
-              idAsignatura: undefined,
-            })
-          }
-          className={clase}
-        >
-          <option value="">Todos</option>
-          {opciones.programas.map((programa) => (
-            <option key={programa.id} value={programa.id}>
-              {programa.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-1">
-        <label htmlFor={ids.asignatura} className="block font-medium">
-          Asignatura
-        </label>
-        <select
-          id={ids.asignatura}
-          value={filtro.idAsignatura ?? ''}
-          onChange={(evento) =>
-            alCambiar({ idAsignatura: numero(evento.target.value) })
-          }
-          className={clase}
-        >
-          <option value="">Todas</option>
-          {asignaturas.map((asignatura) => (
-            <option key={asignatura.id} value={asignatura.id}>
-              {asignatura.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-1">
-        <label htmlFor={ids.docente} className="block font-medium">
-          Docente
-        </label>
-        <select
-          id={ids.docente}
-          value={filtro.idDocente ?? ''}
-          onChange={(evento) =>
-            alCambiar({ idDocente: numero(evento.target.value) })
-          }
-          className={clase}
-        >
-          <option value="">Todos</option>
-          {opciones.docentes.map((docente) => (
-            <option key={docente.id} value={docente.id}>
-              {docente.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-    </form>
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <button
+        type="button"
+        aria-expanded={abiertos}
+        aria-controls={ids.formulario}
+        onClick={() => setAbiertos((valor) => !valor)}
+        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl px-4 py-2 text-left focus-visible:outline-2 focus-visible:outline-marca sm:hidden"
+      >
+        <span>
+          <span className="font-semibold">Filtros</span>
+          {resumen && <span className="text-slate-600"> · {resumen}</span>}
+        </span>
+        <span className="shrink-0 text-sm font-semibold text-marca">
+          {abiertos ? 'Ocultar' : 'Cambiar'}
+        </span>
+      </button>
+      <form
+        id={ids.formulario}
+        onSubmit={(evento) => evento.preventDefault()}
+        className={`${abiertos ? 'grid' : 'hidden'} gap-3 px-4 pb-4 sm:grid sm:grid-cols-2 sm:p-6 lg:grid-cols-4`}
+      >
+        <div className="space-y-1">
+          <label htmlFor={ids.periodo} className="block font-medium">
+            Período académico
+          </label>
+          <select
+            id={ids.periodo}
+            value={filtro.idPeriodo ?? ''}
+            onChange={(evento) =>
+              alCambiar({ idPeriodo: numero(evento.target.value) })
+            }
+            className={clase}
+          >
+            {opciones.periodos.map((periodo) => (
+              <option key={periodo.id} value={periodo.id}>
+                {periodo.codigo}
+                {periodo.vigente ? ' (vigente)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor={ids.programa} className="block font-medium">
+            Programa
+          </label>
+          <select
+            id={ids.programa}
+            value={filtro.idPrograma ?? ''}
+            onChange={(evento) =>
+              alCambiar({
+                idPrograma: numero(evento.target.value),
+                idAsignatura: undefined,
+              })
+            }
+            className={clase}
+          >
+            <option value="">Todos</option>
+            {opciones.programas.map((programa) => (
+              <option key={programa.id} value={programa.id}>
+                {programa.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor={ids.asignatura} className="block font-medium">
+            Asignatura
+          </label>
+          <select
+            id={ids.asignatura}
+            value={filtro.idAsignatura ?? ''}
+            onChange={(evento) =>
+              alCambiar({ idAsignatura: numero(evento.target.value) })
+            }
+            className={clase}
+          >
+            <option value="">Todas</option>
+            {asignaturas.map((asignatura) => (
+              <option key={asignatura.id} value={asignatura.id}>
+                {asignatura.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor={ids.docente} className="block font-medium">
+            Docente
+          </label>
+          <select
+            id={ids.docente}
+            value={filtro.idDocente ?? ''}
+            onChange={(evento) =>
+              alCambiar({ idDocente: numero(evento.target.value) })
+            }
+            className={clase}
+          >
+            <option value="">Todos</option>
+            {opciones.docentes.map((docente) => (
+              <option key={docente.id} value={docente.id}>
+                {docente.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -495,7 +532,7 @@ function Tarjeta({ proyecto }: { proyecto: ProyectoSeguimiento }) {
       </dl>
       <Link
         href={`/proyectos-docentes/${proyecto.idProyecto}`}
-        className="inline-block font-semibold text-marca hover:underline"
+        className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 font-semibold text-marca hover:underline"
       >
         Abrir el proyecto →
       </Link>

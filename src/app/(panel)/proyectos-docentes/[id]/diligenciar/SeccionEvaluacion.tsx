@@ -124,8 +124,9 @@ export function SeccionEvaluacion({
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600">
-        Para cada RAC, indique las actividades con las que lo evaluará y el
-        instrumento de cada una. El peso dentro del RAC es opcional.
+        {puedeEditar
+          ? 'Para cada RAC, indique las actividades con las que lo evaluará y el instrumento de cada una. El peso dentro del RAC es opcional.'
+          : 'Actividades con las que se evalúa cada RAC y el instrumento de cada una.'}
       </p>
       {seccion.racsSinEvaluacion.length > 0 && (
         <p role="status" className="text-sm font-medium text-amber-900">

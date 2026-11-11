@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useSesion } from '@/sesion/ProveedorSesion';
 import { usePermisos } from '@/sesion/permisos';
-import { ROL } from './menu';
+import { REPORTES, ROL } from './menu';
 import { PendientesDocente } from './PendientesDocente';
 import { ProyectosDevueltos } from './ProyectosDevueltos';
-import { useOpcionesMenu } from './useOpcionesMenu';
+import { useOpcionesMenu, useReportes } from './useOpcionesMenu';
+
+const LISTA = new Intl.ListFormat('es', { type: 'conjunction' });
 
 /**
  * Panel inicial después de iniciar sesión (RF-01, p4): los roles del usuario, un acceso por
@@ -18,10 +20,34 @@ export function PanelInicial() {
   const { sesion } = useSesion();
   const tiene = usePermisos();
   const opciones = useOpcionesMenu();
+  const reportes = useReportes();
   if (sesion.estado !== 'autenticado') {
     return null;
   }
   const { id, nombres, roles } = sesion.usuario;
+
+  // `menu.ts` trae una descripción por opción. Dos se ajustan aquí a quien las lee:
+  // - «Reportes» nombra solo los reportes que el usuario puede abrir (el Líder RAP no abre el
+  //   de cumplimiento);
+  // - «Proyectos docentes» dice «a su cargo» al docente; los demás consultan los del programa.
+  const descripcionDe = (opcion: (typeof opciones)[number]): string => {
+    if (opcion.descripcionSi && tiene(opcion.descripcionSi.permiso)) {
+      return opcion.descripcionSi.texto;
+    }
+    if (opcion.ruta === '/reportes' && reportes.length < REPORTES.length) {
+      const titulos = reportes.map((reporte, indice) => {
+        const nombre = reporte.etiquetaMenu ?? reporte.etiqueta;
+        return indice === 0
+          ? nombre
+          : nombre.charAt(0).toLowerCase() + nombre.slice(1);
+      });
+      return `${LISTA.format(titulos)}, con exportación a Excel y PDF.`;
+    }
+    if (opcion.ruta === '/proyectos-docentes' && !roles.includes(ROL.docente)) {
+      return 'Consulte los proyectos docentes del programa.';
+    }
+    return opcion.descripcion;
+  };
 
   return (
     <section aria-labelledby="titulo-panel" className="space-y-6">
@@ -65,9 +91,7 @@ export function PanelInicial() {
                 {opcion.etiqueta}
               </span>
               <span className="block text-sm text-slate-600">
-                {opcion.descripcionSi && tiene(opcion.descripcionSi.permiso)
-                  ? opcion.descripcionSi.texto
-                  : opcion.descripcion}
+                {descripcionDe(opcion)}
               </span>
             </Link>
           ))}
