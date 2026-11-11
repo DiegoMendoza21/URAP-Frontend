@@ -14,6 +14,7 @@ import {
 } from '@/api/reportes';
 import { porcentaje } from '@/componentes/formato';
 import {
+  AvisoSinMeta,
   base,
   COMO_SE_CALCULA,
   Juicio,
@@ -58,7 +59,7 @@ export function ReporteLogroRap() {
       <div className="space-y-1">
         <Link
           href="/reportes"
-          className="text-sm font-medium text-marca hover:underline print:hidden"
+          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline print:hidden"
         >
           ← Reportes
         </Link>
@@ -244,19 +245,32 @@ function Resultado({
       <p className="text-sm text-slate-700">
         {evaluados} de {datos.raps.length}{' '}
         {datos.raps.length === 1 ? 'RAP evaluado' : 'RAP evaluados'} con
-        mediciones cerradas en el período.{' '}
-        {!datos.metaDefinida &&
-          `${META_NO_DEFINIDA}: los resultados se presentan sin juicio de cumplimiento.`}
+        mediciones cerradas en el período.
       </p>
+      {!datos.metaDefinida && <AvisoSinMeta />}
 
       {datos.raps.map((rap) => (
-        <TarjetaRap key={rap.id} rap={rap} periodo={datos.periodo.codigo} />
+        <TarjetaRap
+          key={rap.id}
+          rap={rap}
+          periodo={datos.periodo.codigo}
+          metaDelPrograma={datos.metaDefinida}
+        />
       ))}
     </div>
   );
 }
 
-function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
+function TarjetaRap({
+  rap,
+  periodo,
+  metaDelPrograma,
+}: {
+  rap: RapReporte;
+  periodo: string;
+  /** Falso si el programa no ha definido la meta: el aviso ya está arriba, una sola vez. */
+  metaDelPrograma: boolean;
+}) {
   const metaDelRap = rap.porcentajeEsperado !== null;
   return (
     <article
@@ -321,6 +335,7 @@ function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
                         <Juicio
                           alcanzado={indicador.alcanzado}
                           metaDefinida={asignatura.porcentajeEsperado !== null}
+                          avisarSinMeta={metaDelPrograma}
                         />
                       </span>
                     </li>
@@ -342,6 +357,7 @@ function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
                   <Juicio
                     alcanzado={asignatura.alcanzado}
                     metaDefinida={asignatura.porcentajeEsperado !== null}
+                    avisarSinMeta={metaDelPrograma}
                   />
                 </p>
                 {asignatura.accionesPropuestas && (
@@ -368,11 +384,12 @@ function TarjetaRap({ rap, periodo }: { rap: RapReporte; periodo: string }) {
               <Juicio alcanzado={rap.alcanzado} metaDefinida={metaDelRap} />
             </p>
             <p className="text-sm text-slate-600">
-              Esperado:{' '}
               {metaDelRap
-                ? porcentaje(rap.porcentajeEsperado)
-                : META_NO_DEFINIDA.toLowerCase()}
-              . Se suman las valoraciones de todas las asignaturas; no se
+                ? `Esperado: ${porcentaje(rap.porcentajeEsperado)}. `
+                : metaDelPrograma
+                  ? `Esperado: ${META_NO_DEFINIDA.toLowerCase()}. `
+                  : ''}
+              Se suman las valoraciones de todas las asignaturas; no se
               promedian porcentajes.
             </p>
             <p className="text-xs text-slate-600">{COMO_SE_CALCULA}</p>
