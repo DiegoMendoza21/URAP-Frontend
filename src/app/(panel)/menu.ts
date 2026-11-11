@@ -116,6 +116,19 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
     roles: [ROL.docente, ROL.liderRap, ROL.departamento],
   },
   {
+    // RF-02: quien consulta usuarios en la matriz (el Administrador, y el Departamento y la
+    // Dirección solo para verlos). Crear y editar lo decide `usuarios.administrar`.
+    ruta: '/usuarios',
+    etiqueta: 'Usuarios',
+    descripcion: 'Personas con acceso al sistema, con sus roles y su estado.',
+    descripcionSi: {
+      permiso: 'usuarios.administrar',
+      texto:
+        'Cree usuarios, asígneles roles e inactive a quienes ya no deben entrar.',
+    },
+    permiso: 'usuarios.leer',
+  },
+  {
     // RF-28 y RF-32: una sola opción para los tres reportes (URAP-126), que en el teléfono
     // ocupaban tres líneas del menú. La ve quien puede abrir al menos uno; la página índice
     // muestra solo los suyos.
