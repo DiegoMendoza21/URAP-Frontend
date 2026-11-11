@@ -119,6 +119,24 @@ export function TarjetaParametro({
     }
   }
 
+  /** El motivo por el que no se guardó, junto al campo: el del backend o el de esta pantalla. */
+  const aviso = error && (
+    <div
+      id={idError}
+      role="alert"
+      className="space-y-1 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+    >
+      <p>{error.mensaje}</p>
+      {error.detalles && error.detalles.length > 0 && (
+        <ul className="list-disc pl-5">
+          {error.detalles.map((detalle) => (
+            <li key={detalle}>{detalle}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
   return (
     <article
       aria-labelledby={`${id}-titulo`}
@@ -162,6 +180,8 @@ export function TarjetaParametro({
 
       {editando && (
         <form onSubmit={pedirConfirmacion} noValidate className="space-y-3">
+          {/* En una lista el aviso va arriba: abajo quedaría lejos del primer renglón. */}
+          {borrador.tipo === 'lista' && aviso}
           <fieldset disabled={porConfirmar !== null} className="space-y-3">
             <legend className="sr-only">Valor nuevo de {texto.titulo}</legend>
             <EditorValor
@@ -177,22 +197,7 @@ export function TarjetaParametro({
               primerCampo={primerCampo}
             />
           </fieldset>
-          {error && (
-            <div
-              id={idError}
-              role="alert"
-              className="space-y-1 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
-            >
-              <p>{error.mensaje}</p>
-              {error.detalles && error.detalles.length > 0 && (
-                <ul className="list-disc pl-5">
-                  {error.detalles.map((detalle) => (
-                    <li key={detalle}>{detalle}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+          {borrador.tipo !== 'lista' && aviso}
           {porConfirmar === null ? (
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
