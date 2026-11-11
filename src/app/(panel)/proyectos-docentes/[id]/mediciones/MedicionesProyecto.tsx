@@ -150,7 +150,7 @@ function Requisitos({
         >
           <p>
             No se puede medir un RAP sin rúbrica. El programa debe registrarla
-            primero (gestión de la rúbrica del RAP, RF-06).
+            primero (gestión de la rúbrica del RAP).
           </p>
         </Advertencia>
       )}

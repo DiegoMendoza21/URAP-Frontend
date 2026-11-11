@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
 import { consultarDiligenciamiento } from '@/api/diligenciamiento';
 import {
@@ -35,6 +35,8 @@ const MENSAJE_SIN_OBSERVACIONES =
 
 const nada = () => {};
 
+type Decision = 'aprobar' | 'devolver';
+
 /** La decisión tomada y el estado en que quedó el proyecto, según el backend. */
 type Resultado = { estado: TransicionProyecto['estado'] } & (
   { tipo: 'aprobado' } | { tipo: 'devuelto'; cantidad: number }
@@ -66,9 +68,22 @@ export function RevisionProyecto() {
     {},
   );
   const [general, setGeneral] = useState('');
-  const [decidiendo, setDecidiendo] = useState<'aprobar' | 'devolver' | null>(
-    null,
-  );
+  const [decidiendo, setDecidiendo] = useState<Decision | null>(null);
+  /** La decisión que espera confirmación; nula mientras no se pulse ninguna. */
+  const [porConfirmar, setPorConfirmar] = useState<Decision | null>(null);
+  // Al cancelar, el foco vuelve al botón que abrió la confirmación (teclado y lector de pantalla).
+  const botonAprobar = useRef<HTMLButtonElement>(null);
+  const botonDevolver = useRef<HTMLButtonElement>(null);
+  const volverA = useRef<Decision | null>(null);
+  useEffect(() => {
+    if (porConfirmar === null && volverA.current !== null) {
+      (volverA.current === 'aprobar'
+        ? botonAprobar
+        : botonDevolver
+      ).current?.focus();
+      volverA.current = null;
+    }
+  }, [porConfirmar]);
   const [error, setError] = useState<{
     mensaje: string;
     detalles?: string[];
@@ -102,21 +117,18 @@ export function RevisionProyecto() {
     resultado?.estado ??
     (resumen.estado === 'lista' ? resumen.datos.estado : null);
 
-  async function decidir(accion: 'aprobar' | 'devolver') {
+  /** Pide confirmar la decisión dentro de la página (URAP-124), como al cerrar la medición. */
+  function pedirConfirmacion(accion: Decision) {
     setError(null);
     if (accion === 'devolver' && escritas.length === 0) {
       setError({ mensaje: MENSAJE_SIN_OBSERVACIONES });
       return;
     }
-    const confirmacion =
-      accion === 'aprobar'
-        ? escritas.length > 0
-          ? 'Escribió observaciones por sección: al aprobar no se envían al docente. ¿Desea aprobar el proyecto de todas formas?'
-          : '¿Aprobar el proyecto docente? El docente podrá registrar sus clases y el proyecto ya no se podrá editar.'
-        : `¿Devolver el proyecto con ${escritas.length === 1 ? 'una observación' : `${escritas.length} observaciones`}? El docente podrá editarlo de nuevo.`;
-    if (!window.confirm(confirmacion)) {
-      return;
-    }
+    setPorConfirmar(accion);
+  }
+
+  async function decidir(accion: Decision) {
+    setError(null);
     setDecidiendo(accion);
     const nota = general.trim() || undefined;
     try {
@@ -134,6 +146,7 @@ export function RevisionProyecto() {
       });
     } finally {
       setDecidiendo(null);
+      setPorConfirmar(null);
     }
   }
 
@@ -311,33 +324,117 @@ export function RevisionProyecto() {
               {error && (
                 <AvisoError mensaje={error.mensaje} detalles={error.detalles} />
               )}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => void decidir('aprobar')}
-                  disabled={decidiendo !== null}
-                  className="w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro disabled:opacity-50 sm:w-auto sm:py-2"
-                >
-                  {decidiendo === 'aprobar'
-                    ? 'Aprobando…'
-                    : 'Aprobar el proyecto'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void decidir('devolver')}
-                  disabled={decidiendo !== null}
-                  className="w-full rounded-lg border border-amber-400 bg-white px-4 py-3 font-semibold text-amber-950 hover:bg-amber-50 disabled:opacity-50 sm:w-auto sm:py-2"
-                >
-                  {decidiendo === 'devolver'
-                    ? 'Devolviendo…'
-                    : 'Devolver con observaciones'}
-                </button>
-              </div>
+              {porConfirmar === null ? (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    ref={botonAprobar}
+                    type="button"
+                    onClick={() => pedirConfirmacion('aprobar')}
+                    className="w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro sm:w-auto sm:py-2"
+                  >
+                    Aprobar el proyecto
+                  </button>
+                  <button
+                    ref={botonDevolver}
+                    type="button"
+                    onClick={() => pedirConfirmacion('devolver')}
+                    className="w-full rounded-lg border border-amber-400 bg-white px-4 py-3 font-semibold text-amber-950 hover:bg-amber-50 sm:w-auto sm:py-2"
+                  >
+                    Devolver con observaciones
+                  </button>
+                </div>
+              ) : (
+                <ConfirmarDecision
+                  accion={porConfirmar}
+                  observaciones={escritas.length}
+                  decidiendo={decidiendo !== null}
+                  alConfirmar={() => void decidir(porConfirmar)}
+                  alCancelar={() => {
+                    volverA.current = porConfirmar;
+                    setPorConfirmar(null);
+                  }}
+                />
+              )}
             </section>
           )}
         </>
       )}
     </section>
+  );
+}
+
+/** El texto de la confirmación: lo que pasa al aprobar o al devolver. */
+function textoConfirmacion(accion: Decision, observaciones: number): string {
+  if (accion === 'aprobar') {
+    return observaciones > 0
+      ? 'Escribió observaciones por sección: al aprobar no se envían al docente. ¿Desea aprobar el proyecto de todas formas?'
+      : '¿Aprobar el proyecto docente? El docente podrá registrar sus clases y el proyecto ya no se podrá editar.';
+  }
+  return `¿Devolver el proyecto con ${observaciones === 1 ? 'una observación' : `${observaciones} observaciones`}? El docente podrá editarlo de nuevo.`;
+}
+
+/**
+ * Confirmación dentro de la página (URAP-124), la misma forma que la de cerrar la medición: en
+ * el teléfono se ve igual en todos los navegadores. Cancelar no borra las observaciones.
+ */
+function ConfirmarDecision({
+  accion,
+  observaciones,
+  decidiendo,
+  alConfirmar,
+  alCancelar,
+}: {
+  accion: Decision;
+  observaciones: number;
+  decidiendo: boolean;
+  alConfirmar: () => void;
+  alCancelar: () => void;
+}) {
+  const id = useId();
+  // El botón pulsado desaparece al abrir la confirmación: el foco pasa al «Sí, …».
+  const botonSi = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    botonSi.current?.focus();
+  }, []);
+  return (
+    <div
+      role="alertdialog"
+      aria-labelledby={`${id}-confirmar`}
+      className="space-y-3 rounded-lg border border-slate-300 bg-slate-50 p-3"
+    >
+      <p id={`${id}-confirmar`} className="text-sm">
+        {textoConfirmacion(accion, observaciones)}
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <button
+          ref={botonSi}
+          type="button"
+          disabled={decidiendo}
+          onClick={alConfirmar}
+          className={
+            accion === 'aprobar'
+              ? 'w-full rounded-lg bg-marca px-4 py-3 font-semibold text-white hover:bg-marca-oscuro disabled:opacity-50 sm:w-auto sm:py-2'
+              : 'w-full rounded-lg border border-amber-400 bg-amber-100 px-4 py-3 font-semibold text-amber-950 hover:bg-amber-200 disabled:opacity-50 sm:w-auto sm:py-2'
+          }
+        >
+          {accion === 'aprobar'
+            ? decidiendo
+              ? 'Aprobando…'
+              : 'Sí, aprobar el proyecto'
+            : decidiendo
+              ? 'Devolviendo…'
+              : 'Sí, devolver el proyecto'}
+        </button>
+        <button
+          type="button"
+          disabled={decidiendo}
+          onClick={alCancelar}
+          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 font-semibold disabled:opacity-50 sm:w-auto sm:py-2"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }
 
