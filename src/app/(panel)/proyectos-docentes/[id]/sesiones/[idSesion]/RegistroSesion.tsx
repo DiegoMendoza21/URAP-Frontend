@@ -460,7 +460,7 @@ function FormularioRegistro({
 
   return (
     <form onSubmit={guardar} className="space-y-5" noValidate>
-      <fieldset className="space-y-2">
+      <fieldset className="min-w-0 space-y-2">
         <legend className="text-lg font-semibold">Temas desarrollados</legend>
         <p className="text-sm text-slate-600">
           Marque los temas del contenido programático que desarrolló en esta
@@ -509,7 +509,7 @@ function FormularioRegistro({
       </fieldset>
 
       {/* HU-08-05: opcional y rápido de llenar desde el teléfono, al salir del salón. */}
-      <fieldset className="space-y-2">
+      <fieldset className="min-w-0 space-y-2">
         <legend className="text-lg font-semibold">
           Temas no planeados{' '}
           <span className="text-sm font-normal text-slate-600">(opcional)</span>
@@ -588,7 +588,7 @@ function FormularioRegistro({
         )}
       </fieldset>
 
-      <fieldset className="space-y-2">
+      <fieldset className="min-w-0 space-y-2">
         <legend className="text-lg font-semibold">Asistencia</legend>
         {!asistencia?.listaCargada ? (
           <Advertencia titulo="Este curso no tiene lista de estudiantes cargada">
