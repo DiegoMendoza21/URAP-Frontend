@@ -10,9 +10,10 @@ const INTERVALO_MS = 60_000;
 
 /**
  * Campana del encabezado con el número de notificaciones sin leer (RF-26; HU-13-01 y
- * HU-13-03). Cuenta al cambiar de pantalla, cada minuto mientras la pestaña está a la vista y
- * cuando la bandeja avisa que se leyó alguna. Si la consulta falla, conserva el último número:
- * la campana no es lugar para mostrar errores.
+ * HU-13-03). Cuenta al abrir el panel, cada minuto mientras la pestaña está a la vista, al
+ * volver a la pestaña y cuando la bandeja avisa que se leyó alguna. No cuenta en cada cambio
+ * de pantalla: serían peticiones de más. Si la consulta falla, conserva el último número: la
+ * campana no es lugar para mostrar errores.
  */
 export function CampanaNotificaciones() {
   const ruta = usePathname();
@@ -21,17 +22,19 @@ export function CampanaNotificaciones() {
 
   useEffect(() => {
     const otraVez = () => setVuelta((valor) => valor + 1);
-    const temporizador = setInterval(() => {
+    // Solo con la pestaña a la vista: al ocultarla, nadie vería el número.
+    const siEstaVisible = () => {
       if (document.visibilityState === 'visible') {
         otraVez();
       }
-    }, INTERVALO_MS);
+    };
+    const temporizador = setInterval(siEstaVisible, INTERVALO_MS);
     window.addEventListener(EVENTO_NOTIFICACIONES, otraVez);
-    document.addEventListener('visibilitychange', otraVez);
+    document.addEventListener('visibilitychange', siEstaVisible);
     return () => {
       clearInterval(temporizador);
       window.removeEventListener(EVENTO_NOTIFICACIONES, otraVez);
-      document.removeEventListener('visibilitychange', otraVez);
+      document.removeEventListener('visibilitychange', siEstaVisible);
     };
   }, []);
 
@@ -39,7 +42,7 @@ export function CampanaNotificaciones() {
     const controlador = new AbortController();
     contarNoLeidas(controlador.signal).then(setNoLeidas, () => undefined);
     return () => controlador.abort();
-  }, [ruta, vuelta]);
+  }, [vuelta]);
 
   const hay = noLeidas !== null && noLeidas > 0;
   const etiqueta = !hay
