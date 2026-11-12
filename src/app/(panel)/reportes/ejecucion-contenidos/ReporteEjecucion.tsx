@@ -329,7 +329,9 @@ function Resultado({
       </dl>
       <p className="text-sm text-slate-600">
         «No dictado»: su semana ya terminó y no se marcó en ninguna clase. «Por
-        dictar»: su semana todavía no termina. {NOTA_ADICIONALES}
+        dictar»: su semana todavía no termina, y no cuenta como incumplimiento.
+        Las semanas son las del calendario de clases, que no cuenta el receso.{' '}
+        {NOTA_ADICIONALES}
       </p>
 
       <section aria-labelledby="titulo-cursos" className="space-y-2">
@@ -357,6 +359,7 @@ function Contador({ etiqueta, valor }: { etiqueta: string; valor: number }) {
 
 /** Un curso: el resumen arriba y el detalle de los temas, plegado, abajo. */
 function Curso({ curso }: { curso: CursoEjecucion }) {
+  const sinClases = curso.clasesRegistradas === 0;
   return (
     <li className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:break-inside-avoid print:shadow-none">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -382,16 +385,33 @@ function Curso({ curso }: { curso: CursoEjecucion }) {
         </p>
       ) : (
         <>
-          <p className="text-lg font-semibold">
-            {curso.dictados} de {curso.planeados} {temas(curso.planeados)}{' '}
-            {curso.dictados === 1 ? 'dictado' : 'dictados'}
-            <span className="ml-2 text-sm font-normal text-slate-600">
-              {porcentaje(curso.porcentajeDictados)}
-            </span>
-          </p>
+          {sinClases ? (
+            // Sin clases registradas, el reporte no puede saber qué se dictó: se dice así, y
+            // no como un curso donde no se dictó nada.
+            <p className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-950">
+              <span className="font-semibold">
+                {curso.sesiones === 0
+                  ? 'Todavía no tiene calendario de clases.'
+                  : 'Todavía no tiene clases registradas.'}
+              </span>{' '}
+              {curso.sesiones === 0
+                ? `Sus ${curso.planeados} ${temas(curso.planeados)} planeados siguen por dictar.`
+                : `El reporte no puede saber cuáles de sus ${curso.planeados} ${temas(curso.planeados)} planeados se dictaron hasta que el docente registre sus clases.`}
+            </p>
+          ) : (
+            <p className="text-lg font-semibold">
+              {curso.dictados} de {curso.planeados} {temas(curso.planeados)}{' '}
+              {curso.dictados === 1 ? 'dictado' : 'dictados'}
+              <span className="ml-2 text-sm font-normal text-slate-600">
+                {porcentaje(curso.porcentajeDictados)}
+              </span>
+            </p>
+          )}
           <ul className="flex flex-wrap gap-1.5" aria-label="Temas por estado">
             <li>
-              <Insignia tono={curso.noDictados > 0 ? 'peligro' : 'neutro'}>
+              <Insignia
+                tono={curso.noDictados > 0 && !sinClases ? 'peligro' : 'neutro'}
+              >
                 No dictados: {curso.noDictados}
               </Insignia>
             </li>
@@ -428,7 +448,9 @@ function Curso({ curso }: { curso: CursoEjecucion }) {
                       </p>
                     )}
                   </div>
-                  <Insignia tono={ESTADO_TEMA[tema.estado].tono}>
+                  <Insignia
+                    tono={sinClases ? 'neutro' : ESTADO_TEMA[tema.estado].tono}
+                  >
                     {ESTADO_TEMA[tema.estado].texto}
                   </Insignia>
                 </li>

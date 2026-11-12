@@ -4010,7 +4010,7 @@ export interface components {
             /** @example Flujo de caja proyectado */
             tema: string;
             /**
-             * @description dictado: se marcó en al menos una clase registrada. no_dictado: no se marcó y su semana ya terminó (su última sesión del calendario ya pasó). por_dictar: no se marcó y su semana todavía no termina.
+             * @description dictado: se marcó en al menos una clase registrada. no_dictado: no se marcó y su semana ya terminó (su última sesión del calendario ya pasó). por_dictar: no se marcó y su semana todavía no termina; no cuenta como incumplimiento. La semana es la del calendario de RF-19, que no cuenta las semanas de receso.
              * @example dictado
              * @enum {string}
              */
@@ -4071,6 +4071,16 @@ export interface components {
              * @example 56.25
              */
             porcentajeDictados: number | null;
+            /**
+             * @description Sesiones vigentes del calendario del curso (RF-19); 0 si todavía no tiene calendario
+             * @example 32
+             */
+            sesiones: number;
+            /**
+             * @description Clases ya registradas (RF-20). Con 0, el reporte no puede saber qué se dictó: la pantalla lo dice en vez de presentarlo como incumplimiento.
+             * @example 14
+             */
+            clasesRegistradas: number;
             temas: components["schemas"]["TemaEjecucionDto"][];
             temasAdicionales: components["schemas"]["TemaAdicionalDto"][];
         };
