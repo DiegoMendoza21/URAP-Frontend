@@ -1029,8 +1029,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Lista de estudiantes del curso (RF-22)
-         * @description Datos personales (Ley 1581 de 2012): solo el Administrador y los docentes asignados al proyecto. `ultimaCarga` es nulo si el curso todavía no tiene lista.
+         * Lista de estudiantes del curso, con sus inasistencias acumuladas (RF-22, HU-09-03)
+         * @description Por cada estudiante, el número de inasistencias y las sesiones en que faltó. Se puede ordenar por inasistencias, de más a menos. Datos personales (Ley 1581 de 2012): solo el Administrador y los docentes asignados al proyecto, y cada consulta queda en la auditoría. `ultimaCarga` es nulo si el curso todavía no tiene lista.
          */
         get: operations["MatriculasController_listar"];
         put?: never;
@@ -3356,6 +3356,20 @@ export interface components {
             actualizados: number;
             carga: components["schemas"]["UltimaCargaDto"];
         };
+        SesionInasistenciaDto: {
+            /**
+             * @description Sesión de clase en que faltó
+             * @example 31
+             */
+            idSesion: number;
+            /**
+             * Format: date
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /** @example 6 */
+            semana: number | null;
+        };
         MatriculadoDto: {
             /**
              * @description Identificador de la matrícula
@@ -3372,6 +3386,13 @@ export interface components {
             correo: string | null;
             /** @enum {string} */
             estado: "matriculado" | "retirado";
+            /**
+             * @description Inasistencias acumuladas en las clases del curso (HU-09-03): las sesiones en que el docente lo marcó ausente al registrar la clase (RF-22)
+             * @example 2
+             */
+            inasistencias: number;
+            /** @description Las sesiones en que faltó, de la más antigua a la más reciente (HU-09-03) */
+            sesionesInasistencia: components["schemas"]["SesionInasistenciaDto"][];
         };
         PaginaMatriculadosDto: {
             elementos: components["schemas"]["MatriculadoDto"][];
@@ -8401,6 +8422,8 @@ export interface operations {
                 tamano?: number;
                 /** @description Matriculados (por defecto) o retirados: los que estaban en una carga anterior y no en la última */
                 estado?: "matriculado" | "retirado";
+                /** @description Por apellidos (por defecto) o por inasistencias, de más a menos; con el mismo número, por apellidos */
+                orden?: "apellidos" | "inasistencias";
             };
             header?: never;
             path: {
@@ -8418,7 +8441,7 @@ export interface operations {
                     "application/json": components["schemas"]["PaginaMatriculadosDto"];
                 };
             };
-            /** @description Paginación o estado inválidos */
+            /** @description Paginación, estado u orden inválidos */
             400: {
                 headers: {
                     [name: string]: unknown;

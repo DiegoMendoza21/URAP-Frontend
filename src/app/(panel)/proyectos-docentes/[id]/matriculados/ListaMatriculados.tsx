@@ -9,6 +9,8 @@ import {
   COLUMNAS_LISTA,
   consultarMatriculados,
   type EstadoMatricula,
+  type Matriculado,
+  type OrdenMatriculados,
   type ResultadoCargaMatriculados,
 } from '@/api/matriculados';
 import { consultarProyectoDocente } from '@/api/proyectos-docentes';
@@ -19,6 +21,7 @@ import {
   Cargando,
   Insignia,
 } from '../../_componentes/Estados';
+import { fechaLarga } from '../../_componentes/fechas';
 import { useConsulta } from '../../_componentes/useConsulta';
 
 /** El backend no entrega más de 100 por página; un curso cabe casi siempre en una. */
@@ -32,15 +35,18 @@ const formatoFecha = new Intl.DateTimeFormat('es-CO', {
 });
 
 /**
- * Lista de estudiantes matriculados del curso (RF-22, HU-09-01). El Administrador la carga
- * desde un Excel; el Administrador y los docentes del curso la consultan. Son datos personales
- * (Ley 1581 de 2012): el backend responde 404 a quien no debe verla.
+ * Lista de estudiantes matriculados del curso (RF-22, HU-09-01), con las inasistencias
+ * acumuladas de cada uno (HU-09-03): el número y, al tocarlo, las sesiones en que faltó. El
+ * Administrador la carga desde un Excel; el Administrador y los docentes del curso la
+ * consultan. Son datos personales (Ley 1581 de 2012): el backend responde 404 a quien no debe
+ * verla y registra cada consulta en la auditoría.
  */
 export function ListaMatriculados() {
   const { sesion } = useSesion();
   const idProyecto = useIdProyecto();
   const [pagina, setPagina] = useState(1);
   const [estado, setEstado] = useState<EstadoMatricula>('matriculado');
+  const [orden, setOrden] = useState<OrdenMatriculados>('apellidos');
   const [version, setVersion] = useState(0);
   /** Hubo una carga en esta visita: el formulario sigue visible mientras se recarga la lista. */
   const [huboCarga, setHuboCarga] = useState(false);
@@ -52,11 +58,11 @@ export function ListaMatriculados() {
   const lista = useConsulta(
     idProyecto === null
       ? null
-      : `matriculados-${idProyecto}-${estado}-${pagina}-${version}`,
+      : `matriculados-${idProyecto}-${estado}-${orden}-${pagina}-${version}`,
     (senal) =>
       consultarMatriculados(
         idProyecto!,
-        { pagina, tamano: TAMANO_PAGINA, estado },
+        { pagina, tamano: TAMANO_PAGINA, estado, orden },
         senal,
       ),
   );
@@ -70,6 +76,10 @@ export function ListaMatriculados() {
       : 1;
   const cambiarEstado = (nuevo: EstadoMatricula) => {
     setEstado(nuevo);
+    setPagina(1);
+  };
+  const cambiarOrden = (nuevo: OrdenMatriculados) => {
+    setOrden(nuevo);
     setPagina(1);
   };
 
@@ -202,6 +212,39 @@ export function ListaMatriculados() {
                   con sus inasistencias y valoraciones.
                 </p>
               )}
+              {lista.datos.elementos.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span id="etiqueta-orden" className="text-slate-700">
+                    Ordenar por
+                  </span>
+                  <div
+                    role="group"
+                    aria-labelledby="etiqueta-orden"
+                    className="flex rounded-lg border border-slate-300"
+                  >
+                    {(
+                      [
+                        ['apellidos', 'Apellidos'],
+                        ['inasistencias', 'Más inasistencias'],
+                      ] as const
+                    ).map(([opcion, texto]) => (
+                      <button
+                        key={opcion}
+                        type="button"
+                        aria-pressed={orden === opcion}
+                        onClick={() => cambiarOrden(opcion)}
+                        className={`min-h-11 px-3 py-2 font-semibold first:rounded-l-lg last:rounded-r-lg ${
+                          orden === opcion
+                            ? 'bg-marca text-white'
+                            : 'bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {texto}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {lista.datos.elementos.length === 0 ? (
                 <p className="py-4 text-sm text-slate-600">
@@ -213,18 +256,10 @@ export function ListaMatriculados() {
                   className="divide-y divide-slate-100"
                 >
                   {lista.datos.elementos.map((estudiante) => (
-                    <li
+                    <FilaEstudiante
                       key={estudiante.idMatricula}
-                      className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
-                    >
-                      <span className="font-medium">
-                        {estudiante.apellidos}, {estudiante.nombres}
-                      </span>
-                      <span className="text-sm text-slate-600">
-                        Doc. {estudiante.documento}
-                        {estudiante.correo ? ` · ${estudiante.correo}` : ''}
-                      </span>
-                    </li>
+                      estudiante={estudiante}
+                    />
                   ))}
                 </ol>
               )}
@@ -260,6 +295,66 @@ export function ListaMatriculados() {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * Un estudiante con sus inasistencias acumuladas (HU-09-03). El número abre las sesiones en
+ * que faltó. Solo el conteo y las fechas: RF-22 no define porcentajes ni alertas.
+ */
+function FilaEstudiante({ estudiante }: { estudiante: Matriculado }) {
+  const [abierta, setAbierta] = useState(false);
+  const idDetalle = useId();
+  const total = estudiante.inasistencias;
+  const texto = total === 1 ? '1 inasistencia' : `${total} inasistencias`;
+
+  return (
+    <li className="py-2.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 sm:flex sm:flex-1 sm:items-baseline sm:justify-between sm:gap-4">
+          <p className="font-medium">
+            {estudiante.apellidos}, {estudiante.nombres}
+          </p>
+          <p className="break-words text-sm text-slate-600">
+            Doc. {estudiante.documento}
+            {estudiante.correo ? ` · ${estudiante.correo}` : ''}
+          </p>
+        </div>
+        {total === 0 ? (
+          <span className="shrink-0 px-1 py-2 text-sm text-slate-500">
+            Sin inasistencias
+          </span>
+        ) : (
+          <button
+            type="button"
+            aria-expanded={abierta}
+            aria-controls={idDetalle}
+            onClick={() => setAbierta((valor) => !valor)}
+            className="min-h-11 shrink-0 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-950 hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+          >
+            {texto}
+            <span aria-hidden="true">{abierta ? ' ▴' : ' ▾'}</span>
+          </button>
+        )}
+      </div>
+      {total > 0 && abierta && (
+        <div id={idDetalle} className="mt-2 rounded-lg bg-slate-50 px-3 py-2">
+          <p className="text-sm font-medium text-slate-800">
+            {total === 1
+              ? 'Faltó a esta sesión:'
+              : `Faltó a estas ${total} sesiones:`}
+          </p>
+          <ul className="mt-1 space-y-0.5 text-sm text-slate-700">
+            {estudiante.sesionesInasistencia.map((sesion) => (
+              <li key={sesion.idSesion}>
+                {sesion.fecha ? fechaLarga(sesion.fecha) : 'Sin fecha'}
+                {sesion.semana ? ` · Semana ${sesion.semana}` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </li>
   );
 }
 
