@@ -181,6 +181,8 @@ export const ENTIDADES: Record<string, Entidad> = {
     ruta: (id) => `/proyectos-docentes/${id}/matriculados`,
   },
   evidencia_rap: { nombre: 'Evidencia', enFrase: 'la evidencia' },
+  // HU-10-04: la consulta del Líder RAP lleva el id del RAP, no el de una evidencia.
+  rap: { nombre: 'Evidencias de un RAP', enFrase: 'las evidencias del RAP' },
   medicion_rap: {
     nombre: 'Medición de RAP',
     enFrase: 'la medición de RAP',

@@ -12,12 +12,13 @@ import { Advertencia, AvisoError, Cargando } from '../../_componentes/Estados';
 import { useConsulta } from '../../_componentes/useConsulta';
 import { type Borrador, guardarBorrador, leerBorrador } from './borrador';
 import { FormularioCarga } from './FormularioCarga';
-import { GaleriaEvidencias } from './GaleriaEvidencias';
+import { GaleriaEvidencias, nombreDelRap } from './GaleriaEvidencias';
 
 /**
- * Evidencias fotográficas por RAP (RF-24, HU-10-01). El docente elige el RAP, carga las
- * fotos y ve la galería de ese RAP. Los demás roles autorizados solo ven la galería; el
- * backend decide quién ve qué (matriz de permisos, módulo «Documentos»).
+ * Evidencias fotográficas por RAP (RF-24, HU-10-01 y HU-10-02). El docente elige el RAP y
+ * carga las fotos; debajo, la galería agrupada por RAP señala los que no tienen evidencias.
+ * Los demás roles autorizados solo ven la galería; el backend decide quién ve qué (matriz de
+ * permisos, módulo «Documentos»).
  */
 export function EvidenciasProyecto() {
   const { id } = useParams<{ id: string }>();
@@ -91,7 +92,6 @@ function Evidencias({
   const [borrador, setBorrador] = useState<Borrador>(() =>
     leerBorrador(idProyecto),
   );
-  const [pagina, setPagina] = useState(1);
   /** Cambia con cada carga exitosa, para volver a consultar la galería. */
   const [version, setVersion] = useState(0);
   /** Evidencias cargadas en esta visita, por RAP, para actualizar los conteos sin recargar. */
@@ -115,56 +115,62 @@ function Evidencias({
 
   const actualizar = (cambios: Partial<Borrador>) =>
     setBorrador((anterior) => ({ ...anterior, ...cambios }));
-  const nombreRap = rap.codigo ?? `RAP ${rap.numero}`;
+  const nombreRap = nombreDelRap(rap);
+  const totales = Object.fromEntries(
+    raps.map((opcion) => [
+      opcion.id,
+      opcion.totalEvidencias + (cargadas[opcion.id] ?? 0),
+    ]),
+  );
 
   return (
     <>
-      <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <label htmlFor="rap-evidencias" className="block font-semibold">
-          RAP
-        </label>
-        <select
-          id="rap-evidencias"
-          value={rap.id}
-          onChange={(evento) => {
-            actualizar({ idRap: Number(evento.target.value) });
-            setPagina(1);
-          }}
-          className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-        >
-          {raps.map((opcion) => {
-            const total = opcion.totalEvidencias + (cargadas[opcion.id] ?? 0);
-            return (
-              <option key={opcion.id} value={opcion.id}>
-                {`${opcion.codigo ?? `RAP ${opcion.numero}`} · ${
-                  total === 1 ? '1 evidencia' : `${total} evidencias`
-                }`}
-              </option>
-            );
-          })}
-        </select>
-        {rap.descripcion && (
-          <p className="text-sm text-slate-700">{rap.descripcion}</p>
-        )}
-      </div>
-
       {opciones.puedeCargar ? (
-        <FormularioCarga
-          idProyecto={idProyecto}
-          opciones={opciones}
-          idRap={rap.id}
-          nombreRap={nombreRap}
-          borrador={borrador}
-          actualizarBorrador={actualizar}
-          alCargar={(cantidad) => {
-            setCargadas((anterior) => ({
-              ...anterior,
-              [rap.id]: (anterior[rap.id] ?? 0) + cantidad,
-            }));
-            setPagina(1);
-            setVersion((anterior) => anterior + 1);
-          }}
-        />
+        <>
+          <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+            <label htmlFor="rap-evidencias" className="block font-semibold">
+              RAP de la evidencia
+            </label>
+            <select
+              id="rap-evidencias"
+              value={rap.id}
+              onChange={(evento) => {
+                actualizar({ idRap: Number(evento.target.value) });
+              }}
+              className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+            >
+              {raps.map((opcion) => {
+                const total = totales[opcion.id] ?? 0;
+                return (
+                  <option key={opcion.id} value={opcion.id}>
+                    {`${opcion.codigo ?? `RAP ${opcion.numero}`} · ${
+                      total === 1 ? '1 evidencia' : `${total} evidencias`
+                    }`}
+                  </option>
+                );
+              })}
+            </select>
+            {rap.descripcion && (
+              <p className="text-sm text-slate-700">{rap.descripcion}</p>
+            )}
+          </div>
+
+          <FormularioCarga
+            idProyecto={idProyecto}
+            opciones={opciones}
+            idRap={rap.id}
+            nombreRap={nombreRap}
+            borrador={borrador}
+            actualizarBorrador={actualizar}
+            alCargar={(cantidad) => {
+              setCargadas((anterior) => ({
+                ...anterior,
+                [rap.id]: (anterior[rap.id] ?? 0) + cantidad,
+              }));
+              setVersion((anterior) => anterior + 1);
+            }}
+          />
+        </>
       ) : (
         opciones.motivoSinCarga && (
           <Advertencia titulo={opciones.motivoSinCarga} />
@@ -173,10 +179,8 @@ function Evidencias({
 
       <GaleriaEvidencias
         idProyecto={idProyecto}
-        idRap={rap.id}
-        nombreRap={nombreRap}
-        pagina={pagina}
-        alCambiarPagina={setPagina}
+        raps={raps}
+        totales={totales}
         version={version}
       />
     </>

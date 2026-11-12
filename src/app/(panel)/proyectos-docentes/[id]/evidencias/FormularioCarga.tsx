@@ -10,7 +10,7 @@ import {
   formatoTamano,
   problemaDelArchivo,
   tiposLegibles,
-} from './formato';
+} from '../../_componentes/formatoEvidencias';
 
 const DESCRIPCION_MAXIMA = 1000;
 

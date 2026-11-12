@@ -10,6 +10,10 @@ export type SesionEvidencia = Esquemas['SesionEvidenciaDto'];
 export type Evidencia = Esquemas['EvidenciaDto'];
 export type PaginaEvidencias = Esquemas['PaginaEvidenciasDto'];
 export type CargaEvidencias = Esquemas['CargaEvidenciasDto'];
+export type RapACargo = Esquemas['RapACargoDto'];
+export type EvidenciaRapACargo = Esquemas['EvidenciaRapACargoDto'];
+export type PaginaEvidenciasRapACargo =
+  Esquemas['PaginaEvidenciasRapACargoDto'];
 
 /* Evidencias fotográficas por RAP (RF-24). El backend decide quién ve y quién carga. */
 
@@ -38,6 +42,31 @@ export function consultarEvidencias(
   });
   return obtener<PaginaEvidencias>(
     `/proyectos-docentes/${idProyecto}/evidencias?${consulta}`,
+    { senal },
+  );
+}
+
+/** HU-10-04: los RAP a cargo del Líder RAP, con cuántas evidencias tiene cada uno. */
+export function consultarRapsACargo(senal?: AbortSignal) {
+  return obtener<Esquemas['RapsACargoDto']>('/raps-a-cargo', { senal });
+}
+
+/**
+ * HU-10-04: evidencias de un RAP a cargo, en todas las asignaturas. El backend la registra en
+ * la auditoría (fotos de clase, Ley 1581).
+ */
+export function consultarEvidenciasRapACargo(
+  idRap: number,
+  pagina: number,
+  tamano: number,
+  senal?: AbortSignal,
+) {
+  const consulta = new URLSearchParams({
+    pagina: String(pagina),
+    tamano: String(tamano),
+  });
+  return obtener<PaginaEvidenciasRapACargo>(
+    `/raps-a-cargo/${idRap}/evidencias?${consulta}`,
     { senal },
   );
 }
