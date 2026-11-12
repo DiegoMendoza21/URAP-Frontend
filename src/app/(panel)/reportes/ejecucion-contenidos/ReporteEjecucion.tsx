@@ -40,13 +40,6 @@ const ESTADO_TEMA: Record<
   por_dictar: { texto: 'Por dictar', tono: 'neutro' },
 };
 
-/**
- * HU-12-04: el registro de clase todavía no permite anotar temas fuera del contenido
- * programático (HU-08-05). Se dice para que el cero no se lea como un dato.
- */
-const NOTA_ADICIONALES =
-  'Los temas adicionales no planeados aparecen en cero: el registro de clase todavía no permite anotarlos.';
-
 const temas = (cantidad: number) => (cantidad === 1 ? 'tema' : 'temas');
 
 /**
@@ -330,8 +323,9 @@ function Resultado({
       <p className="text-sm text-slate-600">
         «No dictado»: su semana ya terminó y no se marcó en ninguna clase. «Por
         dictar»: su semana todavía no termina, y no cuenta como incumplimiento.
-        Las semanas son las del calendario de clases, que no cuenta el receso.{' '}
-        {NOTA_ADICIONALES}
+        Las semanas son las del calendario de clases, que no cuenta el receso.
+        «Adicional no planeado»: un tema que el docente escribió al registrar la
+        clase, fuera del contenido programático; no suma a lo planeado.
       </p>
 
       <section aria-labelledby="titulo-cursos" className="space-y-2">

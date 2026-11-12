@@ -4235,7 +4235,7 @@ export interface components {
             /** @example 5 */
             porDictar: number;
             /**
-             * @description Temas dictados fuera del contenido programático. El registro de clase todavía no permite escribirlos (HU-08-05): hoy siempre es 0.
+             * @description Temas dictados fuera del contenido programático: los que el docente escribe como no planeados al registrar la clase (HU-08-05), sin repetir el mismo texto.
              * @example 0
              */
             adicionales: number;
@@ -4982,6 +4982,13 @@ export interface components {
             /** @description Temas del contenido programático del proyecto (RF-20, p3), por semana. El previsto para la semana de la sesión va marcado. */
             temas: components["schemas"]["TemaContenidoDto"][];
             /**
+             * @description Temas desarrollados fuera del contenido programático: no planeados (HU-08-05)
+             * @example [
+             *       "Charla de un invitado del sector"
+             *     ]
+             */
+            temasAdicionales: string[];
+            /**
              * @description Número de ausentes de la sesión (RF-22, p6)
              * @example 3
              */
@@ -4997,13 +5004,20 @@ export interface components {
         };
         RegistrarSesionDto: {
             /**
-             * @description Temas desarrollados en la sesión: semanas del contenido programático (punto 6) con su tema (RF-20, p4). Al menos uno.
+             * @description Temas desarrollados en la sesión: semanas del contenido programático (punto 6) con su tema (RF-20, p4). Puede ir vacío solo si la sesión lleva al menos un tema no planeado.
              * @example [
              *       12,
              *       13
              *     ]
              */
             idsContenido: number[];
+            /**
+             * @description Temas desarrollados que no están en el contenido programático (RF-20, excepción de p4; HU-08-05): se guardan como no planeados. Sin el campo se conservan los anteriores; una lista vacía los borra. Sin repetir y distintos de los temas del contenido programático.
+             * @example [
+             *       "Charla de un invitado del sector"
+             *     ]
+             */
+            temasAdicionales?: string[];
             /**
              * @description Matrículas de los estudiantes que no asistieron (RF-22, p4). Vacío si asistieron todos o si el curso no tiene lista cargada.
              * @default []
