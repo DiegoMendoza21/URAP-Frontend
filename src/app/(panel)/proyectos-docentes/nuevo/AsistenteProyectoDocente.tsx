@@ -658,7 +658,7 @@ export function AsistenteProyectoDocente() {
               <Advertencia titulo="Ya existe un proyecto docente para esta asignatura, período y grupo">
                 <p>
                   No se puede crear otro para el mismo curso. Puede abrir el
-                  existente o, cuando esté disponible, duplicarlo.
+                  existente, o duplicarlo para otro grupo, período o docente.
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Link
@@ -666,6 +666,13 @@ export function AsistenteProyectoDocente() {
                     className="rounded-lg bg-white px-3 py-2 text-center font-semibold text-marca ring-1 ring-amber-300 hover:bg-amber-100"
                   >
                     Abrir el proyecto existente
+                  </Link>
+                  {/* RF-09: la copia parte del existente; ahí se eligen período, grupo y docentes. */}
+                  <Link
+                    href={`/proyectos-docentes/${proyectoExistente.id}/duplicar`}
+                    className="rounded-lg bg-white px-3 py-2 text-center font-semibold text-marca ring-1 ring-amber-300 hover:bg-amber-100"
+                  >
+                    Duplicarlo
                   </Link>
                 </div>
               </Advertencia>
