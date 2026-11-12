@@ -886,6 +886,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notificaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notificaciones del usuario, de la más reciente a la más antigua (HU-13-01, HU-13-03) */
+        get: operations["NotificacionesController_listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notificaciones/no-leidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuántas notificaciones tiene el usuario sin leer */
+        get: operations["NotificacionesController_contarNoLeidas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notificaciones/leidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Marca como leídas todas las notificaciones del usuario */
+        patch: operations["NotificacionesController_marcarTodasLeidas"];
+        trace?: never;
+    };
+    "/api/notificaciones/{id}/leida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Marca como leída una notificación del usuario
+         * @description Una notificación de otra persona responde igual que una que no existe (404).
+         */
+        patch: operations["NotificacionesController_marcarLeida"];
+        trace?: never;
+    };
     "/api/parametros": {
         parameters: {
             query?: never;
@@ -2912,6 +2983,60 @@ export interface components {
              * @example 2
              */
             observaciones: number;
+        };
+        NotificacionDto: {
+            /** @example 315 */
+            id: number;
+            /**
+             * @description Código del tipo de notificación (`tipo_notificacion.codigo`)
+             * @example proyecto_devuelto
+             */
+            tipo: string | null;
+            /** @example Proyecto docente devuelto con observaciones */
+            titulo: string;
+            /** @example El departamento académico devolvió el proyecto docente de Mercados (2026-2) con 2 observaciones. */
+            mensaje: string;
+            /**
+             * @description Ruta del frontend que abre lo que originó el aviso (RF-26, poscondición); vacía si no hay a dónde ir
+             * @example /proyectos-docentes/12/diligenciar
+             */
+            urlDestino: string | null;
+            /** @example false */
+            leida: boolean;
+            /**
+             * Format: date-time
+             * @example 2026-11-11T15:04:05.000Z
+             */
+            fecha: string | null;
+            /**
+             * Format: date-time
+             * @description Cuándo la abrió el usuario; vacía mientras no la haya leído
+             * @example null
+             */
+            fechaLectura: string | null;
+        };
+        PaginaNotificacionesDto: {
+            elementos: components["schemas"]["NotificacionDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /** @example 3 */
+            total: number;
+        };
+        ContadorNotificacionesDto: {
+            /**
+             * @description Notificaciones del usuario que todavía no ha leído
+             * @example 2
+             */
+            noLeidas: number;
+        };
+        NotificacionesMarcadasDto: {
+            /**
+             * @description Cuántas notificaciones pasaron a leídas con esta petición
+             * @example 2
+             */
+            marcadas: number;
         };
         ParametroDto: {
             /** @example alerta_dias_anticipacion */
@@ -7500,6 +7625,142 @@ export interface operations {
                 };
             };
             /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    NotificacionesController_listar: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                /** @description Con «no_leidas», solo las que el usuario todavía no ha abierto */
+                filtro?: "todas" | "no_leidas";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaNotificacionesDto"];
+                };
+            };
+            /** @description Página, tamaño o filtro no válidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    NotificacionesController_contarNoLeidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContadorNotificacionesDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    NotificacionesController_marcarTodasLeidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificacionesMarcadasDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    NotificacionesController_marcarLeida: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificacionDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
             404: {
                 headers: {
                     [name: string]: unknown;

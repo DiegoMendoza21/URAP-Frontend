@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { NOMBRE_APLICACION } from '@/app/identidad';
 import { useSesion } from '@/sesion/ProveedorSesion';
+import { CampanaNotificaciones } from './CampanaNotificaciones';
 
 export function EncabezadoPanel() {
   const { sesion, cerrar } = useSesion();
@@ -29,7 +30,8 @@ export function EncabezadoPanel() {
         <span className="text-lg font-bold text-marca">
           {NOMBRE_APLICACION}
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <CampanaNotificaciones />
           {nombreCompleto && (
             <span className="hidden text-sm text-slate-700 sm:inline">
               {nombreCompleto}
