@@ -52,6 +52,12 @@ export const TEMAS: readonly Tema[] = [
           'Con cuántos días de anticipación se le avisa al docente que una clase está por vencer sin registrar. Con 0, el aviso aparece solo el mismo día de la clase.',
         unidad: ['día', 'días'],
       },
+      recordatorio_sesiones_dias: {
+        titulo: 'Cada cuántos días se recuerdan las sesiones pendientes',
+        explicacion:
+          'Cada cuántos días recibe el docente, en un solo aviso, el recordatorio de sus clases vencidas y por vencer sin registrar. El sistema lo revisa todos los días a las 7:00 de la mañana.',
+        unidad: ['día', 'días'],
+      },
     },
   },
   {
