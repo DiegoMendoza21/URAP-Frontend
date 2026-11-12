@@ -12,6 +12,7 @@ import { AvisoError, Cargando, Insignia } from '../_componentes/Estados';
 import { InformacionGeneral } from '../_componentes/InformacionGeneral';
 import { useConsulta } from '../_componentes/useConsulta';
 import { HistorialRevisiones } from './HistorialRevisiones';
+import { ResumenProyecto } from './ResumenProyecto';
 
 /**
  * Roles que ven la lista de estudiantes del curso (RF-22). Es presentación: el backend solo la
@@ -33,6 +34,8 @@ const CLASE_SECUNDARIO = 'border border-marca text-marca hover:bg-marca/5';
 /**
  * Ficha del proyecto docente: la información base con la que lo creó el asistente (RF-08). Las
  * secciones que diligencia el docente (puntos 2 a 7 del formato) están en `diligenciar/`.
+ * Arriba va el resumen (HU-12-07): es la entrada del docente a su proyecto, y sus tarjetas
+ * llevan al calendario, a las evidencias y a las mediciones.
  */
 export function FichaProyectoDocente() {
   const { sesion } = useSesion();
@@ -108,9 +111,6 @@ export function FichaProyectoDocente() {
               {proyecto.datos.asignatura}
             </h1>
             <div className="flex flex-wrap gap-1.5">
-              {proyecto.datos.estado && (
-                <Insignia tono="marca">{proyecto.datos.estado.nombre}</Insignia>
-              )}
               {proyecto.datos.informacionIncompleta && (
                 <Insignia tono="advertencia">Información incompleta</Insignia>
               )}
@@ -131,6 +131,10 @@ export function FichaProyectoDocente() {
                 .
               </p>
             )}
+            <ResumenProyecto
+              proyecto={proyecto.datos}
+              veMediciones={veMediciones}
+            />
             {/* Con un proyecto enviado, revisarlo es la acción principal de quien aprueba. Los
                 puntos 2 a 7 los diligencia el docente asignado; los demás solo los consultan. */}
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -175,24 +179,6 @@ export function FichaProyectoDocente() {
             />
           </section>
 
-          <Link
-            href={`/proyectos-docentes/${idProyecto}/calendario`}
-            className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca sm:p-6"
-          >
-            <span>
-              <span className="block text-lg font-semibold">
-                Calendario de sesiones
-              </span>
-              <span className="block text-sm text-slate-600">
-                Días y horas de clase, y las sesiones del período con sus
-                festivos.
-              </span>
-            </span>
-            <span aria-hidden="true" className="text-xl text-marca">
-              →
-            </span>
-          </Link>
-
           <section
             aria-labelledby="titulo-docentes"
             className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
@@ -225,16 +211,6 @@ export function FichaProyectoDocente() {
             </Link>
           )}
 
-          {veMediciones && (
-            <Link
-              href={`/proyectos-docentes/${idProyecto}/mediciones`}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 font-semibold shadow-sm hover:border-marca hover:text-marca sm:p-6"
-            >
-              <span>Medición de RAP</span>
-              <span aria-hidden="true">→</span>
-            </Link>
-          )}
-
           <section
             aria-labelledby="titulo-raps"
             className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
@@ -257,25 +233,6 @@ export function FichaProyectoDocente() {
           </section>
 
           <HistorialRevisiones idProyecto={proyecto.datos.id} />
-
-          {/* RF-24: el backend decide quién carga y quién ve cada evidencia. */}
-          <Link
-            href={`/proyectos-docentes/${idProyecto}/evidencias`}
-            className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-marca sm:p-6"
-          >
-            <span>
-              <span className="block text-lg font-semibold">
-                Evidencias de los RAP
-              </span>
-              <span className="block text-sm text-slate-600">
-                Fotos y documentos que respaldan el desarrollo de cada RAP en el
-                curso.
-              </span>
-            </span>
-            <span aria-hidden="true" className="text-xl text-marca">
-              →
-            </span>
-          </Link>
         </>
       )}
     </section>
