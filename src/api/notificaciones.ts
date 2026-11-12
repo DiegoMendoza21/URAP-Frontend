@@ -11,6 +11,10 @@ type Esquemas = components['schemas'];
 export type Notificacion = Esquemas['NotificacionDto'];
 export type PaginaNotificaciones = Esquemas['PaginaNotificacionesDto'];
 export type FiltroNotificaciones = 'todas' | 'no_leidas';
+export type TipoNotificacion = Esquemas['TipoNotificacionDto'];
+export type ConfiguracionNotificaciones =
+  Esquemas['ConfiguracionNotificacionesDto'];
+export type ResultadoRecordatorios = Esquemas['ResultadoRecordatoriosDto'];
 
 /**
  * Evento del navegador que avisa que cambió alguna notificación (se leyó una o todas), para
@@ -65,4 +69,36 @@ export function marcarTodasLeidas() {
  */
 export function destinoInterno(url: string | null): string | null {
   return url && /^\/(?!\/)/.test(url) ? url : null;
+}
+
+/*
+ * Configuración de las notificaciones (RF-26, HU-13-04). La protege el backend con el permiso
+ * de administrar la configuración (`estructura.administrar`), el mismo de los parámetros.
+ */
+
+export function consultarConfiguracionNotificaciones(senal?: AbortSignal) {
+  return obtener<ConfiguracionNotificaciones>('/notificaciones/tipos', {
+    senal,
+  });
+}
+
+/** Activa o desactiva un tipo, o su correo. Rige desde el siguiente aviso. */
+export function actualizarTipoNotificacion(
+  codigo: string,
+  cambios: Esquemas['ActualizarTipoNotificacionDto'],
+) {
+  return solicitar<TipoNotificacion>(
+    `/notificaciones/tipos/${encodeURIComponent(codigo)}`,
+    { metodo: 'PATCH', cuerpo: cambios },
+  );
+}
+
+/**
+ * HU-13-02: envía ya el recordatorio de sesiones pendientes, como la revisión diaria. Respeta
+ * la periodicidad: quien ya lo recibió dentro de ella no lo recibe otra vez.
+ */
+export function enviarRecordatoriosSesiones() {
+  return solicitar<ResultadoRecordatorios>('/recordatorios/sesiones', {
+    metodo: 'POST',
+  });
 }

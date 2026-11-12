@@ -910,6 +910,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notificaciones/tipos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tipos de notificación con su configuración y la periodicidad del recordatorio (HU-13-04) */
+        get: operations["TiposNotificacionController_consultar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notificaciones/tipos/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Activa o desactiva un tipo de notificación y su correo (HU-13-04)
+         * @description Rige desde el siguiente aviso, sin redesplegar. Un tipo apagado deja de generar avisos; los que ya están en las bandejas se conservan.
+         */
+        patch: operations["TiposNotificacionController_actualizar"];
+        trace?: never;
+    };
     "/api/notificaciones": {
         parameters: {
             query?: never;
@@ -1697,6 +1734,26 @@ export interface paths {
          */
         put: operations["RegistroClaseController_registrar"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recordatorios/sesiones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Envía ahora el recordatorio de sesiones pendientes (RF-26, HU-13-02)
+         * @description Hace lo mismo que la revisión diaria de las 7:00: un solo aviso por docente con sus sesiones vencidas y por vencer. Respeta la periodicidad: quien ya lo recibió dentro de `recordatorio_sesiones_dias` no lo recibe otra vez.
+         */
+        post: operations["RecordatoriosController_enviar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3194,6 +3251,28 @@ export interface components {
              */
             observaciones: number;
         };
+        TipoNotificacionDto: {
+            /** @example sesion_vencida */
+            codigo: string;
+            /** @example Sesión vencida */
+            nombre: string;
+            /** @description Si está apagado, el sistema deja de generar este aviso */
+            activo: boolean;
+            /** @description Si el aviso sale también por correo. Se guarda desde ya; el envío llega con el servicio de correo institucional (ACT-07) */
+            enviaEmail: boolean;
+        };
+        ConfiguracionNotificacionesDto: {
+            tipos: components["schemas"]["TipoNotificacionDto"][];
+            /**
+             * @description Cada cuántos días se recuerdan las sesiones pendientes (`recordatorio_sesiones_dias`). Se cambia en `PATCH /parametros/recordatorio_sesiones_dias`. Vacío si el parámetro falta o es inválido
+             * @example 7
+             */
+            recordatorioSesionesDias: number | null;
+        };
+        ActualizarTipoNotificacionDto: {
+            activo?: boolean;
+            enviaEmail?: boolean;
+        };
         NotificacionDto: {
             /** @example 315 */
             id: number;
@@ -4235,7 +4314,7 @@ export interface components {
             /** @example 5 */
             porDictar: number;
             /**
-             * @description Temas dictados fuera del contenido programático. El registro de clase todavía no permite escribirlos (HU-08-05): hoy siempre es 0.
+             * @description Temas dictados fuera del contenido programático: los que el docente escribe como no planeados al registrar la clase (HU-08-05), sin repetir el mismo texto.
              * @example 0
              */
             adicionales: number;
@@ -4982,6 +5061,13 @@ export interface components {
             /** @description Temas del contenido programático del proyecto (RF-20, p3), por semana. El previsto para la semana de la sesión va marcado. */
             temas: components["schemas"]["TemaContenidoDto"][];
             /**
+             * @description Temas desarrollados fuera del contenido programático: no planeados (HU-08-05)
+             * @example [
+             *       "Charla de un invitado del sector"
+             *     ]
+             */
+            temasAdicionales: string[];
+            /**
              * @description Número de ausentes de la sesión (RF-22, p6)
              * @example 3
              */
@@ -4997,13 +5083,20 @@ export interface components {
         };
         RegistrarSesionDto: {
             /**
-             * @description Temas desarrollados en la sesión: semanas del contenido programático (punto 6) con su tema (RF-20, p4). Al menos uno.
+             * @description Temas desarrollados en la sesión: semanas del contenido programático (punto 6) con su tema (RF-20, p4). Puede ir vacío solo si la sesión lleva al menos un tema no planeado.
              * @example [
              *       12,
              *       13
              *     ]
              */
             idsContenido: number[];
+            /**
+             * @description Temas desarrollados que no están en el contenido programático (RF-20, excepción de p4; HU-08-05): se guardan como no planeados. Sin el campo se conservan los anteriores; una lista vacía los borra. Sin repetir y distintos de los temas del contenido programático.
+             * @example [
+             *       "Charla de un invitado del sector"
+             *     ]
+             */
+            temasAdicionales?: string[];
             /**
              * @description Matrículas de los estudiantes que no asistieron (RF-22, p4). Vacío si asistieron todos o si el curso no tiene lista cargada.
              * @default []
@@ -5022,6 +5115,33 @@ export interface components {
              * @example false
              */
             confirmarTodoElGrupo?: boolean;
+        };
+        ResultadoRecordatoriosDto: {
+            /**
+             * @description Periodicidad leída de `recordatorio_sesiones_dias`. Vacía si el parámetro falta o es inválido: entonces no se envía nada
+             * @example 7
+             */
+            periodicidadDias: number | null;
+            /**
+             * @description Docentes activos con sesiones vencidas o por vencer
+             * @example 4
+             */
+            docentesConPendientes: number;
+            /**
+             * @description Recordatorios enviados
+             * @example 3
+             */
+            enviados: number;
+            /**
+             * @description Docentes que ya recibieron un recordatorio dentro de la periodicidad
+             * @example 1
+             */
+            omitidosPorPeriodicidad: number;
+            /**
+             * @description Docentes cuyo tipo de recordatorio (`sesion_vencida` o `sesion_por_vencer`) está desactivado
+             * @example 0
+             */
+            omitidosPorTipoInactivo: number;
         };
     };
     responses: never;
@@ -8160,6 +8280,104 @@ export interface operations {
             };
         };
     };
+    TiposNotificacionController_consultar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionNotificacionesDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la configuración (`estructura.administrar`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    TiposNotificacionController_actualizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActualizarTipoNotificacionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TipoNotificacionDto"];
+                };
+            };
+            /** @description No llegó ningún cambio, o un valor no es sí o no */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la configuración (`estructura.administrar`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No existe un tipo de notificación con ese código */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
     NotificacionesController_listar: {
         parameters: {
             query?: {
@@ -10734,6 +10952,52 @@ export interface operations {
                 };
             };
             /** @description Sesión de fecha futura, período cerrado, proyecto sin aprobar, sesión de un tipo que no lleva temas, o todo el grupo ausente sin confirmar */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RecordatoriosController_enviar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoRecordatoriosDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la configuración (`estructura.administrar`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya hay un envío en curso */
             409: {
                 headers: {
                     [name: string]: unknown;

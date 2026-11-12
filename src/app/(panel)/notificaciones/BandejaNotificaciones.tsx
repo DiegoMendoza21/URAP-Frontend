@@ -122,7 +122,7 @@ export function BandejaNotificaciones() {
                 setFiltro(opcion.valor);
                 setPagina(1);
               }}
-              className={`min-h-10 rounded-md px-4 text-sm font-semibold ${
+              className={`min-h-11 rounded-md px-4 text-sm font-semibold ${
                 filtro === opcion.valor
                   ? 'bg-marca text-white'
                   : 'text-slate-800 hover:bg-slate-100'
