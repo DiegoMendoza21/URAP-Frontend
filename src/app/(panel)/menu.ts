@@ -116,6 +116,16 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
     roles: [ROL.docente, ROL.liderRap, ROL.departamento],
   },
   {
+    // HU-10-04: el backend la abre con `documentos.leer`, pero sus RAP salen de `lider_rap`:
+    // solo el Líder RAP tiene RAP a cargo. A los demás roles les mostraría una lista vacía.
+    ruta: '/evidencias-rap',
+    etiqueta: 'Evidencias de mis RAP',
+    etiquetaMenu: 'Evidencias RAP',
+    descripcion:
+      'Fotos de clase que cargan los docentes en las asignaturas que tributan a sus RAP.',
+    roles: [ROL.liderRap],
+  },
+  {
     // RF-02: quien consulta usuarios en la matriz (el Administrador, y el Departamento y la
     // Dirección solo para verlos). Crear y editar lo decide `usuarios.administrar`.
     ruta: '/usuarios',
