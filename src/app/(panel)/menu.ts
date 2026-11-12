@@ -65,6 +65,14 @@ export const REPORTES: readonly OpcionMenu[] = [
     roles: ROLES_SEGUIMIENTO,
   },
   {
+    // RF-28, HU-12-04: el backend lo abre con @Roles, con los roles del de cumplimiento.
+    ruta: '/reportes/ejecucion-contenidos',
+    etiqueta: 'Ejecución de contenidos',
+    descripcion:
+      'Temas planeados por curso frente a los dictados en las clases registradas, con exportación a Excel y PDF.',
+    roles: ROLES_SEGUIMIENTO,
+  },
+  {
     // RF-28: el backend lo abre con @Roles.
     ruta: '/reportes/contribucion-rac-rap',
     etiqueta: 'Contribución de los RAC a los RAP',
