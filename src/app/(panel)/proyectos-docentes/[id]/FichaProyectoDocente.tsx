@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import {
   consultarProyectoDocente,
   nombreDocente,
@@ -38,6 +38,8 @@ export function FichaProyectoDocente() {
   const { sesion } = useSesion();
   const tiene = usePermisos();
   const { id } = useParams<{ id: string }>();
+  // RF-09: se llega aquí al terminar de duplicar, con el mensaje a la vista.
+  const recienDuplicado = useSearchParams().get('duplicado') === '1';
   const idProyecto = /^\d+$/.test(id) ? Number(id) : null;
   const proyecto = useConsulta(
     idProyecto === null ? null : `proyecto-${idProyecto}`,
@@ -64,6 +66,8 @@ export function FichaProyectoDocente() {
     proyecto.estado === 'lista' &&
     proyecto.datos.estado?.codigo === 'enviado' &&
     tiene('proyectos.aprobar');
+  // RF-09: duplicar es crear, del Departamento académico. El backend comprueba el programa.
+  const puedeDuplicar = proyecto.estado === 'lista' && tiene('proyectos.crear');
 
   return (
     <section className="space-y-6">
@@ -86,6 +90,19 @@ export function FichaProyectoDocente() {
       )}
       {proyecto.estado === 'lista' && (
         <>
+          {recienDuplicado && proyecto.datos.idProyectoOrigen !== null && (
+            <div
+              role="status"
+              className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-3 text-sm text-emerald-950"
+            >
+              <p className="font-semibold">Proyecto docente duplicado</p>
+              <p>
+                Está en diligenciamiento, con los puntos 2 a 7 copiados del
+                proyecto de origen. Los docentes asignados ya recibieron el
+                aviso.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <h1 className="text-2xl font-bold sm:text-3xl">
               {proyecto.datos.asignatura}
@@ -98,7 +115,22 @@ export function FichaProyectoDocente() {
                 <Insignia tono="advertencia">Información incompleta</Insignia>
               )}
               <Insignia>Período {proyecto.datos.periodo}</Insignia>
+              {proyecto.datos.grupo && (
+                <Insignia>Grupo {proyecto.datos.grupo}</Insignia>
+              )}
             </div>
+            {proyecto.datos.idProyectoOrigen !== null && (
+              <p className="text-sm text-slate-700">
+                Copiado del{' '}
+                <Link
+                  href={`/proyectos-docentes/${proyecto.datos.idProyectoOrigen}`}
+                  className="font-medium text-marca hover:underline"
+                >
+                  proyecto docente n.º {proyecto.datos.idProyectoOrigen}
+                </Link>
+                .
+              </p>
+            )}
             {/* Con un proyecto enviado, revisarlo es la acción principal de quien aprueba. Los
                 puntos 2 a 7 los diligencia el docente asignado; los demás solo los consultan. */}
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -118,6 +150,14 @@ export function FichaProyectoDocente() {
                   ? 'Diligenciar el proyecto'
                   : 'Ver los puntos 2 a 7'}
               </Link>
+              {puedeDuplicar && (
+                <Link
+                  href={`/proyectos-docentes/${proyecto.datos.id}/duplicar`}
+                  className={`${CLASE_BOTON} ${CLASE_SECUNDARIO}`}
+                >
+                  Duplicar
+                </Link>
+              )}
             </div>
           </div>
 

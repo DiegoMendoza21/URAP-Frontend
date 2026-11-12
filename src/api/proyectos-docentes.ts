@@ -113,3 +113,31 @@ export function etiquetaPlan(plan: {
     ? `Plan ${plan.codigo}`
     : (plan.nombre ?? 'Plan sin código');
 }
+
+/* Duplicación (RF-09; HU-05-04). Como el asistente, solo responde al Departamento académico. */
+
+export type PreparacionDuplicado = Esquemas['PreparacionDuplicadoDto'];
+export type DatosDuplicarProyectoDocente =
+  Esquemas['DuplicarProyectoDocenteDto'];
+
+/** RF-09, p3: qué se copia, los períodos abiertos, los docentes y los RAP, y el aviso de RAP. */
+export function consultarPreparacionDuplicado(
+  idOrigen: number,
+  senal?: AbortSignal,
+) {
+  return obtener<PreparacionDuplicado>(
+    `/proyectos-docentes/${idOrigen}/duplicacion`,
+    { senal },
+  );
+}
+
+/** RF-09, p5 y p6: guarda la copia en diligenciamiento, con la referencia al origen. */
+export function duplicarProyectoDocente(
+  idOrigen: number,
+  datos: DatosDuplicarProyectoDocente,
+) {
+  return enviar<ProyectoDocenteDetalle>(
+    `/proyectos-docentes/${idOrigen}/duplicacion`,
+    datos,
+  );
+}
