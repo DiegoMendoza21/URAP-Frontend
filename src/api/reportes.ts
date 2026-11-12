@@ -101,6 +101,35 @@ export function descargarCumplimientoExcel(filtros: ConsultaCumplimiento) {
   );
 }
 
+/* HU-12-04 · Ejecución de contenidos: lo planeado en el punto 6 frente a lo dictado. */
+
+export type ReporteEjecucion = Esquemas['ReporteEjecucionDto'];
+export type CursoEjecucion = Esquemas['CursoEjecucionDto'];
+export type TemaEjecucion = Esquemas['TemaEjecucionDto'];
+
+export interface ConsultaEjecucion {
+  idPeriodo?: number;
+  idPrograma?: number;
+  idAsignatura?: number;
+}
+
+export function consultarEjecucion(
+  filtros: ConsultaEjecucion,
+  senal?: AbortSignal,
+) {
+  return obtener<ReporteEjecucion>(
+    `/reportes/ejecucion-contenidos?${filtrosComoParametros({ ...filtros })}`,
+    { senal },
+  );
+}
+
+export function descargarEjecucionExcel(filtros: ConsultaEjecucion) {
+  return descargarArchivo(
+    `/reportes/ejecucion-contenidos/excel?${filtrosComoParametros({ ...filtros })}`,
+    'ejecucion-contenidos.xlsx',
+  );
+}
+
 export function consultarContribucion(
   filtros: ConsultaContribucion,
   senal?: AbortSignal,

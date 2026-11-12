@@ -1299,6 +1299,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reportes/ejecucion-contenidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reporte de ejecución de contenidos (RF-28, HU-12-04)
+         * @description Por curso: los temas planeados en el punto 6 del proyecto docente, los dictados (marcados en una clase registrada), los no dictados (su semana ya terminó), los que siguen por dictar y los adicionales no planeados, con filtros por período, programa y asignatura. Los roles y el alcance son los del reporte de cumplimiento. Queda registrado en reporte_academico con el usuario y la fecha.
+         */
+        get: operations["ReportesAcademicosController_ejecucion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reportes/ejecucion-contenidos/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporta el reporte de ejecución de contenidos a Excel (RF-28, p5) */
+        get: operations["ReportesAcademicosController_ejecucionExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reportes/contribucion-rac-rap": {
         parameters: {
             query?: never;
@@ -3947,6 +3984,103 @@ export interface components {
             resumen: components["schemas"]["ResumenCumplimientoDto"];
             /** @description Vacío si no hay proyectos para los filtros (RF-28, excepción de p3) */
             proyectos: components["schemas"]["ProyectoSeguimientoDto"][];
+        };
+        ResumenEjecucionDto: {
+            /** @example 12 */
+            cursos: number;
+            /** @example 192 */
+            planeados: number;
+            /** @example 110 */
+            dictados: number;
+            /** @example 14 */
+            noDictados: number;
+            /** @example 68 */
+            porDictar: number;
+            /** @example 0 */
+            adicionales: number;
+            /**
+             * @description Dictados sobre planeados, sumando todos los cursos; nulo si no hay temas planeados
+             * @example 57.29
+             */
+            porcentajeDictados: number | null;
+        };
+        TemaEjecucionDto: {
+            /** @example 3 */
+            semana: number | null;
+            /** @example Flujo de caja proyectado */
+            tema: string;
+            /**
+             * @description dictado: se marcó en al menos una clase registrada. no_dictado: no se marcó y su semana ya terminó (su última sesión del calendario ya pasó). por_dictar: no se marcó y su semana todavía no termina.
+             * @example dictado
+             * @enum {string}
+             */
+            estado: "dictado" | "no_dictado" | "por_dictar";
+            /**
+             * @description Fechas de las clases en que se marcó el tema
+             * @example [
+             *       "2026-08-19"
+             *     ]
+             */
+            fechas: string[];
+        };
+        TemaAdicionalDto: {
+            /** @example Charla de un invitado del sector */
+            tema: string;
+            /**
+             * @example [
+             *       "2026-09-02"
+             *     ]
+             */
+            fechas: string[];
+        };
+        CursoEjecucionDto: {
+            /** @example 13 */
+            idProyecto: number;
+            /** @example Finanzas a corto plazo */
+            asignatura: string;
+            /** @example A */
+            grupo: string | null;
+            /** @example Administración Industrial */
+            programa: string | null;
+            /**
+             * @description El responsable va primero
+             * @example [
+             *       "Docente Demo"
+             *     ]
+             */
+            docentes: string[];
+            estado: components["schemas"]["EstadoProyectoSeguimientoDto"] | null;
+            /**
+             * @description Semanas del contenido programático que tienen tema
+             * @example 16
+             */
+            planeados: number;
+            /** @example 9 */
+            dictados: number;
+            /** @example 2 */
+            noDictados: number;
+            /** @example 5 */
+            porDictar: number;
+            /**
+             * @description Temas dictados fuera del contenido programático. El registro de clase todavía no permite escribirlos (HU-08-05): hoy siempre es 0.
+             * @example 0
+             */
+            adicionales: number;
+            /**
+             * @description Dictados sobre planeados; nulo si no hay temas planeados
+             * @example 56.25
+             */
+            porcentajeDictados: number | null;
+            temas: components["schemas"]["TemaEjecucionDto"][];
+            temasAdicionales: components["schemas"]["TemaAdicionalDto"][];
+        };
+        ReporteEjecucionDto: {
+            periodo: components["schemas"]["PeriodoSeguimientoDto"] | null;
+            /** @example 2026-11-12T15:30:00.000Z */
+            generado: string;
+            resumen: components["schemas"]["ResumenEjecucionDto"];
+            /** @description Vacío si no hay proyectos para los filtros (RF-28, excepción de p3) */
+            cursos: components["schemas"]["CursoEjecucionDto"][];
         };
         RacContribucionDto: {
             /** @example RAC 1 */
@@ -8833,6 +8967,136 @@ export interface operations {
                 idDocente?: number;
                 /** @description Código del estado del proyecto docente */
                 estado?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro de Excel (.xlsx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Supera el máximo de filas exportables: hay que restringir los filtros */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_ejecucion: {
+        parameters: {
+            query?: {
+                /** @description Sin período, el activo más reciente */
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteEjecucionDto"];
+                };
+            };
+            /** @description Filtros inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No es Administrador, Departamento académico ni Dirección del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período no existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ReportesAcademicosController_ejecucionExcel: {
+        parameters: {
+            query?: {
+                /** @description Sin período, el activo más reciente */
+                idPeriodo?: number;
+                idPrograma?: number;
+                idAsignatura?: number;
             };
             header?: never;
             path?: never;
