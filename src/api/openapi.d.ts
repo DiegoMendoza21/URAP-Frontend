@@ -484,6 +484,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{id}/duplicacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prepara la duplicación del proyecto docente (RF-09, p3; HU-05-04)
+         * @description Qué se va a copiar, los períodos abiertos, los docentes del programa y los RAP, con lo que sugiere el origen. Advierte si la asignatura cambió de RAP (excepción de p4).
+         */
+        get: operations["ProyectosDocentesController_prepararDuplicado"];
+        put?: never;
+        /**
+         * Duplica el proyecto docente (RF-09; HU-05-04)
+         * @description Crea un proyecto en «En diligenciamiento» con la descripción, los RAC con su relación con los RAP y su evaluación, las estrategias, los contenidos por semana y la bibliografía del origen, y guarda la referencia a él. No copia revisiones, observaciones, horario, clases, evidencias, matriculados ni mediciones. Las semanas que no caben en el período elegido no se copian.
+         */
+        post: operations["ProyectosDocentesController_duplicar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/{id}": {
         parameters: {
             query?: never;
@@ -2358,6 +2382,11 @@ export interface components {
              * @example manual
              */
             origen: string | null;
+            /**
+             * @description Proyecto del que se copió, si es un duplicado (RF-09, p6)
+             * @example 12
+             */
+            idProyectoOrigen: number | null;
             periodoAcademico: components["schemas"]["PeriodoAcademicoDto"] | null;
             informacion: components["schemas"]["InformacionInstitucionalDto"];
             /** @description RAP a los que contribuye el curso (paso 3) */
@@ -2374,6 +2403,110 @@ export interface components {
              * @example 42
              */
             total: number;
+        };
+        ContenidoCopiadoDto: {
+            /** @description Punto 2: si el origen tiene descripción */
+            descripcion: boolean;
+            /**
+             * @description Punto 3: RAC
+             * @example 3
+             */
+            racs: number;
+            /**
+             * @description Punto 3: relaciones de los RAC con los RAP
+             * @example 4
+             */
+            relacionesRap: number;
+            /**
+             * @description Punto 4: estrategias
+             * @example 5
+             */
+            estrategias: number;
+            /**
+             * @description Punto 5: actividades de evaluación de los RAC
+             * @example 6
+             */
+            actividadesEvaluacion: number;
+            /**
+             * @description Punto 6: semanas de contenido
+             * @example 16
+             */
+            semanasContenido: number;
+            /**
+             * @description Punto 7: referencias
+             * @example 4
+             */
+            referencias: number;
+        };
+        PeriodoParaDuplicarDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fechaInicio: string | null;
+            /**
+             * Format: date
+             * @example 2026-11-21
+             */
+            fechaFin: string | null;
+            /** @example 16 */
+            numeroSemanas: number | null;
+            /**
+             * @description Semanas de contenido del origen que no caben en este período (tiene menos semanas). No se copian.
+             * @example 0
+             */
+            semanasQueNoCaben: number;
+        };
+        AvisoRapDto: {
+            /** @example La asignatura cambió de RAP desde el proyecto de origen. Revise la selección antes de duplicar. */
+            mensaje: string;
+            /** @description RAP del origen que ya no están activos o que la asignatura ya no tiene en su mapeo curricular */
+            retirados: components["schemas"]["RapDto"][];
+            /** @description RAP del mapeo actual de la asignatura que el origen no tenía */
+            nuevos: components["schemas"]["RapDto"][];
+        };
+        PreparacionDuplicadoDto: {
+            origen: components["schemas"]["ProyectoDocenteResumenDto"];
+            contenido: components["schemas"]["ContenidoCopiadoDto"];
+            /** @description Períodos activos y sin cerrar, del más reciente al más antiguo */
+            periodos: components["schemas"]["PeriodoParaDuplicarDto"][];
+            /** @description El período vigente, o nulo si no hay ninguno abierto */
+            idPeriodoSugerido: number | null;
+            /** @description Docentes del programa que se pueden asignar */
+            docentes: components["schemas"]["DocenteOpcionDto"][];
+            /** @description Los docentes del origen que todavía se pueden asignar, con su responsable */
+            docentesSugeridos: components["schemas"]["DocenteAsignadoDto"][];
+            /** @description RAP activos del programa, con los del mapeo curricular actual marcados */
+            raps: components["schemas"]["RapOpcionDto"][];
+            /** @description Los RAP del origen que siguen activos */
+            idsRapSugeridos: number[];
+            avisoRap: components["schemas"]["AvisoRapDto"] | null;
+        };
+        DuplicarProyectoDocenteDto: {
+            /**
+             * @description Período del proyecto nuevo: uno activo y sin cerrar. Si se omite, el vigente.
+             * @example 4
+             */
+            idPeriodo?: number;
+            /**
+             * @description Grupo del curso nuevo. Vacío si la asignatura tiene un solo grupo en el período.
+             * @example B
+             */
+            grupo?: string;
+            /** @description De 1 a 3 docentes, con un único responsable (HU-05-03). */
+            docentes: components["schemas"]["DocenteAsignadoDto"][];
+            /**
+             * @description RAP del proyecto nuevo (RF-09, excepción de p4: revisar la selección si la asignatura cambió de RAP). Si se omite, los del origen que siguen activos. Las relaciones de los RAC con un RAP que no quede seleccionado no se copian.
+             * @example [
+             *       1,
+             *       3
+             *     ]
+             */
+            idsRap?: number[];
         };
         SeccionResumenDto: {
             /**
@@ -6130,6 +6263,124 @@ export interface operations {
                 };
             };
             /** @description Ya existe un proyecto para la asignatura, el período y el grupo (p6), o no hay un período académico activo */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ProyectosDocentesController_prepararDuplicado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreparacionDuplicadoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin el permiso de crear proyectos docentes, o no es Departamento académico del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    ProyectosDocentesController_duplicar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicarProyectoDocenteDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProyectoDocenteDetalleDto"];
+                };
+            };
+            /** @description Período cerrado o inactivo, RAP de otro programa o inactivos, docentes repetidos, sin responsable o que no lo son en el programa */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin el permiso de crear proyectos docentes, o no es Departamento académico del programa */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto de origen no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya existe un proyecto para la asignatura, el período y el grupo (excepción de p5), o no hay un período académico abierto */
             409: {
                 headers: {
                     [name: string]: unknown;
