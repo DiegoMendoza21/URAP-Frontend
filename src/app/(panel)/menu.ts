@@ -148,6 +148,17 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
     permiso: 'estructura.administrar',
   },
   {
+    // RF-26, HU-13-04: la misma regla que los parámetros, donde vive la periodicidad del
+    // recordatorio. La bandeja de cada usuario no va en el menú: es la campana del encabezado,
+    // que ya se llama «Notificaciones»; por eso esta opción tiene otro nombre.
+    ruta: '/notificaciones/configuracion',
+    etiqueta: 'Configuración de notificaciones',
+    etiquetaMenu: 'Configurar avisos',
+    descripcion:
+      'Elija qué eventos generan aviso, cuáles saldrán también por correo y cada cuánto se recuerdan las sesiones pendientes.',
+    permiso: 'estructura.administrar',
+  },
+  {
     // RF-29, HU-14-02: la consulta completa de la auditoría. En la matriz inicial solo el
     // Administrador tiene `auditoria.administrar`; el `auditoria.leer` del Departamento y de
     // la Dirección es una consulta restringida que el programa aún no define, y no abre esta.
