@@ -1494,6 +1494,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/raps-a-cargo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * RAP a cargo del Líder RAP, con sus evidencias (HU-10-04)
+         * @description Los RAP que lidera el usuario (`lider_rap` vigente), con los períodos, cuántas evidencias tiene cada uno y cuántos de los proyectos docentes que tributan a él las tienen. Vacía si el usuario no es Líder RAP o no lidera ninguno.
+         */
+        get: operations["EvidenciasLiderRapController_rapsACargo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/raps-a-cargo/{idRap}/evidencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Evidencias de un RAP a cargo, en todas las asignaturas (HU-10-04)
+         * @description Paginadas, las más recientes primero, con la asignatura, el grupo, el período y el docente responsable de cada una. Solo de los proyectos docentes de los períodos en que el usuario lidera el RAP. La consulta queda en la auditoría como consulta sensible de `evidencia_rap`, con el id del RAP.
+         */
+        get: operations["EvidenciasLiderRapController_evidenciasDeRap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/{idProyecto}/horario": {
         parameters: {
             query?: never;
@@ -4205,6 +4245,96 @@ export interface components {
         };
         CargaEvidenciasDto: {
             evidencias: components["schemas"]["EvidenciaDto"][];
+        };
+        PeriodoLiderazgoDto: {
+            /** @example 4 */
+            id: number;
+            /** @example 2026-2 */
+            codigo: string | null;
+        };
+        RapACargoDto: {
+            /** @example 2 */
+            id: number;
+            /** @example 2 */
+            numero: number | null;
+            /** @example RAP 2 */
+            codigo: string | null;
+            /** @example Diseña sistemas productivos… */
+            descripcion: string | null;
+            /** @description Si lidera el RAP sin período (`lider_rap.id_periodo` vacío): entonces ve todos los períodos y `periodos` va vacía */
+            todosLosPeriodos: boolean;
+            /** @description Períodos en los que lidera el RAP */
+            periodos: components["schemas"]["PeriodoLiderazgoDto"][];
+            /**
+             * @description Evidencias del RAP en los proyectos docentes de esos períodos
+             * @example 5
+             */
+            totalEvidencias: number;
+            /**
+             * @description Proyectos docentes de esos períodos que tributan al RAP
+             * @example 4
+             */
+            totalProyectos: number;
+            /**
+             * @description Cuántos de esos proyectos tienen al menos una evidencia del RAP
+             * @example 3
+             */
+            proyectosConEvidencias: number;
+        };
+        RapsACargoDto: {
+            /** @description RAP que lidera el usuario, por número. Vacía si no lidera ninguno o no es Líder RAP. */
+            raps: components["schemas"]["RapACargoDto"][];
+        };
+        ProyectoEvidenciaDto: {
+            /** @example 12 */
+            id: number;
+            /** @example Organización y dirección */
+            asignatura: string | null;
+            /** @example A */
+            grupo: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+            /** @description Docente responsable del proyecto */
+            docenteResponsable: components["schemas"]["UsuarioEvidenciaDto"] | null;
+        };
+        EvidenciaRapACargoDto: {
+            /** @example 40 */
+            id: number;
+            /** @example 12 */
+            idProyectoDocente: number;
+            /** @example 2 */
+            idRap: number;
+            sesion: components["schemas"]["SesionEvidenciaDto"] | null;
+            /** @example Exposición de los grupos. */
+            descripcion: string;
+            /**
+             * Format: date
+             * @example 2026-09-14
+             */
+            fecha: string;
+            /** @example IMG_20260914_101500.jpg */
+            nombreOriginal: string;
+            /** @example image/jpeg */
+            tipo: string;
+            /** @example 2481337 */
+            tamanoBytes: number;
+            /**
+             * Format: date-time
+             * @example 2026-09-14T15:20:00.000Z
+             */
+            fechaSubida: string;
+            subidoPor: components["schemas"]["UsuarioEvidenciaDto"] | null;
+            /** @description Proyecto docente de la evidencia: asignatura, grupo y docente */
+            proyecto: components["schemas"]["ProyectoEvidenciaDto"];
+        };
+        PaginaEvidenciasRapACargoDto: {
+            elementos: components["schemas"]["EvidenciaRapACargoDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 12 */
+            tamano: number;
+            /** @example 5 */
+            total: number;
         };
         BloqueHorarioDto: {
             /**
@@ -9593,6 +9723,94 @@ export interface operations {
                     "image/jpeg": components["schemas"]["RespuestaErrorDto"];
                     "image/png": components["schemas"]["RespuestaErrorDto"];
                     "application/pdf": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasLiderRapController_rapsACargo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RapsACargoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario consulta documentos, o el RAP no está a su cargo */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    EvidenciasLiderRapController_evidenciasDeRap: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path: {
+                idRap: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaEvidenciasRapACargoDto"];
+                };
+            };
+            /** @description Paginación inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario consulta documentos, o el RAP no está a su cargo */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
         };
