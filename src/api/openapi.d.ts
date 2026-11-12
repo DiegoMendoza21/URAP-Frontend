@@ -1523,7 +1523,7 @@ export interface paths {
         };
         /**
          * Evidencias de un RAP a cargo, en todas las asignaturas (HU-10-04)
-         * @description Paginadas, las más recientes primero, con la asignatura, el grupo, el período y el docente responsable de cada una. Solo de los proyectos docentes de los períodos en que el usuario lidera el RAP. La consulta queda en la auditoría como consulta sensible de `evidencia_rap`, con el id del RAP.
+         * @description Paginadas, las más recientes primero, con la asignatura, el grupo, el período y el docente responsable de cada una. Solo de los proyectos docentes de los períodos en que el usuario lidera el RAP. La consulta queda en la auditoría como consulta sensible de `rap`, con el id del RAP.
          */
         get: operations["EvidenciasLiderRapController_evidenciasDeRap"];
         put?: never;

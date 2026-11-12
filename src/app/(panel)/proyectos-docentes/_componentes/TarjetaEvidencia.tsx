@@ -22,6 +22,16 @@ export function TarjetaEvidencia({
   detalles?: ReactNode;
 }) {
   const [ampliada, setAmpliada] = useState(false);
+  const miniatura = useRef<HTMLButtonElement>(null);
+  const devolverFoco = useRef(false);
+  // Al cerrar el visor, el foco vuelve a la miniatura. Se hace después de desmontarlo: mientras
+  // el diálogo modal está abierto, el resto de la página no recibe el foco.
+  useEffect(() => {
+    if (!ampliada && devolverFoco.current) {
+      devolverFoco.current = false;
+      miniatura.current?.focus();
+    }
+  }, [ampliada]);
   const esImagen = evidencia.tipo.startsWith('image/');
   const clasesEnlace =
     'block w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca';
@@ -30,6 +40,7 @@ export function TarjetaEvidencia({
     <li className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       {esImagen ? (
         <button
+          ref={miniatura}
           type="button"
           onClick={() => setAmpliada(true)}
           className={`${clasesEnlace} cursor-zoom-in`}
@@ -63,7 +74,10 @@ export function TarjetaEvidencia({
           url={url}
           evidencia={evidencia}
           detalles={detalles}
-          alCerrar={() => setAmpliada(false)}
+          alCerrar={() => {
+            devolverFoco.current = true;
+            setAmpliada(false);
+          }}
         />
       )}
     </li>
@@ -72,7 +86,11 @@ export function TarjetaEvidencia({
 
 /**
  * La foto ampliada, a pantalla completa en el teléfono. Es un `<dialog>` modal: el foco queda
- * dentro, Escape lo cierra y, al cerrarse, el navegador devuelve el foco a la miniatura.
+ * dentro y el resto de la página no responde. Se cierra con «Cerrar», con Escape (o el gesto de
+ * volver del teléfono) y tocando fuera de la foto; al cerrarse, el foco vuelve a la miniatura.
+ *
+ * Para cerrar se desmonta el componente, sin esperar el evento «close»: el navegador lo entrega
+ * más tarde (o nunca, con la pestaña en segundo plano) y React monta dos veces en desarrollo.
  */
 function VisorEvidencia({
   url,
@@ -92,18 +110,23 @@ function VisorEvidencia({
     if (elemento && !elemento.open) {
       elemento.showModal();
     }
-    return () => elemento?.close();
+    // Sin limpieza: al desmontarse, el diálogo sale del documento y del primer plano.
   }, []);
 
   return (
     <dialog
       ref={dialogo}
       aria-label={`Evidencia: ${evidencia.descripcion}`}
+      onCancel={(evento) => {
+        // Escape o el gesto de volver: lo cierra el componente, no el navegador.
+        evento.preventDefault();
+        alCerrar();
+      }}
       onClose={alCerrar}
       onClick={(evento) => {
         // Un toque en el fondo oscuro, fuera de la foto y del texto, también lo cierra.
         if (evento.target === evento.currentTarget) {
-          dialogo.current?.close();
+          alCerrar();
         }
       }}
       className="m-0 h-dvh max-h-none w-screen max-w-none bg-slate-950 p-0 text-white backdrop:bg-slate-950/90 sm:m-auto sm:h-[90dvh] sm:w-[90vw] sm:max-w-5xl sm:rounded-2xl"
@@ -113,7 +136,7 @@ function VisorEvidencia({
           <button
             type="button"
             autoFocus
-            onClick={() => dialogo.current?.close()}
+            onClick={alCerrar}
             className="min-h-11 rounded-lg bg-white/10 px-4 py-2 font-semibold text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-white"
           >
             Cerrar
