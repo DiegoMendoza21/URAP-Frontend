@@ -26,6 +26,24 @@ import { useConsulta } from '../../../_componentes/useConsulta';
 
 /** El mismo tope que valida el backend; aquí solo sirve para contar caracteres al escribir. */
 const OBSERVACIONES_MAXIMO = 2000;
+/** HU-08-05: los mismos topes que valida el backend para los temas no planeados. */
+const TEMA_ADICIONAL_MAXIMO = 200;
+const TEMAS_ADICIONALES_MAXIMO = 10;
+const MENSAJE_SIN_TEMAS =
+  'Seleccione al menos un tema del contenido programático o escriba un tema no planeado.';
+
+/** Para comparar temas como los lee una persona: sin mayúsculas, tildes ni espacios de más. */
+function huellaTema(texto: string): string {
+  return texto
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('es-CO')
+    .normalize('NFD')
+    .replace(/[́̈]/g, '')
+    .normalize('NFC');
+}
+
+const limpiarTema = (texto: string) => texto.trim().replace(/\s+/g, ' ');
 
 interface Fallo {
   mensaje: string;
@@ -170,7 +188,7 @@ function ConsultaRegistro({ detalle }: { detalle: DetalleSesion }) {
         <h2 id="titulo-temas" className="text-lg font-semibold">
           Temas desarrollados
         </h2>
-        {temas.length === 0 ? (
+        {temas.length === 0 && detalle.temasAdicionales.length === 0 ? (
           <p className="text-sm text-slate-600">
             La clase todavía no está registrada.
           </p>
@@ -182,6 +200,15 @@ function ConsultaRegistro({ detalle }: { detalle: DetalleSesion }) {
                   Semana {tema.semana} ·{' '}
                 </span>
                 {tema.tema}
+              </li>
+            ))}
+            {detalle.temasAdicionales.map((tema) => (
+              <li
+                key={`adicional-${tema}`}
+                className="flex flex-wrap items-center gap-2"
+              >
+                <span className="break-words">{tema}</span>
+                <Insignia tono="informativo">No planeado</Insignia>
               </li>
             ))}
           </ul>
@@ -282,6 +309,11 @@ function FormularioRegistro({
           .map((estudiante) => estudiante.idMatricula),
       ),
   );
+  const [adicionales, setAdicionales] = useState<string[]>(
+    () => detalle.temasAdicionales,
+  );
+  const [nuevoAdicional, setNuevoAdicional] = useState('');
+  const [avisoAdicional, setAvisoAdicional] = useState<string | null>(null);
   const [observaciones, setObservaciones] = useState(
     detalle.observaciones ?? '',
   );
@@ -320,12 +352,58 @@ function FormularioRegistro({
     setConfirmandoTodos(false);
   }
 
-  async function enviar(confirmarTodoElGrupo: boolean) {
+  /**
+   * HU-08-05: el tema escrito en el campo, si se puede agregar. Repite aquí, para avisar al
+   * momento, las reglas que el backend vuelve a validar: no vacío, no repetido y no un tema
+   * del contenido programático, que se marca en la lista.
+   */
+  function temaParaAgregar(texto: string, lista: string[]): string | null {
+    const tema = limpiarTema(texto);
+    if (tema === '') {
+      return null;
+    }
+    const huella = huellaTema(tema);
+    if (lista.some((otro) => huellaTema(otro) === huella)) {
+      setAvisoAdicional(`«${tema}» ya está entre los temas no planeados.`);
+      return null;
+    }
+    const planeado = detalle.temas.find(
+      (contenido) => huellaTema(contenido.tema) === huella,
+    );
+    if (planeado) {
+      setAvisoAdicional(
+        `«${tema}» está en el contenido programático (semana ${planeado.semana}): márquelo en la lista de arriba.`,
+      );
+      return null;
+    }
+    if (lista.length >= TEMAS_ADICIONALES_MAXIMO) {
+      setAvisoAdicional(
+        `Se pueden escribir como máximo ${TEMAS_ADICIONALES_MAXIMO} temas no planeados por clase.`,
+      );
+      return null;
+    }
+    setAvisoAdicional(null);
+    return tema;
+  }
+
+  function agregarAdicional() {
+    const tema = temaParaAgregar(nuevoAdicional, adicionales);
+    if (tema !== null) {
+      setAdicionales([...adicionales, tema]);
+      setNuevoAdicional('');
+    }
+  }
+
+  async function enviar(
+    confirmarTodoElGrupo: boolean,
+    temasAdicionales: string[] = adicionales,
+  ) {
     setEnviando(true);
     setFallo(null);
     try {
       const nuevo = await registrarSesion(idProyecto, detalle.sesion.id, {
         idsContenido: [...temas],
+        temasAdicionales,
         ausentes: [...ausentes],
         observaciones,
         confirmarTodoElGrupo,
@@ -355,9 +433,21 @@ function FormularioRegistro({
 
   function guardar(evento: FormEvent) {
     evento.preventDefault();
+    // Lo que quedó escrito en el campo sin pulsar «Agregar» también se guarda: es lo que el
+    // docente quiso anotar. Si no se puede agregar, el aviso lo dice y no se envía.
+    let temasAdicionales = adicionales;
+    if (limpiarTema(nuevoAdicional) !== '') {
+      const tema = temaParaAgregar(nuevoAdicional, adicionales);
+      if (tema === null) {
+        return;
+      }
+      temasAdicionales = [...adicionales, tema];
+      setAdicionales(temasAdicionales);
+      setNuevoAdicional('');
+    }
     // Se repite aquí para avisar sin esperar al servidor; el backend valida lo mismo.
-    if (temas.size === 0) {
-      setAviso('Seleccione al menos un tema del contenido programático.');
+    if (temas.size === 0 && temasAdicionales.length === 0) {
+      setAviso(MENSAJE_SIN_TEMAS);
       return;
     }
     setAviso(null);
@@ -365,16 +455,17 @@ function FormularioRegistro({
       setConfirmandoTodos(true);
       return;
     }
-    void enviar(todoElGrupo);
+    void enviar(todoElGrupo, temasAdicionales);
   }
 
   return (
     <form onSubmit={guardar} className="space-y-5" noValidate>
-      <fieldset className="space-y-2">
+      <fieldset className="min-w-0 space-y-2">
         <legend className="text-lg font-semibold">Temas desarrollados</legend>
         <p className="text-sm text-slate-600">
           Marque los temas del contenido programático que desarrolló en esta
-          clase.
+          clase. Si desarrolló uno que no está, escríbalo abajo, en «Temas no
+          planeados».
         </p>
         {destacados.map((tema) => (
           <CasillaTema
@@ -417,7 +508,87 @@ function FormularioRegistro({
         )}
       </fieldset>
 
-      <fieldset className="space-y-2">
+      {/* HU-08-05: opcional y rápido de llenar desde el teléfono, al salir del salón. */}
+      <fieldset className="min-w-0 space-y-2">
+        <legend className="text-lg font-semibold">
+          Temas no planeados{' '}
+          <span className="text-sm font-normal text-slate-600">(opcional)</span>
+        </legend>
+        <p id="ayuda-no-planeados" className="text-sm text-slate-600">
+          Si desarrolló un tema que no está en el contenido programático,
+          escríbalo aquí. Queda marcado como no planeado.
+        </p>
+        {adicionales.length > 0 && (
+          <ul className="space-y-2">
+            {adicionales.map((tema) => (
+              <li
+                key={tema}
+                className="flex min-h-12 items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2"
+              >
+                <span className="min-w-0 flex-1 break-words">{tema}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdicionales(adicionales.filter((otro) => otro !== tema));
+                    setAvisoAdicional(null);
+                  }}
+                  aria-label={`Quitar el tema no planeado «${tema}»`}
+                  className="min-h-11 shrink-0 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-800 hover:bg-red-50"
+                >
+                  Quitar
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex gap-2">
+          <label htmlFor="nuevo-no-planeado" className="sr-only">
+            Tema no planeado
+          </label>
+          <input
+            id="nuevo-no-planeado"
+            type="text"
+            enterKeyHint="done"
+            autoComplete="off"
+            maxLength={TEMA_ADICIONAL_MAXIMO}
+            placeholder="Escriba el tema"
+            value={nuevoAdicional}
+            onChange={(evento) => {
+              setNuevoAdicional(evento.target.value);
+              setAvisoAdicional(null);
+            }}
+            onKeyDown={(evento) => {
+              // Intro agrega el tema; no envía el registro a medio llenar.
+              if (evento.key === 'Enter') {
+                evento.preventDefault();
+                agregarAdicional();
+              }
+            }}
+            aria-describedby={`ayuda-no-planeados${avisoAdicional ? ' aviso-no-planeados' : ''}`}
+            aria-invalid={avisoAdicional ? true : undefined}
+            className="min-h-12 min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-base aria-[invalid=true]:border-red-500"
+          />
+          <button
+            type="button"
+            onClick={agregarAdicional}
+            disabled={limpiarTema(nuevoAdicional) === ''}
+            className="min-h-12 shrink-0 rounded-lg border border-marca px-4 font-semibold text-marca hover:bg-marca/5 disabled:opacity-50"
+          >
+            Agregar
+          </button>
+        </div>
+        {avisoAdicional && (
+          <p
+            id="aviso-no-planeados"
+            role="alert"
+            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+          >
+            {avisoAdicional}
+          </p>
+        )}
+      </fieldset>
+
+      <fieldset className="min-w-0 space-y-2">
         <legend className="text-lg font-semibold">Asistencia</legend>
         {!asistencia?.listaCargada ? (
           <Advertencia titulo="Este curso no tiene lista de estudiantes cargada">
@@ -507,7 +678,7 @@ function FormularioRegistro({
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
-              onClick={() => void enviar(true)}
+              onClick={() => void enviar(true, adicionales)}
               disabled={enviando}
               className="min-h-11 rounded-lg bg-amber-700 px-4 font-semibold text-white hover:bg-amber-800 disabled:opacity-60"
             >
