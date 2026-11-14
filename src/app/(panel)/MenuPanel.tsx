@@ -15,12 +15,15 @@ const RUTA_REVISION = /^\/proyectos-docentes\/[^/]+\/revision$/;
 export function MenuPanel() {
   const ruta = usePathname();
   const enlaces = [
-    { ruta: '/', etiqueta: 'Inicio' },
+    { ruta: '/', etiqueta: 'Inicio', subrutas: [] as string[] },
     ...useOpcionesMenu().map((opcion) => ({
       ruta: opcion.ruta,
       etiqueta: opcion.etiquetaMenu ?? opcion.etiqueta,
+      subrutas: opcion.subopciones?.map((subopcion) => subopcion.ruta) ?? [],
     })),
   ];
+  const dentroDe = (base: string) =>
+    ruta === base || ruta.startsWith(`${base}/`);
   // La revisión de un proyecto vive bajo `/proyectos-docentes/…`, pero se llega a ella desde
   // «Revisión»: quien tiene esa opción la ve resaltada. Los demás (el Administrador, que abre
   // la revisión sin decidir) siguen en «Proyectos docentes».
@@ -38,7 +41,8 @@ export function MenuPanel() {
             ? enlace.ruta === '/revision'
             : enlace.ruta === '/'
               ? ruta === '/'
-              : ruta === enlace.ruta || ruta.startsWith(`${enlace.ruta}/`);
+              : // «Configuración» queda resaltada también en «Parámetros» y las demás que agrupa.
+                dentroDe(enlace.ruta) || enlace.subrutas.some(dentroDe);
           return (
             <li key={enlace.ruta}>
               <Link
