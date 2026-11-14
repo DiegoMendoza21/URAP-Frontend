@@ -1740,6 +1740,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proyectos-docentes/{idProyecto}/sesiones/{idSesion}/tipo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambia el tipo de la sesión: clase, parcial, festivo o actividad complementaria (RF-21, HU-08-06)
+         * @description Los tipos salen del catálogo `tipo_sesion`. Uno que no lleva temas exige una descripción. El parcial y la actividad se registran después con su asistencia y sin temas; en el festivo no hay clase. Una sesión que el calendario marcó festivo se puede pasar a clase si sí se dictó (excepción de p2), y la recalculación no la vuelve a marcar. Si el tipo nuevo no admite lo ya registrado (temas o ausentes), pide `confirmarQuitarRegistro` y responde 409 diciendo qué se quitaría. Se puede cambiar en una sesión futura, para marcar un parcial con anticipación.
+         */
+        patch: operations["RegistroClaseController_cambiarTipo"];
+        trace?: never;
+    };
     "/api/recordatorios/sesiones": {
         parameters: {
             query?: never;
@@ -4806,6 +4826,11 @@ export interface components {
              */
             festivo: string | null;
             /**
+             * @description Qué fue la sesión cuando no es una clase: parcial, actividad o festivo (RF-21)
+             * @example Primer parcial escrito
+             */
+            descripcion: string | null;
+            /**
              * @description Si el docente ya la diligenció. Una sesión diligenciada no se recalcula.
              * @example false
              */
@@ -5063,6 +5088,16 @@ export interface components {
             /** @example Docente Demo */
             registradoPor: string | null;
         };
+        TipoSesionOpcionDto: {
+            /** @example parcial */
+            codigo: string;
+            /** @example Parcial */
+            nombre: string;
+            /** @description Si la sesión lleva temas del contenido programático. Si no, pide una descripción. */
+            llevaTemas: boolean;
+            /** @description Si en la sesión hay clase: se toma la asistencia y cuenta para las alertas. El festivo no. */
+            hayClase: boolean;
+        };
         DetalleSesionDto: {
             /** @example 4 */
             idProyectoDocente: number;
@@ -5101,6 +5136,18 @@ export interface components {
              */
             observaciones: string | null;
             registro: components["schemas"]["RegistroSesionDto"] | null;
+            /**
+             * @description Descripción del parcial o de la actividad (RF-21, p4)
+             * @example Primer parcial escrito: unidades 1 a 3.
+             */
+            descripcion: string | null;
+            /**
+             * @description Si el usuario puede cambiar el tipo de la sesión (RF-21): docente asignado o administrador, con el proyecto aprobado o en ejecución y el período abierto. También en una sesión futura, para marcar un parcial con anticipación.
+             * @example true
+             */
+            puedeCambiarTipo: boolean;
+            /** @description Tipos de sesión activos del catálogo, para elegir (RF-21, p2) */
+            tiposSesion: components["schemas"]["TipoSesionOpcionDto"][];
         };
         RegistrarSesionDto: {
             /**
@@ -5136,6 +5183,28 @@ export interface components {
              * @example false
              */
             confirmarTodoElGrupo?: boolean;
+            /**
+             * @description Solo para una sesión de un tipo que no lleva temas pero sí hay clase, como el parcial (RF-21, p4). Sin el campo se conserva la que ya tiene; la sesión no se registra sin descripción (RF-21, excepción de p5). En una clase se ignora.
+             * @example Primer parcial escrito: unidades 1 a 3.
+             */
+            descripcion?: string;
+        };
+        CambiarTipoSesionDto: {
+            /**
+             * @description Código del tipo de sesión del catálogo (`tipo_sesion`): clase, parcial, festivo, actividad_complementaria u otro que agregue el programa
+             * @example parcial
+             */
+            tipo: string;
+            /**
+             * @description Obligatoria si el tipo no lleva temas (RF-21, p3 y p4). En una clase se ignora.
+             * @example Primer parcial escrito: unidades 1 a 3.
+             */
+            descripcion?: string;
+            /**
+             * @description Confirma que se quiten los temas o los ausentes ya registrados que el tipo nuevo no admite. Sin esta confirmación, el cambio responde 409 y dice qué se quitaría.
+             * @example false
+             */
+            confirmarQuitarRegistro?: boolean;
         };
         ResultadoRecordatoriosDto: {
             /**
@@ -10938,7 +11007,7 @@ export interface operations {
                     "application/json": components["schemas"]["DetalleSesionDto"];
                 };
             };
-            /** @description Sin temas, temas de otro proyecto o sin tema, o estudiantes que no están matriculados en el curso */
+            /** @description Sin temas, temas de otro proyecto o sin tema, estudiantes que no están matriculados en el curso, o un parcial o una actividad con temas o sin descripción */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -10974,7 +11043,78 @@ export interface operations {
                     "application/json": components["schemas"]["RespuestaErrorDto"];
                 };
             };
-            /** @description Sesión de fecha futura, período cerrado, proyecto sin aprobar, sesión de un tipo que no lleva temas, o todo el grupo ausente sin confirmar */
+            /** @description Sesión de fecha futura, período cerrado, proyecto sin aprobar, sesión de un tipo en que no hay clase (festivo), o todo el grupo ausente sin confirmar */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RegistroClaseController_cambiarTipo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+                idSesion: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarTipoSesionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleSesionDto"];
+                };
+            };
+            /** @description Tipo que no existe o está inactivo, o un tipo sin temas sin descripción */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario registra clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él, o la sesión no es de ese proyecto */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Período cerrado, proyecto sin aprobar, evidencias en una sesión que pasaría a no tener clase, o temas o ausentes que se quitarían sin confirmar */
             409: {
                 headers: {
                     [name: string]: unknown;
