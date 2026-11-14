@@ -61,10 +61,10 @@ export function ConfiguracionNotificaciones() {
     <section aria-labelledby="titulo-configuracion" className="space-y-6">
       <div className="space-y-1">
         <Link
-          href="/"
+          href="/configuracion"
           className="relative inline-block text-sm font-medium text-marca after:absolute after:inset-x-0 after:-inset-y-3 hover:underline"
         >
-          ← Inicio
+          ← Configuración
         </Link>
         <h1
           id="titulo-configuracion"

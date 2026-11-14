@@ -31,6 +31,11 @@ export type OpcionMenu = Acceso & {
   descripcion: string;
   /** Otra descripción para quien tiene ese permiso. */
   descripcionSi?: { permiso: ClavePermiso; texto: string };
+  /**
+   * Pantallas que se abren desde la página índice de esta opción: el menú la resalta también
+   * en ellas (por ejemplo, «Configuración» en «Parámetros»).
+   */
+  subopciones?: readonly OpcionMenu[];
 };
 
 const ROLES_SEGUIMIENTO = [
@@ -80,6 +85,43 @@ export const REPORTES: readonly OpcionMenu[] = [
     descripcion:
       'Asignaturas, docentes, RAC y evidencias que aportan a cada RAP.',
     roles: ROLES_REPORTES_RAP,
+  },
+];
+
+/**
+ * La configuración del sistema, en el orden de la página índice `/configuracion`: todo lo que
+ * el administrador ajusta sin tocar el código. En la matriz, `estructura.administrar` (el
+ * Administrador). Usuarios queda aparte, porque el Departamento y la Dirección también lo
+ * consultan.
+ */
+export const CONFIGURACION: readonly OpcionMenu[] = [
+  {
+    // HU-03-07.
+    ruta: '/parametros',
+    etiqueta: 'Parámetros del sistema',
+    etiquetaMenu: 'Parámetros',
+    descripcion:
+      'Ajuste las reglas y los límites del sistema: alertas, inicio de sesión, archivos, revisión y catálogos.',
+    permiso: 'estructura.administrar',
+  },
+  {
+    // RF-26, HU-13-04: la misma regla que los parámetros, donde vive la periodicidad del
+    // recordatorio. La bandeja de cada usuario es la campana del encabezado, que ya se llama
+    // «Notificaciones»; por eso esta opción tiene otro nombre.
+    ruta: '/notificaciones/configuracion',
+    etiqueta: 'Configuración de notificaciones',
+    etiquetaMenu: 'Configurar avisos',
+    descripcion:
+      'Elija qué eventos generan aviso, cuáles saldrán también por correo y cada cuánto se recuerdan las sesiones pendientes.',
+    permiso: 'estructura.administrar',
+  },
+  {
+    // RF-19, HU-08-01.
+    ruta: '/festivos',
+    etiqueta: 'Días festivos',
+    descripcion:
+      'Cargue los festivos de ley de cada año y agregue los días sin clase de la Universidad. Los calendarios se recalculan solos.',
+    permiso: 'estructura.administrar',
   },
 ];
 
@@ -157,24 +199,14 @@ export const OPCIONES_MENU: readonly OpcionMenu[] = [
     roles: [...new Set(REPORTES.flatMap((reporte) => reporte.roles ?? []))],
   },
   {
-    // HU-03-07: quien administra la estructura académica en la matriz (el Administrador).
-    ruta: '/parametros',
-    etiqueta: 'Parámetros del sistema',
-    etiquetaMenu: 'Parámetros',
+    // Una sola opción para la configuración (HU-08-01), como «Reportes»: en el teléfono, cada
+    // pantalla de configuración ocupaba una línea del menú.
+    ruta: '/configuracion',
+    etiqueta: 'Configuración',
     descripcion:
-      'Ajuste las reglas y los límites del sistema: alertas, inicio de sesión, archivos, revisión y catálogos.',
+      'Parámetros del sistema, avisos y recordatorios, y días festivos.',
     permiso: 'estructura.administrar',
-  },
-  {
-    // RF-26, HU-13-04: la misma regla que los parámetros, donde vive la periodicidad del
-    // recordatorio. La bandeja de cada usuario no va en el menú: es la campana del encabezado,
-    // que ya se llama «Notificaciones»; por eso esta opción tiene otro nombre.
-    ruta: '/notificaciones/configuracion',
-    etiqueta: 'Configuración de notificaciones',
-    etiquetaMenu: 'Configurar avisos',
-    descripcion:
-      'Elija qué eventos generan aviso, cuáles saldrán también por correo y cada cuánto se recuerdan las sesiones pendientes.',
-    permiso: 'estructura.administrar',
+    subopciones: CONFIGURACION,
   },
   {
     // RF-29, HU-14-02: la consulta completa de la auditoría. En la matriz inicial solo el
