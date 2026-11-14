@@ -1058,6 +1058,222 @@ export interface paths {
         patch: operations["ParametrosController_cambiar"];
         trace?: never;
     };
+    "/api/festivos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista los días sin clase de un año (HU-08-01)
+         * @description Festivos de ley, días institucionales y ajustes, con cuántas sesiones marca cada uno. Dice además cuántos festivos de ley del año faltan por cargar.
+         */
+        get: operations["FestivosController_listar"];
+        put?: never;
+        /**
+         * Agrega un día sin clase (HU-08-01)
+         * @description Un festivo o un día no hábil de la Universidad: receso, día cívico. Recalcula los calendarios ya generados de los períodos abiertos que tocan la fecha, sin tocar las sesiones diligenciadas (RF-19, excepción p5).
+         */
+        post: operations["FestivosController_crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/festivos/ley": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Carga los festivos de ley de un año (Ley 51 de 1983)
+         * @description Calcula los festivos del año, con los traslados al lunes y los que dependen de la Pascua, y agrega los que falten. Las fechas que ya están se conservan como están. Recalcula los calendarios ya generados de los períodos abiertos que tocan la fecha, sin tocar las sesiones diligenciadas (RF-19, excepción p5).
+         */
+        post: operations["FestivosController_cargarLey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/festivos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Quita un día sin clase (HU-08-01)
+         * @description Si el día marca sesiones de algún calendario, pide confirmar con `confirmar=true`. Recalcula los calendarios ya generados de los períodos abiertos que tocan la fecha, sin tocar las sesiones diligenciadas (RF-19, excepción p5).
+         */
+        delete: operations["FestivosController_eliminar"];
+        options?: never;
+        head?: never;
+        /**
+         * Edita un día sin clase (HU-08-01)
+         * @description Cambia su fecha, su nombre o su origen. Si cambia la fecha: Recalcula los calendarios ya generados de los períodos abiertos que tocan la fecha, sin tocar las sesiones diligenciadas (RF-19, excepción p5).
+         */
+        patch: operations["FestivosController_editar"];
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/horario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Días y horas de clase del curso (HU-08-02)
+         * @description Lo consultan quienes ven el proyecto docente.
+         */
+        get: operations["SesionesController_obtenerHorario"];
+        /**
+         * Define los días y horas de clase del curso (HU-08-02)
+         * @description Reemplaza el horario completo. Solo el docente asignado al proyecto o el administrador. El calendario no cambia hasta generarlo de nuevo.
+         */
+        put: operations["SesionesController_guardarHorario"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/calendario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calendario de sesiones del curso (RF-19, p5)
+         * @description Sesiones en orden de fecha, con su semana, tipo y festivo. Lo consultan quienes ven el proyecto docente.
+         */
+        get: operations["SesionesController_consultarCalendario"];
+        put?: never;
+        /**
+         * Genera o recalcula el calendario de sesiones (HU-08-03)
+         * @description Una sesión por día de clase del período, numerada por semana, marcando como festivo las que coinciden con la tabla de festivos. Si ya existe, recalcula las sesiones sin diligenciar y deja intactas las diligenciadas. Si un año no tiene festivos, genera sin marcas, lo advierte y avisa al administrador (excepción p3).
+         */
+        post: operations["SesionesController_generarCalendario"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sesiones/pendientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sesiones vencidas y por vencer del docente, para su panel (RF-23, p5)
+         * @description Cuenta las sesiones vencidas sin diligenciar y las por vencer de los proyectos en los que el docente que consulta está asignado, con el período abierto. Lista los proyectos con pendientes, los más atrasados primero. Las de tipo festivo no cuentan.
+         */
+        get: operations["PendientesController_pendientes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/sesiones/{idSesion}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La sesión para registrarla o consultarla (RF-20, p2 y p3; RF-22, p3)
+         * @description Trae los temas del contenido programático del proyecto y lo ya registrado. La lista del curso con los ausentes y las observaciones solo llegan al docente asignado y al administrador: son datos personales (Ley 1581). Los demás roles ven los temas y el número de ausentes.
+         */
+        get: operations["RegistroClaseController_detalle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/sesiones/{idSesion}/registro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra o corrige la clase de una sesión (HU-08-04 y HU-09-02)
+         * @description Guarda los temas desarrollados, los estudiantes que no asistieron y las observaciones, y marca la sesión como diligenciada: deja de salir como vencida (RF-23). Reemplaza el registro anterior. No se registra una sesión de fecha futura (RF-20, p6), y marcar a todo el grupo como ausente pide `confirmarTodoElGrupo` (RF-22, p6).
+         */
+        put: operations["RegistroClaseController_registrar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proyectos-docentes/{idProyecto}/sesiones/{idSesion}/tipo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambia el tipo de la sesión: clase, parcial, festivo o actividad complementaria (RF-21, HU-08-06)
+         * @description Los tipos salen del catálogo `tipo_sesion`. Uno que no lleva temas exige una descripción. El parcial y la actividad se registran después con su asistencia y sin temas; en el festivo no hay clase. Una sesión que el calendario marcó festivo se puede pasar a clase si sí se dictó (excepción de p2), y la recalculación no la vuelve a marcar. Si el tipo nuevo no admite lo ya registrado (temas o ausentes), pide `confirmarQuitarRegistro` y responde 409 diciendo qué se quitaría. Se puede cambiar en una sesión futura, para marcar un parcial con anticipación.
+         */
+        patch: operations["RegistroClaseController_cambiarTipo"];
+        trace?: never;
+    };
+    "/api/recordatorios/sesiones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Envía ahora el recordatorio de sesiones pendientes (RF-26, HU-13-02)
+         * @description Hace lo mismo que la revisión diaria de las 7:00: un solo aviso por docente con sus sesiones vencidas y por vencer. Respeta la periodicidad: quien ya lo recibió dentro de `recordatorio_sesiones_dias` no lo recibe otra vez.
+         */
+        post: operations["RecordatoriosController_enviar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proyectos-docentes/{idProyecto}/matriculados": {
         parameters: {
             query?: never;
@@ -1626,154 +1842,6 @@ export interface paths {
         get: operations["EvidenciasLiderRapController_evidenciasDeRap"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/proyectos-docentes/{idProyecto}/horario": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Días y horas de clase del curso (HU-08-02)
-         * @description Lo consultan quienes ven el proyecto docente.
-         */
-        get: operations["SesionesController_obtenerHorario"];
-        /**
-         * Define los días y horas de clase del curso (HU-08-02)
-         * @description Reemplaza el horario completo. Solo el docente asignado al proyecto o el administrador. El calendario no cambia hasta generarlo de nuevo.
-         */
-        put: operations["SesionesController_guardarHorario"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/proyectos-docentes/{idProyecto}/calendario": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Calendario de sesiones del curso (RF-19, p5)
-         * @description Sesiones en orden de fecha, con su semana, tipo y festivo. Lo consultan quienes ven el proyecto docente.
-         */
-        get: operations["SesionesController_consultarCalendario"];
-        put?: never;
-        /**
-         * Genera o recalcula el calendario de sesiones (HU-08-03)
-         * @description Una sesión por día de clase del período, numerada por semana, marcando como festivo las que coinciden con la tabla de festivos. Si ya existe, recalcula las sesiones sin diligenciar y deja intactas las diligenciadas. Si un año no tiene festivos, genera sin marcas, lo advierte y avisa al administrador (excepción p3).
-         */
-        post: operations["SesionesController_generarCalendario"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sesiones/pendientes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Sesiones vencidas y por vencer del docente, para su panel (RF-23, p5)
-         * @description Cuenta las sesiones vencidas sin diligenciar y las por vencer de los proyectos en los que el docente que consulta está asignado, con el período abierto. Lista los proyectos con pendientes, los más atrasados primero. Las de tipo festivo no cuentan.
-         */
-        get: operations["PendientesController_pendientes"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/proyectos-docentes/{idProyecto}/sesiones/{idSesion}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * La sesión para registrarla o consultarla (RF-20, p2 y p3; RF-22, p3)
-         * @description Trae los temas del contenido programático del proyecto y lo ya registrado. La lista del curso con los ausentes y las observaciones solo llegan al docente asignado y al administrador: son datos personales (Ley 1581). Los demás roles ven los temas y el número de ausentes.
-         */
-        get: operations["RegistroClaseController_detalle"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/proyectos-docentes/{idProyecto}/sesiones/{idSesion}/registro": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Registra o corrige la clase de una sesión (HU-08-04 y HU-09-02)
-         * @description Guarda los temas desarrollados, los estudiantes que no asistieron y las observaciones, y marca la sesión como diligenciada: deja de salir como vencida (RF-23). Reemplaza el registro anterior. No se registra una sesión de fecha futura (RF-20, p6), y marcar a todo el grupo como ausente pide `confirmarTodoElGrupo` (RF-22, p6).
-         */
-        put: operations["RegistroClaseController_registrar"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/proyectos-docentes/{idProyecto}/sesiones/{idSesion}/tipo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Cambia el tipo de la sesión: clase, parcial, festivo o actividad complementaria (RF-21, HU-08-06)
-         * @description Los tipos salen del catálogo `tipo_sesion`. Uno que no lleva temas exige una descripción. El parcial y la actividad se registran después con su asistencia y sin temas; en el festivo no hay clase. Una sesión que el calendario marcó festivo se puede pasar a clase si sí se dictó (excepción de p2), y la recalculación no la vuelve a marcar. Si el tipo nuevo no admite lo ya registrado (temas o ausentes), pide `confirmarQuitarRegistro` y responde 409 diciendo qué se quitaría. Se puede cambiar en una sesión futura, para marcar un parcial con anticipación.
-         */
-        patch: operations["RegistroClaseController_cambiarTipo"];
-        trace?: never;
-    };
-    "/api/recordatorios/sesiones": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Envía ahora el recordatorio de sesiones pendientes (RF-26, HU-13-02)
-         * @description Hace lo mismo que la revisión diaria de las 7:00: un solo aviso por docente con sus sesiones vencidas y por vencer. Respeta la periodicidad: quien ya lo recibió dentro de `recordatorio_sesiones_dias` no lo recibe otra vez.
-         */
-        post: operations["RecordatoriosController_enviar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3418,6 +3486,597 @@ export interface components {
              */
             elementos?: string[];
         };
+        FestivoDto: {
+            /** @example 12 */
+            id: number;
+            /**
+             * Format: date
+             * @example 2026-08-07
+             */
+            fecha: string;
+            /** @example Batalla de Boyacá */
+            nombre: string;
+            /**
+             * @example ley
+             * @enum {string|null}
+             */
+            origen: "ley" | "institucional" | "ajuste_manual" | null;
+            /**
+             * @description Sesiones de los calendarios que caen ese día (RF-19, p4)
+             * @example 4
+             */
+            sesiones: number;
+        };
+        ListaFestivosDto: {
+            /** @example 2026 */
+            anio: number;
+            /** @description Los días sin clase del año, por fecha. Un año tiene pocas decenas: no se pagina. */
+            elementos: components["schemas"]["FestivoDto"][];
+            /**
+             * @description Cuántos festivos de ley hay ese año según la Ley 51 de 1983
+             * @example 18
+             */
+            festivosDeLey: number;
+            /**
+             * @description Festivos de ley del año que todavía no están en la tabla. Si es mayor que cero, se pueden cargar.
+             * @example 0
+             */
+            faltantesDeLey: number;
+        };
+        CargarFestivosLeyDto: {
+            /** @example 2026 */
+            anio: number;
+        };
+        ResultadoCargaLeyDto: {
+            /** @example 2027 */
+            anio: number;
+            /**
+             * @description Festivos de ley que se agregaron
+             * @example 18
+             */
+            creados: number;
+            /**
+             * @description Fechas que ya estaban en la tabla: se conservan como están, con su nombre y su origen
+             * @example 0
+             */
+            existentes: number;
+            /** @example 0 */
+            calendariosRecalculados: number;
+        };
+        CrearFestivoDto: {
+            /**
+             * Format: date
+             * @example 2026-10-09
+             */
+            fecha: string;
+            /** @example Día cívico institucional */
+            nombre: string;
+            /**
+             * @description ley: festivo nacional. institucional: día no hábil de la Universidad (receso, día cívico). ajuste_manual: corrección puntual.
+             * @default institucional
+             * @enum {string}
+             */
+            origen: "ley" | "institucional" | "ajuste_manual";
+        };
+        ResultadoFestivoDto: {
+            festivo: components["schemas"]["FestivoDto"] | null;
+            /**
+             * @description Calendarios de períodos abiertos que se recalcularon (RF-19, excepción p5). Las sesiones ya diligenciadas no se tocan.
+             * @example 3
+             */
+            calendariosRecalculados: number;
+        };
+        EditarFestivoDto: {
+            /**
+             * Format: date
+             * @example 2026-10-09
+             */
+            fecha?: string;
+            /** @example Día cívico institucional */
+            nombre?: string;
+            /** @enum {string} */
+            origen?: "ley" | "institucional" | "ajuste_manual";
+        };
+        BloqueHorarioDto: {
+            /**
+             * @description 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /** @example 07:00 */
+            horaInicio: string;
+            /** @example 09:00 */
+            horaFin: string;
+        };
+        HorarioCursoDto: {
+            /** @example 4 */
+            idProyectoDocente: number;
+            bloques: components["schemas"]["BloqueHorarioDto"][];
+            /**
+             * @description Si el usuario puede cambiar el horario y generar el calendario: el docente asignado al proyecto o el administrador, con el período abierto.
+             * @example true
+             */
+            puedeEditar: boolean;
+        };
+        BloqueHorarioEntradaDto: {
+            /**
+             * @description Día de la semana: 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /**
+             * @description Hora de inicio, HH:mm
+             * @example 07:00
+             */
+            horaInicio: string;
+            /**
+             * @description Hora de fin, HH:mm
+             * @example 09:00
+             */
+            horaFin: string;
+        };
+        GuardarHorarioDto: {
+            /** @description Uno o varios días de clase, cada uno con su hora de inicio y de fin. Un día no se repite: el calendario tiene una sesión por fecha. */
+            bloques: components["schemas"]["BloqueHorarioEntradaDto"][];
+        };
+        TipoSesionDto: {
+            /**
+             * @description clase | parcial | festivo | actividad_complementaria
+             * @example clase
+             */
+            codigo: string;
+            /** @example Clase */
+            nombre: string;
+        };
+        /**
+         * @description RF-23. vencida: la fecha pasó sin registro (rojo). por_vencer: es hoy o cae dentro del umbral del parámetro alerta_dias_anticipacion (advertencia). incumplida: vencida de un período cerrado. Nulo: diligenciada, festivo o todavía lejos.
+         * @enum {string}
+         */
+        TipoAlertaSesion: "vencida" | "por_vencer" | "incumplida";
+        SesionCalendarioDto: {
+            /** @example 120 */
+            id: number;
+            /**
+             * @description Semana del período
+             * @example 1
+             */
+            semana: number;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fecha: string;
+            /**
+             * @description 1 = lunes … 6 = sábado
+             * @example 1
+             */
+            diaSemana: number;
+            /**
+             * @description Del horario vigente; nulo si ese día ya no está en el horario
+             * @example 07:00
+             */
+            horaInicio: string | null;
+            /** @example 09:00 */
+            horaFin: string | null;
+            tipo: components["schemas"]["TipoSesionDto"] | null;
+            /**
+             * @description programada | registrada (RF-20). Las retiradas no se listan.
+             * @example programada
+             */
+            estado: string | null;
+            /**
+             * @description Nombre del festivo con el que coincide la fecha (RF-19, p4)
+             * @example Batalla de Boyacá
+             */
+            festivo: string | null;
+            /**
+             * @description Qué fue la sesión cuando no es una clase: parcial, actividad o festivo (RF-21)
+             * @example Primer parcial escrito
+             */
+            descripcion: string | null;
+            /**
+             * @description Si el docente ya la diligenció. Una sesión diligenciada no se recalcula.
+             * @example false
+             */
+            diligenciada: boolean;
+            /**
+             * @description Temas registrados en la sesión (RF-20)
+             * @example 2
+             */
+            numeroTemas: number;
+            /**
+             * @description Estudiantes que no asistieron (RF-22). Es un conteo: los nombres solo los ve quien puede registrar la clase.
+             * @example 3
+             */
+            numeroAusentes: number;
+            /**
+             * @description RF-23. vencida: la fecha pasó sin registro (rojo). por_vencer: es hoy o cae dentro del umbral del parámetro alerta_dias_anticipacion (advertencia). incumplida: vencida de un período cerrado. Nulo: diligenciada, festivo o todavía lejos.
+             * @example vencida
+             */
+            alerta: components["schemas"]["TipoAlertaSesion"] | null;
+            /**
+             * @description Días de atraso de una vencida o incumplida (RF-23, p3)
+             * @example 3
+             */
+            diasAtraso: number | null;
+            /**
+             * @description Días que faltan para una sesión por vencer: 0 es hoy
+             * @example null
+             */
+            diasRestantes: number | null;
+        };
+        PeriodoCalendarioDto: {
+            /** @example 2026-2 */
+            codigo: string | null;
+            /**
+             * Format: date
+             * @example 2026-08-03
+             */
+            fechaInicio: string | null;
+            /**
+             * Format: date
+             * @example 2026-11-21
+             */
+            fechaFin: string | null;
+            /** @example 16 */
+            numeroSemanas: number | null;
+            /** @example false */
+            cerrado: boolean;
+        };
+        ResumenAlertasDto: {
+            /**
+             * @description Sesiones vencidas sin diligenciar
+             * @example 3
+             */
+            vencidas: number;
+            /**
+             * @description Sesiones por vencer
+             * @example 1
+             */
+            porVencer: number;
+            /**
+             * @description Vencidas de un período cerrado (RF-23, excepción p4)
+             * @example 0
+             */
+            incumplidas: number;
+            /**
+             * @description Días de atraso de la vencida más antigua
+             * @example 12
+             */
+            mayorAtraso: number | null;
+        };
+        SemanaRecesoDto: {
+            /**
+             * Format: date
+             * @description Lunes
+             * @example 2026-11-09
+             */
+            desde: string;
+            /**
+             * Format: date
+             * @description Sábado
+             * @example 2026-11-14
+             */
+            hasta: string;
+        };
+        CalendarioSesionesDto: {
+            elementos: components["schemas"]["SesionCalendarioDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 100 */
+            tamano: number;
+            /** @example 48 */
+            total: number;
+            periodo: components["schemas"]["PeriodoCalendarioDto"];
+            /** @example true */
+            puedeEditar: boolean;
+            /**
+             * @description Avisos para el usuario, por ejemplo un año del período sin festivos parametrizados (RF-19, excepción p3)
+             * @example []
+             */
+            advertencias: string[];
+            /**
+             * Format: date
+             * @description La fecha de hoy en la zona horaria de la institución (America/Bogota)
+             * @example 2026-11-07
+             */
+            hoy: string;
+            /**
+             * @description Umbral de «Por vencer» en días, del parámetro alerta_dias_anticipacion. Nulo si falta.
+             * @example 2
+             */
+            umbralDias: number | null;
+            /** @description Alertas de todo el calendario, no solo de la página (RF-23) */
+            resumen: components["schemas"]["ResumenAlertasDto"];
+            /** @description Semanas de receso del período: de lunes a sábado sin clase en la tabla de festivos. No tienen sesiones ni cuentan en la numeración de semanas (Acuerdo 46 de 2026). */
+            recesos: components["schemas"]["SemanaRecesoDto"][];
+        };
+        ResultadoGeneracionDto: {
+            /**
+             * @description Sesiones nuevas o reactivadas
+             * @example 48
+             */
+            creadas: number;
+            /**
+             * @description Sesiones sin diligenciar a las que se les recalculó la semana o el festivo
+             * @example 0
+             */
+            actualizadas: number;
+            /**
+             * @description Sesiones sin diligenciar que ya no caen en el horario: se inactivan (estado «retirada») y salen del calendario
+             * @example 0
+             */
+            retiradas: number;
+            /**
+             * @description Sesiones diligenciadas o con datos del docente, que se dejan intactas
+             * @example 0
+             */
+            conservadas: number;
+            /**
+             * @description Sesiones marcadas como festivo
+             * @example 3
+             */
+            festivos: number;
+            /**
+             * @description Sesiones del calendario después de generar
+             * @example 48
+             */
+            total: number;
+            /** @example [] */
+            advertencias: string[];
+        };
+        ProyectoConPendientesDto: {
+            /** @example 4 */
+            idProyectoDocente: number;
+            /** @example Investigación de operaciones */
+            asignatura: string;
+            /** @example DEMO-03 */
+            codigoAsignatura: string | null;
+            /** @example A */
+            grupo: string | null;
+            /** @example 2026-2 */
+            periodo: string | null;
+            /** @example 3 */
+            vencidas: number;
+            /** @example 1 */
+            porVencer: number;
+            /** @example 12 */
+            mayorAtraso: number | null;
+        };
+        PendientesDocenteDto: {
+            /**
+             * Format: date
+             * @example 2026-11-07
+             */
+            hoy: string;
+            /** @example 2 */
+            umbralDias: number | null;
+            /**
+             * @description Vencidas de todos sus proyectos con el período abierto (RF-23, p5)
+             * @example 5
+             */
+            vencidas: number;
+            /** @example 1 */
+            porVencer: number;
+            /** @description Proyectos con vencidas o por vencer, los más atrasados primero */
+            elementos: components["schemas"]["ProyectoConPendientesDto"][];
+            /** @example 1 */
+            pagina: number;
+            /** @example 20 */
+            tamano: number;
+            /**
+             * @description Proyectos con pendientes
+             * @example 2
+             */
+            total: number;
+        };
+        TemaContenidoDto: {
+            /**
+             * @description Fila del contenido programático
+             * @example 12
+             */
+            idContenido: number;
+            /** @example 3 */
+            semana: number;
+            /** @example Programación lineal: método gráfico */
+            tema: string;
+            /**
+             * @description Es el tema previsto para la semana de la sesión
+             * @example true
+             */
+            previsto: boolean;
+            /**
+             * @description Ya está registrado en la sesión
+             * @example false
+             */
+            seleccionado: boolean;
+        };
+        EstudianteSesionDto: {
+            /** @example 101 */
+            idMatricula: number;
+            /** @example Estudiante */
+            nombres: string | null;
+            /** @example Ficticio Uno */
+            apellidos: string | null;
+            /**
+             * @description No asistió a la sesión
+             * @example false
+             */
+            ausente: boolean;
+            /**
+             * @description Ya no está matriculado; solo aparece si quedó marcado como ausente antes de retirarse
+             * @example false
+             */
+            retirado: boolean;
+        };
+        AsistenciaSesionDto: {
+            /**
+             * @description Si el curso tiene lista de matriculados. Sin lista, la inasistencia se anota en las observaciones (RF-22, excepción p3).
+             * @example true
+             */
+            listaCargada: boolean;
+            /**
+             * @description Estudiantes matriculados hoy en el curso
+             * @example 30
+             */
+            totalMatriculados: number;
+            /** @description Los matriculados del curso, por apellidos */
+            estudiantes: components["schemas"]["EstudianteSesionDto"][];
+        };
+        RegistroSesionDto: {
+            /**
+             * Format: date-time
+             * @example 2026-11-04T19:30:00.000Z
+             */
+            fecha: string;
+            /** @example Docente Demo */
+            registradoPor: string | null;
+        };
+        TipoSesionOpcionDto: {
+            /** @example parcial */
+            codigo: string;
+            /** @example Parcial */
+            nombre: string;
+            /** @description Si la sesión lleva temas del contenido programático. Si no, pide una descripción. */
+            llevaTemas: boolean;
+            /** @description Si en la sesión hay clase: se toma la asistencia y cuenta para las alertas. El festivo no. */
+            hayClase: boolean;
+        };
+        DetalleSesionDto: {
+            /** @example 4 */
+            idProyectoDocente: number;
+            /** @example Investigación de operaciones */
+            asignatura: string | null;
+            sesion: components["schemas"]["SesionCalendarioDto"];
+            /**
+             * @description Si el usuario puede registrar o corregir la sesión ahora
+             * @example true
+             */
+            puedeRegistrar: boolean;
+            /**
+             * @description Por qué no se puede registrar, para quien sí registra clases: fecha futura, período cerrado, proyecto sin aprobar, sesión de otro tipo o sin contenido programático
+             * @example null
+             */
+            motivoNoRegistrable: string | null;
+            /** @description Temas del contenido programático del proyecto (RF-20, p3), por semana. El previsto para la semana de la sesión va marcado. */
+            temas: components["schemas"]["TemaContenidoDto"][];
+            /**
+             * @description Temas desarrollados fuera del contenido programático: no planeados (HU-08-05)
+             * @example [
+             *       "Charla de un invitado del sector"
+             *     ]
+             */
+            temasAdicionales: string[];
+            /**
+             * @description Número de ausentes de la sesión (RF-22, p6)
+             * @example 3
+             */
+            numeroAusentes: number;
+            /** @description Lista del curso con los ausentes marcados. Nula para quien no puede ver datos personales: solo el docente asignado y el administrador (Ley 1581 de 2012). */
+            asistencia: components["schemas"]["AsistenciaSesionDto"] | null;
+            /**
+             * @description Observaciones de la sesión. Pueden nombrar estudiantes, así que se reservan como la lista.
+             * @example Se hizo un taller en grupos.
+             */
+            observaciones: string | null;
+            registro: components["schemas"]["RegistroSesionDto"] | null;
+            /**
+             * @description Descripción del parcial o de la actividad (RF-21, p4)
+             * @example Primer parcial escrito: unidades 1 a 3.
+             */
+            descripcion: string | null;
+            /**
+             * @description Si el usuario puede cambiar el tipo de la sesión (RF-21): docente asignado o administrador, con el proyecto aprobado o en ejecución y el período abierto. También en una sesión futura, para marcar un parcial con anticipación.
+             * @example true
+             */
+            puedeCambiarTipo: boolean;
+            /** @description Tipos de sesión activos del catálogo, para elegir (RF-21, p2) */
+            tiposSesion: components["schemas"]["TipoSesionOpcionDto"][];
+        };
+        RegistrarSesionDto: {
+            /**
+             * @description Temas desarrollados en la sesión: semanas del contenido programático (punto 6) con su tema (RF-20, p4). Puede ir vacío solo si la sesión lleva al menos un tema no planeado.
+             * @example [
+             *       12,
+             *       13
+             *     ]
+             */
+            idsContenido: number[];
+            /**
+             * @description Temas desarrollados que no están en el contenido programático (RF-20, excepción de p4; HU-08-05): se guardan como no planeados. Sin el campo se conservan los anteriores; una lista vacía los borra. Sin repetir y distintos de los temas del contenido programático.
+             * @example [
+             *       "Charla de un invitado del sector"
+             *     ]
+             */
+            temasAdicionales?: string[];
+            /**
+             * @description Matrículas de los estudiantes que no asistieron (RF-22, p4). Vacío si asistieron todos o si el curso no tiene lista cargada.
+             * @default []
+             * @example [
+             *       101
+             *     ]
+             */
+            ausentes: number[];
+            /**
+             * @description Observaciones de la sesión (RF-20, p5; RF-22, p5). Si el curso no tiene lista cargada, aquí se anota la inasistencia en texto libre (RF-22, excepción p3). Sin el campo se conservan las anteriores; un texto vacío las borra.
+             * @example Se hizo un taller en grupos.
+             */
+            observaciones?: string;
+            /**
+             * @description Confirma que no asistió ningún estudiante del grupo (RF-22, excepción p6). Sin esta confirmación, marcar a todo el grupo responde 409.
+             * @example false
+             */
+            confirmarTodoElGrupo?: boolean;
+            /**
+             * @description Solo para una sesión de un tipo que no lleva temas pero sí hay clase, como el parcial (RF-21, p4). Sin el campo se conserva la que ya tiene; la sesión no se registra sin descripción (RF-21, excepción de p5). En una clase se ignora.
+             * @example Primer parcial escrito: unidades 1 a 3.
+             */
+            descripcion?: string;
+        };
+        CambiarTipoSesionDto: {
+            /**
+             * @description Código del tipo de sesión del catálogo (`tipo_sesion`): clase, parcial, festivo, actividad_complementaria u otro que agregue el programa
+             * @example parcial
+             */
+            tipo: string;
+            /**
+             * @description Obligatoria si el tipo no lleva temas (RF-21, p3 y p4). En una clase se ignora.
+             * @example Primer parcial escrito: unidades 1 a 3.
+             */
+            descripcion?: string;
+            /**
+             * @description Confirma que se quiten los temas o los ausentes ya registrados que el tipo nuevo no admite. Sin esta confirmación, el cambio responde 409 y dice qué se quitaría.
+             * @example false
+             */
+            confirmarQuitarRegistro?: boolean;
+        };
+        ResultadoRecordatoriosDto: {
+            /**
+             * @description Periodicidad leída de `recordatorio_sesiones_dias`. Vacía si el parámetro falta o es inválido: entonces no se envía nada
+             * @example 7
+             */
+            periodicidadDias: number | null;
+            /**
+             * @description Docentes activos con sesiones vencidas o por vencer
+             * @example 4
+             */
+            docentesConPendientes: number;
+            /**
+             * @description Recordatorios enviados
+             * @example 3
+             */
+            enviados: number;
+            /**
+             * @description Docentes que ya recibieron un recordatorio dentro de la periodicidad
+             * @example 1
+             */
+            omitidosPorPeriodicidad: number;
+            /**
+             * @description Docentes cuyo tipo de recordatorio (`sesion_vencida` o `sesion_por_vencer`) está desactivado
+             * @example 0
+             */
+            omitidosPorTipoInactivo: number;
+        };
         UltimaCargaDto: {
             /** @example 2026-11-07T15:30:00.000Z */
             fecha: string;
@@ -4732,506 +5391,6 @@ export interface components {
             tamano: number;
             /** @example 5 */
             total: number;
-        };
-        BloqueHorarioDto: {
-            /**
-             * @description 1 = lunes … 6 = sábado
-             * @example 1
-             */
-            diaSemana: number;
-            /** @example 07:00 */
-            horaInicio: string;
-            /** @example 09:00 */
-            horaFin: string;
-        };
-        HorarioCursoDto: {
-            /** @example 4 */
-            idProyectoDocente: number;
-            bloques: components["schemas"]["BloqueHorarioDto"][];
-            /**
-             * @description Si el usuario puede cambiar el horario y generar el calendario: el docente asignado al proyecto o el administrador, con el período abierto.
-             * @example true
-             */
-            puedeEditar: boolean;
-        };
-        BloqueHorarioEntradaDto: {
-            /**
-             * @description Día de la semana: 1 = lunes … 6 = sábado
-             * @example 1
-             */
-            diaSemana: number;
-            /**
-             * @description Hora de inicio, HH:mm
-             * @example 07:00
-             */
-            horaInicio: string;
-            /**
-             * @description Hora de fin, HH:mm
-             * @example 09:00
-             */
-            horaFin: string;
-        };
-        GuardarHorarioDto: {
-            /** @description Uno o varios días de clase, cada uno con su hora de inicio y de fin. Un día no se repite: el calendario tiene una sesión por fecha. */
-            bloques: components["schemas"]["BloqueHorarioEntradaDto"][];
-        };
-        TipoSesionDto: {
-            /**
-             * @description clase | parcial | festivo | actividad_complementaria
-             * @example clase
-             */
-            codigo: string;
-            /** @example Clase */
-            nombre: string;
-        };
-        /**
-         * @description RF-23. vencida: la fecha pasó sin registro (rojo). por_vencer: es hoy o cae dentro del umbral del parámetro alerta_dias_anticipacion (advertencia). incumplida: vencida de un período cerrado. Nulo: diligenciada, festivo o todavía lejos.
-         * @enum {string}
-         */
-        TipoAlertaSesion: "vencida" | "por_vencer" | "incumplida";
-        SesionCalendarioDto: {
-            /** @example 120 */
-            id: number;
-            /**
-             * @description Semana del período
-             * @example 1
-             */
-            semana: number;
-            /**
-             * Format: date
-             * @example 2026-08-03
-             */
-            fecha: string;
-            /**
-             * @description 1 = lunes … 6 = sábado
-             * @example 1
-             */
-            diaSemana: number;
-            /**
-             * @description Del horario vigente; nulo si ese día ya no está en el horario
-             * @example 07:00
-             */
-            horaInicio: string | null;
-            /** @example 09:00 */
-            horaFin: string | null;
-            tipo: components["schemas"]["TipoSesionDto"] | null;
-            /**
-             * @description programada | registrada (RF-20). Las retiradas no se listan.
-             * @example programada
-             */
-            estado: string | null;
-            /**
-             * @description Nombre del festivo con el que coincide la fecha (RF-19, p4)
-             * @example Batalla de Boyacá
-             */
-            festivo: string | null;
-            /**
-             * @description Qué fue la sesión cuando no es una clase: parcial, actividad o festivo (RF-21)
-             * @example Primer parcial escrito
-             */
-            descripcion: string | null;
-            /**
-             * @description Si el docente ya la diligenció. Una sesión diligenciada no se recalcula.
-             * @example false
-             */
-            diligenciada: boolean;
-            /**
-             * @description Temas registrados en la sesión (RF-20)
-             * @example 2
-             */
-            numeroTemas: number;
-            /**
-             * @description Estudiantes que no asistieron (RF-22). Es un conteo: los nombres solo los ve quien puede registrar la clase.
-             * @example 3
-             */
-            numeroAusentes: number;
-            /**
-             * @description RF-23. vencida: la fecha pasó sin registro (rojo). por_vencer: es hoy o cae dentro del umbral del parámetro alerta_dias_anticipacion (advertencia). incumplida: vencida de un período cerrado. Nulo: diligenciada, festivo o todavía lejos.
-             * @example vencida
-             */
-            alerta: components["schemas"]["TipoAlertaSesion"] | null;
-            /**
-             * @description Días de atraso de una vencida o incumplida (RF-23, p3)
-             * @example 3
-             */
-            diasAtraso: number | null;
-            /**
-             * @description Días que faltan para una sesión por vencer: 0 es hoy
-             * @example null
-             */
-            diasRestantes: number | null;
-        };
-        PeriodoCalendarioDto: {
-            /** @example 2026-2 */
-            codigo: string | null;
-            /**
-             * Format: date
-             * @example 2026-08-03
-             */
-            fechaInicio: string | null;
-            /**
-             * Format: date
-             * @example 2026-11-21
-             */
-            fechaFin: string | null;
-            /** @example 16 */
-            numeroSemanas: number | null;
-            /** @example false */
-            cerrado: boolean;
-        };
-        ResumenAlertasDto: {
-            /**
-             * @description Sesiones vencidas sin diligenciar
-             * @example 3
-             */
-            vencidas: number;
-            /**
-             * @description Sesiones por vencer
-             * @example 1
-             */
-            porVencer: number;
-            /**
-             * @description Vencidas de un período cerrado (RF-23, excepción p4)
-             * @example 0
-             */
-            incumplidas: number;
-            /**
-             * @description Días de atraso de la vencida más antigua
-             * @example 12
-             */
-            mayorAtraso: number | null;
-        };
-        SemanaRecesoDto: {
-            /**
-             * Format: date
-             * @description Lunes
-             * @example 2026-11-09
-             */
-            desde: string;
-            /**
-             * Format: date
-             * @description Sábado
-             * @example 2026-11-14
-             */
-            hasta: string;
-        };
-        CalendarioSesionesDto: {
-            elementos: components["schemas"]["SesionCalendarioDto"][];
-            /** @example 1 */
-            pagina: number;
-            /** @example 100 */
-            tamano: number;
-            /** @example 48 */
-            total: number;
-            periodo: components["schemas"]["PeriodoCalendarioDto"];
-            /** @example true */
-            puedeEditar: boolean;
-            /**
-             * @description Avisos para el usuario, por ejemplo un año del período sin festivos parametrizados (RF-19, excepción p3)
-             * @example []
-             */
-            advertencias: string[];
-            /**
-             * Format: date
-             * @description La fecha de hoy en la zona horaria de la institución (America/Bogota)
-             * @example 2026-11-07
-             */
-            hoy: string;
-            /**
-             * @description Umbral de «Por vencer» en días, del parámetro alerta_dias_anticipacion. Nulo si falta.
-             * @example 2
-             */
-            umbralDias: number | null;
-            /** @description Alertas de todo el calendario, no solo de la página (RF-23) */
-            resumen: components["schemas"]["ResumenAlertasDto"];
-            /** @description Semanas de receso del período: de lunes a sábado sin clase en la tabla de festivos. No tienen sesiones ni cuentan en la numeración de semanas (Acuerdo 46 de 2026). */
-            recesos: components["schemas"]["SemanaRecesoDto"][];
-        };
-        ResultadoGeneracionDto: {
-            /**
-             * @description Sesiones nuevas o reactivadas
-             * @example 48
-             */
-            creadas: number;
-            /**
-             * @description Sesiones sin diligenciar a las que se les recalculó la semana o el festivo
-             * @example 0
-             */
-            actualizadas: number;
-            /**
-             * @description Sesiones sin diligenciar que ya no caen en el horario: se inactivan (estado «retirada») y salen del calendario
-             * @example 0
-             */
-            retiradas: number;
-            /**
-             * @description Sesiones diligenciadas o con datos del docente, que se dejan intactas
-             * @example 0
-             */
-            conservadas: number;
-            /**
-             * @description Sesiones marcadas como festivo
-             * @example 3
-             */
-            festivos: number;
-            /**
-             * @description Sesiones del calendario después de generar
-             * @example 48
-             */
-            total: number;
-            /** @example [] */
-            advertencias: string[];
-        };
-        ProyectoConPendientesDto: {
-            /** @example 4 */
-            idProyectoDocente: number;
-            /** @example Investigación de operaciones */
-            asignatura: string;
-            /** @example DEMO-03 */
-            codigoAsignatura: string | null;
-            /** @example A */
-            grupo: string | null;
-            /** @example 2026-2 */
-            periodo: string | null;
-            /** @example 3 */
-            vencidas: number;
-            /** @example 1 */
-            porVencer: number;
-            /** @example 12 */
-            mayorAtraso: number | null;
-        };
-        PendientesDocenteDto: {
-            /**
-             * Format: date
-             * @example 2026-11-07
-             */
-            hoy: string;
-            /** @example 2 */
-            umbralDias: number | null;
-            /**
-             * @description Vencidas de todos sus proyectos con el período abierto (RF-23, p5)
-             * @example 5
-             */
-            vencidas: number;
-            /** @example 1 */
-            porVencer: number;
-            /** @description Proyectos con vencidas o por vencer, los más atrasados primero */
-            elementos: components["schemas"]["ProyectoConPendientesDto"][];
-            /** @example 1 */
-            pagina: number;
-            /** @example 20 */
-            tamano: number;
-            /**
-             * @description Proyectos con pendientes
-             * @example 2
-             */
-            total: number;
-        };
-        TemaContenidoDto: {
-            /**
-             * @description Fila del contenido programático
-             * @example 12
-             */
-            idContenido: number;
-            /** @example 3 */
-            semana: number;
-            /** @example Programación lineal: método gráfico */
-            tema: string;
-            /**
-             * @description Es el tema previsto para la semana de la sesión
-             * @example true
-             */
-            previsto: boolean;
-            /**
-             * @description Ya está registrado en la sesión
-             * @example false
-             */
-            seleccionado: boolean;
-        };
-        EstudianteSesionDto: {
-            /** @example 101 */
-            idMatricula: number;
-            /** @example Estudiante */
-            nombres: string | null;
-            /** @example Ficticio Uno */
-            apellidos: string | null;
-            /**
-             * @description No asistió a la sesión
-             * @example false
-             */
-            ausente: boolean;
-            /**
-             * @description Ya no está matriculado; solo aparece si quedó marcado como ausente antes de retirarse
-             * @example false
-             */
-            retirado: boolean;
-        };
-        AsistenciaSesionDto: {
-            /**
-             * @description Si el curso tiene lista de matriculados. Sin lista, la inasistencia se anota en las observaciones (RF-22, excepción p3).
-             * @example true
-             */
-            listaCargada: boolean;
-            /**
-             * @description Estudiantes matriculados hoy en el curso
-             * @example 30
-             */
-            totalMatriculados: number;
-            /** @description Los matriculados del curso, por apellidos */
-            estudiantes: components["schemas"]["EstudianteSesionDto"][];
-        };
-        RegistroSesionDto: {
-            /**
-             * Format: date-time
-             * @example 2026-11-04T19:30:00.000Z
-             */
-            fecha: string;
-            /** @example Docente Demo */
-            registradoPor: string | null;
-        };
-        TipoSesionOpcionDto: {
-            /** @example parcial */
-            codigo: string;
-            /** @example Parcial */
-            nombre: string;
-            /** @description Si la sesión lleva temas del contenido programático. Si no, pide una descripción. */
-            llevaTemas: boolean;
-            /** @description Si en la sesión hay clase: se toma la asistencia y cuenta para las alertas. El festivo no. */
-            hayClase: boolean;
-        };
-        DetalleSesionDto: {
-            /** @example 4 */
-            idProyectoDocente: number;
-            /** @example Investigación de operaciones */
-            asignatura: string | null;
-            sesion: components["schemas"]["SesionCalendarioDto"];
-            /**
-             * @description Si el usuario puede registrar o corregir la sesión ahora
-             * @example true
-             */
-            puedeRegistrar: boolean;
-            /**
-             * @description Por qué no se puede registrar, para quien sí registra clases: fecha futura, período cerrado, proyecto sin aprobar, sesión de otro tipo o sin contenido programático
-             * @example null
-             */
-            motivoNoRegistrable: string | null;
-            /** @description Temas del contenido programático del proyecto (RF-20, p3), por semana. El previsto para la semana de la sesión va marcado. */
-            temas: components["schemas"]["TemaContenidoDto"][];
-            /**
-             * @description Temas desarrollados fuera del contenido programático: no planeados (HU-08-05)
-             * @example [
-             *       "Charla de un invitado del sector"
-             *     ]
-             */
-            temasAdicionales: string[];
-            /**
-             * @description Número de ausentes de la sesión (RF-22, p6)
-             * @example 3
-             */
-            numeroAusentes: number;
-            /** @description Lista del curso con los ausentes marcados. Nula para quien no puede ver datos personales: solo el docente asignado y el administrador (Ley 1581 de 2012). */
-            asistencia: components["schemas"]["AsistenciaSesionDto"] | null;
-            /**
-             * @description Observaciones de la sesión. Pueden nombrar estudiantes, así que se reservan como la lista.
-             * @example Se hizo un taller en grupos.
-             */
-            observaciones: string | null;
-            registro: components["schemas"]["RegistroSesionDto"] | null;
-            /**
-             * @description Descripción del parcial o de la actividad (RF-21, p4)
-             * @example Primer parcial escrito: unidades 1 a 3.
-             */
-            descripcion: string | null;
-            /**
-             * @description Si el usuario puede cambiar el tipo de la sesión (RF-21): docente asignado o administrador, con el proyecto aprobado o en ejecución y el período abierto. También en una sesión futura, para marcar un parcial con anticipación.
-             * @example true
-             */
-            puedeCambiarTipo: boolean;
-            /** @description Tipos de sesión activos del catálogo, para elegir (RF-21, p2) */
-            tiposSesion: components["schemas"]["TipoSesionOpcionDto"][];
-        };
-        RegistrarSesionDto: {
-            /**
-             * @description Temas desarrollados en la sesión: semanas del contenido programático (punto 6) con su tema (RF-20, p4). Puede ir vacío solo si la sesión lleva al menos un tema no planeado.
-             * @example [
-             *       12,
-             *       13
-             *     ]
-             */
-            idsContenido: number[];
-            /**
-             * @description Temas desarrollados que no están en el contenido programático (RF-20, excepción de p4; HU-08-05): se guardan como no planeados. Sin el campo se conservan los anteriores; una lista vacía los borra. Sin repetir y distintos de los temas del contenido programático.
-             * @example [
-             *       "Charla de un invitado del sector"
-             *     ]
-             */
-            temasAdicionales?: string[];
-            /**
-             * @description Matrículas de los estudiantes que no asistieron (RF-22, p4). Vacío si asistieron todos o si el curso no tiene lista cargada.
-             * @default []
-             * @example [
-             *       101
-             *     ]
-             */
-            ausentes: number[];
-            /**
-             * @description Observaciones de la sesión (RF-20, p5; RF-22, p5). Si el curso no tiene lista cargada, aquí se anota la inasistencia en texto libre (RF-22, excepción p3). Sin el campo se conservan las anteriores; un texto vacío las borra.
-             * @example Se hizo un taller en grupos.
-             */
-            observaciones?: string;
-            /**
-             * @description Confirma que no asistió ningún estudiante del grupo (RF-22, excepción p6). Sin esta confirmación, marcar a todo el grupo responde 409.
-             * @example false
-             */
-            confirmarTodoElGrupo?: boolean;
-            /**
-             * @description Solo para una sesión de un tipo que no lleva temas pero sí hay clase, como el parcial (RF-21, p4). Sin el campo se conserva la que ya tiene; la sesión no se registra sin descripción (RF-21, excepción de p5). En una clase se ignora.
-             * @example Primer parcial escrito: unidades 1 a 3.
-             */
-            descripcion?: string;
-        };
-        CambiarTipoSesionDto: {
-            /**
-             * @description Código del tipo de sesión del catálogo (`tipo_sesion`): clase, parcial, festivo, actividad_complementaria u otro que agregue el programa
-             * @example parcial
-             */
-            tipo: string;
-            /**
-             * @description Obligatoria si el tipo no lleva temas (RF-21, p3 y p4). En una clase se ignora.
-             * @example Primer parcial escrito: unidades 1 a 3.
-             */
-            descripcion?: string;
-            /**
-             * @description Confirma que se quiten los temas o los ausentes ya registrados que el tipo nuevo no admite. Sin esta confirmación, el cambio responde 409 y dice qué se quitaría.
-             * @example false
-             */
-            confirmarQuitarRegistro?: boolean;
-        };
-        ResultadoRecordatoriosDto: {
-            /**
-             * @description Periodicidad leída de `recordatorio_sesiones_dias`. Vacía si el parámetro falta o es inválido: entonces no se envía nada
-             * @example 7
-             */
-            periodicidadDias: number | null;
-            /**
-             * @description Docentes activos con sesiones vencidas o por vencer
-             * @example 4
-             */
-            docentesConPendientes: number;
-            /**
-             * @description Recordatorios enviados
-             * @example 3
-             */
-            enviados: number;
-            /**
-             * @description Docentes que ya recibieron un recordatorio dentro de la periodicidad
-             * @example 1
-             */
-            omitidosPorPeriodicidad: number;
-            /**
-             * @description Docentes cuyo tipo de recordatorio (`sesion_vencida` o `sesion_por_vencer`) está desactivado
-             * @example 0
-             */
-            omitidosPorTipoInactivo: number;
         };
     };
     responses: never;
@@ -8702,6 +8861,814 @@ export interface operations {
             };
         };
     };
+    FestivosController_listar: {
+        parameters: {
+            query: {
+                anio: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListaFestivosDto"];
+                };
+            };
+            /** @description Año no válido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    FestivosController_crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearFestivoDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoFestivoDto"];
+                };
+            };
+            /** @description Fecha, nombre u origen no válidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Esa fecha ya está en la tabla */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    FestivosController_cargarLey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CargarFestivosLeyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoCargaLeyDto"];
+                };
+            };
+            /** @description Año no válido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    FestivosController_eliminar: {
+        parameters: {
+            query?: {
+                /** @description Confirma quitar un día que ya marca sesiones de algún calendario. Sin ella, responde 409. */
+                confirmar?: boolean;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoFestivoDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El día marca sesiones y no se confirmó */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    FestivosController_editar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarFestivoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoFestivoDto"];
+                };
+            };
+            /** @description Fecha, nombre u origen no válidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la estructura académica */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description No existe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description La fecha nueva ya está en la tabla */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_obtenerHorario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HorarioCursoDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_guardarHorario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardarHorarioDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HorarioCursoDto"];
+                };
+            };
+            /** @description Sin días, día fuera de lunes a sábado, día repetido u hora de fin no posterior a la de inicio */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El período académico del proyecto está cerrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_consultarCalendario: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarioSesionesDto"];
+                };
+            };
+            /** @description Paginación inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que consulte proyectos docentes */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    SesionesController_generarCalendario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoGeneracionDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El curso no tiene horario, el período no tiene fechas o el período está cerrado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    PendientesController_pendientes: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendientesDocenteDto"];
+                };
+            };
+            /** @description Paginación inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario registra clases (permiso `clases.actualizar`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RegistroClaseController_detalle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+                idSesion: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleSesionDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario consulta el registro de clases */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él, o la sesión no es de ese proyecto */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RegistroClaseController_registrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+                idSesion: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarSesionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleSesionDto"];
+                };
+            };
+            /** @description Sin temas, temas de otro proyecto o sin tema, estudiantes que no están matriculados en el curso, o un parcial o una actividad con temas o sin descripción */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario registra clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él, o la sesión no es de ese proyecto */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sesión de fecha futura, período cerrado, proyecto sin aprobar, sesión de un tipo en que no hay clase (festivo), o todo el grupo ausente sin confirmar */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RegistroClaseController_cambiarTipo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idProyecto: number;
+                idSesion: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarTipoSesionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetalleSesionDto"];
+                };
+            };
+            /** @description Tipo que no existe o está inactivo, o un tipo sin temas sin descripción */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Sin token, o token vencido, revocado o inválido */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ninguno de los roles del usuario registra clases, o ve el proyecto pero no es su docente asignado ni el administrador */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El proyecto no existe o el usuario no tiene acceso a él, o la sesión no es de ese proyecto */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Período cerrado, proyecto sin aprobar, evidencias en una sesión que pasaría a no tener clase, o temas o ausentes que se quitarían sin confirmar */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
+    RecordatoriosController_enviar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoRecordatoriosDto"];
+                };
+            };
+            /** @description Sin sesión válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description El usuario no tiene el permiso de administrar la configuración (`estructura.administrar`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Ya hay un envío en curso */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+        };
+    };
     MatriculasController_listar: {
         parameters: {
             query?: {
@@ -10641,527 +11608,6 @@ export interface operations {
             };
             /** @description Ninguno de los roles del usuario consulta documentos, o el RAP no está a su cargo */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    SesionesController_obtenerHorario: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                idProyecto: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HorarioCursoDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    SesionesController_guardarHorario: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                idProyecto: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GuardarHorarioDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HorarioCursoDto"];
-                };
-            };
-            /** @description Sin días, día fuera de lunes a sábado, día repetido u hora de fin no posterior a la de inicio */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El período académico del proyecto está cerrado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    SesionesController_consultarCalendario: {
-        parameters: {
-            query?: {
-                pagina?: number;
-                tamano?: number;
-            };
-            header?: never;
-            path: {
-                idProyecto: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CalendarioSesionesDto"];
-                };
-            };
-            /** @description Paginación inválida */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El usuario no tiene un rol que consulte proyectos docentes */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    SesionesController_generarCalendario: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                idProyecto: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultadoGeneracionDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El usuario no tiene un rol que modifique el registro de clases, o ve el proyecto pero no es su docente asignado ni el administrador */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El curso no tiene horario, el período no tiene fechas o el período está cerrado */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    PendientesController_pendientes: {
-        parameters: {
-            query?: {
-                pagina?: number;
-                tamano?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PendientesDocenteDto"];
-                };
-            };
-            /** @description Paginación inválida */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Ninguno de los roles del usuario registra clases (permiso `clases.actualizar`) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    RegistroClaseController_detalle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                idProyecto: number;
-                idSesion: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DetalleSesionDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Ninguno de los roles del usuario consulta el registro de clases */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él, o la sesión no es de ese proyecto */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    RegistroClaseController_registrar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                idProyecto: number;
-                idSesion: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegistrarSesionDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DetalleSesionDto"];
-                };
-            };
-            /** @description Sin temas, temas de otro proyecto o sin tema, estudiantes que no están matriculados en el curso, o un parcial o una actividad con temas o sin descripción */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Ninguno de los roles del usuario registra clases, o ve el proyecto pero no es su docente asignado ni el administrador */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él, o la sesión no es de ese proyecto */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sesión de fecha futura, período cerrado, proyecto sin aprobar, sesión de un tipo en que no hay clase (festivo), o todo el grupo ausente sin confirmar */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    RegistroClaseController_cambiarTipo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                idProyecto: number;
-                idSesion: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CambiarTipoSesionDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DetalleSesionDto"];
-                };
-            };
-            /** @description Tipo que no existe o está inactivo, o un tipo sin temas sin descripción */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Sin token, o token vencido, revocado o inválido */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Ninguno de los roles del usuario registra clases, o ve el proyecto pero no es su docente asignado ni el administrador */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El proyecto no existe o el usuario no tiene acceso a él, o la sesión no es de ese proyecto */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Período cerrado, proyecto sin aprobar, evidencias en una sesión que pasaría a no tener clase, o temas o ausentes que se quitarían sin confirmar */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-        };
-    };
-    RecordatoriosController_enviar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultadoRecordatoriosDto"];
-                };
-            };
-            /** @description Sin sesión válida */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description El usuario no tiene el permiso de administrar la configuración (`estructura.administrar`) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RespuestaErrorDto"];
-                };
-            };
-            /** @description Ya hay un envío en curso */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };

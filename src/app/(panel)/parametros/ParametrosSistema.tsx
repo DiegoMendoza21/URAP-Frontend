@@ -38,10 +38,10 @@ export function ParametrosSistema() {
     <section aria-labelledby="titulo-parametros" className="space-y-6">
       <div className="space-y-1">
         <Link
-          href="/"
+          href="/configuracion"
           className="text-sm font-medium text-marca hover:underline"
         >
-          ← Inicio
+          ← Configuración
         </Link>
         <h1 id="titulo-parametros" className="text-2xl font-bold sm:text-3xl">
           Parámetros del sistema

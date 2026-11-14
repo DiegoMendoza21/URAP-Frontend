@@ -2,7 +2,12 @@
 
 import { useSesion } from '@/sesion/ProveedorSesion';
 import { usePermisos } from '@/sesion/permisos';
-import { OPCIONES_MENU, type OpcionMenu, REPORTES } from './menu';
+import {
+  CONFIGURACION,
+  OPCIONES_MENU,
+  type OpcionMenu,
+  REPORTES,
+} from './menu';
 
 /**
  * Si el usuario puede abrir una opción: por el permiso de la matriz o, donde el backend usa
@@ -27,4 +32,9 @@ export function useOpcionesMenu(): readonly OpcionMenu[] {
 /** Los reportes que el usuario puede abrir, para la página índice `/reportes` (URAP-126). */
 export function useReportes(): readonly OpcionMenu[] {
   return REPORTES.filter(usePuedeAbrir());
+}
+
+/** Lo que el usuario puede configurar, para la página índice `/configuracion` (HU-08-01). */
+export function useConfiguracion(): readonly OpcionMenu[] {
+  return CONFIGURACION.filter(usePuedeAbrir());
 }
