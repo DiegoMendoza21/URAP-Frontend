@@ -17,6 +17,8 @@ export type DetalleSesion = Esquemas['DetalleSesionDto'];
 export type TemaContenido = Esquemas['TemaContenidoDto'];
 export type EstudianteSesion = Esquemas['EstudianteSesionDto'];
 export type DatosRegistrarSesion = Esquemas['RegistrarSesionDto'];
+export type TipoSesionOpcion = Esquemas['TipoSesionOpcionDto'];
+export type DatosCambiarTipoSesion = Esquemas['CambiarTipoSesionDto'];
 
 /** Días en que puede haber clase (RF-19): 1 = lunes … 6 = sábado, como en el backend. */
 export const DIAS_SEMANA = [
@@ -109,6 +111,21 @@ export function registrarSesion(
   return solicitar<DetalleSesion>(
     `/proyectos-docentes/${idProyecto}/sesiones/${idSesion}/registro`,
     { metodo: 'PUT', cuerpo: datos },
+  );
+}
+
+/**
+ * RF-21 (HU-08-06): marca la sesión como clase, parcial, festivo o actividad complementaria. Si
+ * el cambio quita temas o ausentes ya registrados, el backend pide confirmarlo (409).
+ */
+export function cambiarTipoSesion(
+  idProyecto: number,
+  idSesion: number,
+  datos: DatosCambiarTipoSesion,
+) {
+  return solicitar<DetalleSesion>(
+    `/proyectos-docentes/${idProyecto}/sesiones/${idSesion}/tipo`,
+    { metodo: 'PATCH', cuerpo: datos },
   );
 }
 
