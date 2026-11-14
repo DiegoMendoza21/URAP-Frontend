@@ -40,15 +40,21 @@ export function InsigniasSesion({
       {sesion.festivo && (
         <Insignia tono="informativo">Festivo · {sesion.festivo}</Insignia>
       )}
-      {sesion.tipo && !esFestivo && sesion.tipo.codigo !== 'clase' && (
-        <Insignia>{sesion.tipo.nombre}</Insignia>
-      )}
+      {/* RF-21: un festivo en el que el docente sí dictó clase lo dice; los demás tipos, su nombre. */}
+      {sesion.tipo &&
+        !esFestivo &&
+        (sesion.tipo.codigo !== 'clase' || sesion.festivo) && (
+          <Insignia>{sesion.tipo.nombre}</Insignia>
+        )}
       {sesion.diligenciada && <Insignia>Diligenciada</Insignia>}
     </div>
   );
 }
 
-/** «2 temas · 1 ausente», el resumen de una sesión registrada (RF-20, p6; RF-22, p6). */
+/**
+ * «2 temas · 1 ausente», el resumen de una sesión registrada (RF-20, p6; RF-22, p6). Un parcial
+ * o una actividad no llevan temas (RF-21): su resumen es solo la asistencia.
+ */
 export function resumenRegistro(sesion: {
   numeroTemas: number;
   numeroAusentes: number;
@@ -61,5 +67,5 @@ export function resumenRegistro(sesion: {
       : sesion.numeroAusentes === 1
         ? '1 ausente'
         : `${sesion.numeroAusentes} ausentes`;
-  return `${temas} · ${ausentes}`;
+  return sesion.numeroTemas === 0 ? ausentes : `${temas} · ${ausentes}`;
 }

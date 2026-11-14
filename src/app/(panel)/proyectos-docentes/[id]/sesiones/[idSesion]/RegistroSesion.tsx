@@ -5,11 +5,13 @@ import { useParams } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { ErrorApi, mensajeParaUsuario } from '@/api/cliente';
 import {
+  cambiarTipoSesion,
   consultarSesion,
   type DetalleSesion,
   type EstudianteSesion,
   registrarSesion,
   type TemaContenido,
+  type TipoSesionOpcion,
 } from '@/api/sesiones';
 import {
   Advertencia,
@@ -31,6 +33,20 @@ const TEMA_ADICIONAL_MAXIMO = 200;
 const TEMAS_ADICIONALES_MAXIMO = 10;
 const MENSAJE_SIN_TEMAS =
   'Seleccione al menos un tema del contenido programático o escriba un tema no planeado.';
+/** RF-21: el mismo tope y el mismo mensaje del backend para la descripción de la sesión. */
+const DESCRIPCION_MAXIMO = 255;
+const MENSAJE_SIN_DESCRIPCION =
+  'Escriba una descripción breve de la sesión: por ejemplo, qué evaluó el parcial o qué actividad se hizo.';
+
+/**
+ * El tipo de la sesión con lo que implica (RF-21): si lleva temas y si hubo clase. Lo dice el
+ * catálogo del backend; si la sesión no tiene tipo, es una clase.
+ */
+function tipoDe(detalle: DetalleSesion): TipoSesionOpcion | undefined {
+  return detalle.tiposSesion.find(
+    (tipo) => tipo.codigo === detalle.sesion.tipo?.codigo,
+  );
+}
 
 /** Para comparar temas como los lee una persona: sin mayúsculas, tildes ni espacios de más. */
 function huellaTema(texto: string): string {
@@ -116,6 +132,19 @@ export function RegistroSesion() {
               </Link>
             </div>
           )}
+          {detalle.datos.puedeCambiarTipo && (
+            <TipoDeSesion
+              key={`tipo-${version}`}
+              detalle={detalle.datos}
+              idProyecto={idProyecto!}
+              alCambiar={(nuevo) => {
+                setGuardado(
+                  `La sesión quedó como «${nuevo.sesion.tipo?.nombre ?? 'Clase'}».${nuevo.puedeRegistrar && !nuevo.sesion.diligenciada ? ' Ya puede registrarla.' : ''}`,
+                );
+                setVersion((valor) => valor + 1);
+              }}
+            />
+          )}
           {detalle.datos.puedeRegistrar ? (
             <FormularioRegistro
               key={version}
@@ -123,7 +152,9 @@ export function RegistroSesion() {
               idProyecto={idProyecto!}
               alGuardar={(nuevo) => {
                 setGuardado(
-                  `Clase registrada: ${resumenRegistro(nuevo.sesion)}.`,
+                  tipoDe(nuevo)?.llevaTemas === false
+                    ? `Sesión registrada: ${resumenRegistro(nuevo.sesion)}.`
+                    : `Clase registrada: ${resumenRegistro(nuevo.sesion)}.`,
                 );
                 setVersion((valor) => valor + 1);
               }}
@@ -157,6 +188,9 @@ function Encabezado({ detalle }: { detalle: DetalleSesion }) {
           : ''}
       </p>
       <InsigniasSesion sesion={sesion} esHoy={false} />
+      {detalle.descripcion && (
+        <p className="font-medium break-words">{detalle.descripcion}</p>
+      )}
       {registro && (
         <p className="text-sm text-slate-600">
           Registrada el {momento(registro.fecha)}
@@ -179,63 +213,68 @@ function ConsultaRegistro({ detalle }: { detalle: DetalleSesion }) {
     detalle.asistencia?.estudiantes.filter(
       (estudiante) => estudiante.ausente,
     ) ?? [];
+  const tipo = tipoDe(detalle);
   return (
     <div className="space-y-4">
-      <section
-        aria-labelledby="titulo-temas"
-        className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-      >
-        <h2 id="titulo-temas" className="text-lg font-semibold">
-          Temas desarrollados
-        </h2>
-        {temas.length === 0 && detalle.temasAdicionales.length === 0 ? (
-          <p className="text-sm text-slate-600">
-            La clase todavía no está registrada.
+      {tipo?.llevaTemas !== false && (
+        <section
+          aria-labelledby="titulo-temas"
+          className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        >
+          <h2 id="titulo-temas" className="text-lg font-semibold">
+            Temas desarrollados
+          </h2>
+          {temas.length === 0 && detalle.temasAdicionales.length === 0 ? (
+            <p className="text-sm text-slate-600">
+              La clase todavía no está registrada.
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {temas.map((tema) => (
+                <li key={tema.idContenido}>
+                  <span className="text-sm text-slate-600">
+                    Semana {tema.semana} ·{' '}
+                  </span>
+                  {tema.tema}
+                </li>
+              ))}
+              {detalle.temasAdicionales.map((tema) => (
+                <li
+                  key={`adicional-${tema}`}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <span className="break-words">{tema}</span>
+                  <Insignia tono="informativo">No planeado</Insignia>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+      {tipo?.hayClase !== false && (
+        <section
+          aria-labelledby="titulo-asistencia"
+          className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        >
+          <h2 id="titulo-asistencia" className="text-lg font-semibold">
+            Asistencia
+          </h2>
+          <p>
+            {detalle.numeroAusentes === 0
+              ? 'Sin ausentes registrados.'
+              : `${detalle.numeroAusentes} ${detalle.numeroAusentes === 1 ? 'estudiante no asistió' : 'estudiantes no asistieron'}.`}
           </p>
-        ) : (
-          <ul className="space-y-1">
-            {temas.map((tema) => (
-              <li key={tema.idContenido}>
-                <span className="text-sm text-slate-600">
-                  Semana {tema.semana} ·{' '}
-                </span>
-                {tema.tema}
-              </li>
-            ))}
-            {detalle.temasAdicionales.map((tema) => (
-              <li
-                key={`adicional-${tema}`}
-                className="flex flex-wrap items-center gap-2"
-              >
-                <span className="break-words">{tema}</span>
-                <Insignia tono="informativo">No planeado</Insignia>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section
-        aria-labelledby="titulo-asistencia"
-        className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-      >
-        <h2 id="titulo-asistencia" className="text-lg font-semibold">
-          Asistencia
-        </h2>
-        <p>
-          {detalle.numeroAusentes === 0
-            ? 'Sin ausentes registrados.'
-            : `${detalle.numeroAusentes} ${detalle.numeroAusentes === 1 ? 'estudiante no asistió' : 'estudiantes no asistieron'}.`}
-        </p>
-        {ausentes.length > 0 && (
-          <ul className="list-disc space-y-0.5 pl-5 text-sm">
-            {ausentes.map((estudiante) => (
-              <li key={estudiante.idMatricula}>
-                {nombreEstudiante(estudiante)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {ausentes.length > 0 && (
+            <ul className="list-disc space-y-0.5 pl-5 text-sm">
+              {ausentes.map((estudiante) => (
+                <li key={estudiante.idMatricula}>
+                  {nombreEstudiante(estudiante)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
       {detalle.observaciones && (
         <section
           aria-labelledby="titulo-observaciones"
@@ -293,6 +332,9 @@ function FormularioRegistro({
   alGuardar: (nuevo: DetalleSesion) => void;
 }) {
   const { asistencia } = detalle;
+  // RF-21: un parcial o una actividad se registran con la asistencia y una descripción, sin temas.
+  const llevaTemas = tipoDe(detalle)?.llevaTemas !== false;
+  const [descripcion, setDescripcion] = useState(detalle.descripcion ?? '');
   const [temas, setTemas] = useState(
     () =>
       new Set(
@@ -402,8 +444,9 @@ function FormularioRegistro({
     setFallo(null);
     try {
       const nuevo = await registrarSesion(idProyecto, detalle.sesion.id, {
-        idsContenido: [...temas],
-        temasAdicionales,
+        idsContenido: llevaTemas ? [...temas] : [],
+        temasAdicionales: llevaTemas ? temasAdicionales : [],
+        ...(llevaTemas ? {} : { descripcion }),
         ausentes: [...ausentes],
         observaciones,
         confirmarTodoElGrupo,
@@ -436,7 +479,12 @@ function FormularioRegistro({
     // Lo que quedó escrito en el campo sin pulsar «Agregar» también se guarda: es lo que el
     // docente quiso anotar. Si no se puede agregar, el aviso lo dice y no se envía.
     let temasAdicionales = adicionales;
-    if (limpiarTema(nuevoAdicional) !== '') {
+    if (!llevaTemas) {
+      if (descripcion.trim() === '') {
+        setAviso(MENSAJE_SIN_DESCRIPCION);
+        return;
+      }
+    } else if (limpiarTema(nuevoAdicional) !== '') {
       const tema = temaParaAgregar(nuevoAdicional, adicionales);
       if (tema === null) {
         return;
@@ -446,7 +494,7 @@ function FormularioRegistro({
       setNuevoAdicional('');
     }
     // Se repite aquí para avisar sin esperar al servidor; el backend valida lo mismo.
-    if (temas.size === 0 && temasAdicionales.length === 0) {
+    if (llevaTemas && temas.size === 0 && temasAdicionales.length === 0) {
       setAviso(MENSAJE_SIN_TEMAS);
       return;
     }
@@ -460,133 +508,153 @@ function FormularioRegistro({
 
   return (
     <form onSubmit={guardar} className="space-y-5" noValidate>
-      <fieldset className="min-w-0 space-y-2">
-        <legend className="text-lg font-semibold">Temas desarrollados</legend>
-        <p className="text-sm text-slate-600">
-          Marque los temas del contenido programático que desarrolló en esta
-          clase. Si desarrolló uno que no está, escríbalo abajo, en «Temas no
-          planeados».
-        </p>
-        {destacados.map((tema) => (
-          <CasillaTema
-            key={tema.idContenido}
-            tema={tema}
-            marcado={temas.has(tema.idContenido)}
-            alCambiar={(marcado) =>
-              alternar(temas, setTemas, tema.idContenido, marcado)
-            }
-          />
-        ))}
-        {otros.length > 0 && (
-          <details
-            className="group rounded-xl border border-slate-200 bg-white"
-            open={destacados.length === 0}
-          >
-            {/* En el teléfono el texto ocupa dos líneas: sin relleno vertical tocaba el borde. */}
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 font-medium [&::-webkit-details-marker]:hidden">
-              <span>
-                Otros temas del contenido programático ({otros.length})
-              </span>
-              <span className="shrink-0 text-sm font-semibold text-marca">
-                <span className="group-open:hidden">Ver</span>
-                <span className="hidden group-open:inline">Ocultar</span>
-              </span>
-            </summary>
-            <div className="space-y-2 p-2">
-              {otros.map((tema) => (
-                <CasillaTema
-                  key={tema.idContenido}
-                  tema={tema}
-                  marcado={temas.has(tema.idContenido)}
-                  alCambiar={(marcado) =>
-                    alternar(temas, setTemas, tema.idContenido, marcado)
-                  }
-                />
-              ))}
-            </div>
-          </details>
-        )}
-      </fieldset>
-
-      {/* HU-08-05: opcional y rápido de llenar desde el teléfono, al salir del salón. */}
-      <fieldset className="min-w-0 space-y-2">
-        <legend className="text-lg font-semibold">
-          Temas no planeados{' '}
-          <span className="text-sm font-normal text-slate-600">(opcional)</span>
-        </legend>
-        <p id="ayuda-no-planeados" className="text-sm text-slate-600">
-          Si desarrolló un tema que no está en el contenido programático,
-          escríbalo aquí. Queda marcado como no planeado.
-        </p>
-        {adicionales.length > 0 && (
-          <ul className="space-y-2">
-            {adicionales.map((tema) => (
-              <li
-                key={tema}
-                className="flex min-h-12 items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2"
-              >
-                <span className="min-w-0 flex-1 break-words">{tema}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAdicionales(adicionales.filter((otro) => otro !== tema));
-                    setAvisoAdicional(null);
-                  }}
-                  aria-label={`Quitar el tema no planeado «${tema}»`}
-                  className="min-h-11 shrink-0 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-800 hover:bg-red-50"
-                >
-                  Quitar
-                </button>
-              </li>
+      {!llevaTemas && (
+        <CampoDescripcion
+          valor={descripcion}
+          alCambiar={(valor) => {
+            setDescripcion(valor);
+            setAviso(null);
+          }}
+          ayuda="En esta sesión no se marcan temas: describa qué se hizo y, abajo, marque quiénes no asistieron."
+        />
+      )}
+      {llevaTemas && (
+        <>
+          <fieldset className="min-w-0 space-y-2">
+            <legend className="text-lg font-semibold">
+              Temas desarrollados
+            </legend>
+            <p className="text-sm text-slate-600">
+              Marque los temas del contenido programático que desarrolló en esta
+              clase. Si desarrolló uno que no está, escríbalo abajo, en «Temas
+              no planeados».
+            </p>
+            {destacados.map((tema) => (
+              <CasillaTema
+                key={tema.idContenido}
+                tema={tema}
+                marcado={temas.has(tema.idContenido)}
+                alCambiar={(marcado) =>
+                  alternar(temas, setTemas, tema.idContenido, marcado)
+                }
+              />
             ))}
-          </ul>
-        )}
-        <div className="flex gap-2">
-          <label htmlFor="nuevo-no-planeado" className="sr-only">
-            Tema no planeado
-          </label>
-          <input
-            id="nuevo-no-planeado"
-            type="text"
-            enterKeyHint="done"
-            autoComplete="off"
-            maxLength={TEMA_ADICIONAL_MAXIMO}
-            placeholder="Escriba el tema"
-            value={nuevoAdicional}
-            onChange={(evento) => {
-              setNuevoAdicional(evento.target.value);
-              setAvisoAdicional(null);
-            }}
-            onKeyDown={(evento) => {
-              // Intro agrega el tema; no envía el registro a medio llenar.
-              if (evento.key === 'Enter') {
-                evento.preventDefault();
-                agregarAdicional();
-              }
-            }}
-            aria-describedby={`ayuda-no-planeados${avisoAdicional ? ' aviso-no-planeados' : ''}`}
-            aria-invalid={avisoAdicional ? true : undefined}
-            className="min-h-12 min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-base aria-[invalid=true]:border-red-500"
-          />
-          <button
-            type="button"
-            onClick={agregarAdicional}
-            disabled={limpiarTema(nuevoAdicional) === ''}
-            className="min-h-12 shrink-0 rounded-lg border border-marca px-4 font-semibold text-marca hover:bg-marca/5 disabled:opacity-50"
-          >
-            Agregar
-          </button>
-        </div>
-        {avisoAdicional && (
-          <p
-            id="aviso-no-planeados"
-            role="alert"
-            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
-          >
-            {avisoAdicional}
-          </p>
-        )}
-      </fieldset>
+            {otros.length > 0 && (
+              <details
+                className="group rounded-xl border border-slate-200 bg-white"
+                open={destacados.length === 0}
+              >
+                {/* En el teléfono el texto ocupa dos líneas: sin relleno vertical tocaba el borde. */}
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 font-medium [&::-webkit-details-marker]:hidden">
+                  <span>
+                    Otros temas del contenido programático ({otros.length})
+                  </span>
+                  <span className="shrink-0 text-sm font-semibold text-marca">
+                    <span className="group-open:hidden">Ver</span>
+                    <span className="hidden group-open:inline">Ocultar</span>
+                  </span>
+                </summary>
+                <div className="space-y-2 p-2">
+                  {otros.map((tema) => (
+                    <CasillaTema
+                      key={tema.idContenido}
+                      tema={tema}
+                      marcado={temas.has(tema.idContenido)}
+                      alCambiar={(marcado) =>
+                        alternar(temas, setTemas, tema.idContenido, marcado)
+                      }
+                    />
+                  ))}
+                </div>
+              </details>
+            )}
+          </fieldset>
+
+          {/* HU-08-05: opcional y rápido de llenar desde el teléfono, al salir del salón. */}
+          <fieldset className="min-w-0 space-y-2">
+            <legend className="text-lg font-semibold">
+              Temas no planeados{' '}
+              <span className="text-sm font-normal text-slate-600">
+                (opcional)
+              </span>
+            </legend>
+            <p id="ayuda-no-planeados" className="text-sm text-slate-600">
+              Si desarrolló un tema que no está en el contenido programático,
+              escríbalo aquí. Queda marcado como no planeado.
+            </p>
+            {adicionales.length > 0 && (
+              <ul className="space-y-2">
+                {adicionales.map((tema) => (
+                  <li
+                    key={tema}
+                    className="flex min-h-12 items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2"
+                  >
+                    <span className="min-w-0 flex-1 break-words">{tema}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdicionales(
+                          adicionales.filter((otro) => otro !== tema),
+                        );
+                        setAvisoAdicional(null);
+                      }}
+                      aria-label={`Quitar el tema no planeado «${tema}»`}
+                      className="min-h-11 shrink-0 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-800 hover:bg-red-50"
+                    >
+                      Quitar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <label htmlFor="nuevo-no-planeado" className="sr-only">
+                Tema no planeado
+              </label>
+              <input
+                id="nuevo-no-planeado"
+                type="text"
+                enterKeyHint="done"
+                autoComplete="off"
+                maxLength={TEMA_ADICIONAL_MAXIMO}
+                placeholder="Escriba el tema"
+                value={nuevoAdicional}
+                onChange={(evento) => {
+                  setNuevoAdicional(evento.target.value);
+                  setAvisoAdicional(null);
+                }}
+                onKeyDown={(evento) => {
+                  // Intro agrega el tema; no envía el registro a medio llenar.
+                  if (evento.key === 'Enter') {
+                    evento.preventDefault();
+                    agregarAdicional();
+                  }
+                }}
+                aria-describedby={`ayuda-no-planeados${avisoAdicional ? ' aviso-no-planeados' : ''}`}
+                aria-invalid={avisoAdicional ? true : undefined}
+                className="min-h-12 min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-base aria-[invalid=true]:border-red-500"
+              />
+              <button
+                type="button"
+                onClick={agregarAdicional}
+                disabled={limpiarTema(nuevoAdicional) === ''}
+                className="min-h-12 shrink-0 rounded-lg border border-marca px-4 font-semibold text-marca hover:bg-marca/5 disabled:opacity-50"
+              >
+                Agregar
+              </button>
+            </div>
+            {avisoAdicional && (
+              <p
+                id="aviso-no-planeados"
+                role="alert"
+                className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+              >
+                {avisoAdicional}
+              </p>
+            )}
+          </fieldset>
+        </>
+      )}
 
       <fieldset className="min-w-0 space-y-2">
         <legend className="text-lg font-semibold">Asistencia</legend>
@@ -706,9 +774,274 @@ function FormularioRegistro({
             ? 'Guardando…'
             : detalle.sesion.diligenciada
               ? 'Guardar cambios'
-              : 'Registrar clase'}
+              : llevaTemas
+                ? 'Registrar clase'
+                : 'Registrar sesión'}
         </button>
       </div>
     </form>
+  );
+}
+
+function CampoDescripcion({
+  valor,
+  alCambiar,
+  ayuda,
+}: {
+  valor: string;
+  alCambiar: (valor: string) => void;
+  ayuda: string;
+}) {
+  return (
+    <label className="block space-y-1">
+      <span className="block text-lg font-semibold">Descripción</span>
+      <span className="block text-sm text-slate-600">{ayuda}</span>
+      <textarea
+        value={valor}
+        onChange={(evento) => alCambiar(evento.target.value)}
+        maxLength={DESCRIPCION_MAXIMO}
+        rows={2}
+        required
+        placeholder="Por ejemplo: primer parcial escrito, unidades 1 y 2"
+        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base"
+      />
+      <span className="block text-right text-xs text-slate-500 tabular-nums">
+        {valor.length} / {DESCRIPCION_MAXIMO}
+      </span>
+    </label>
+  );
+}
+
+/** Lo que el cambio de tipo quitaría de lo ya registrado, para pedir confirmación antes. */
+function loQueSeQuita(
+  detalle: DetalleSesion,
+  nuevo: TipoSesionOpcion,
+): string[] {
+  const { numeroTemas, numeroAusentes } = detalle.sesion;
+  const partes: string[] = [];
+  if (!nuevo.llevaTemas && numeroTemas > 0) {
+    partes.push(
+      numeroTemas === 1
+        ? '1 tema registrado'
+        : `${numeroTemas} temas registrados`,
+    );
+  }
+  if (!nuevo.hayClase && numeroAusentes > 0) {
+    partes.push(
+      numeroAusentes === 1 ? '1 ausente' : `${numeroAusentes} ausentes`,
+    );
+  }
+  return partes;
+}
+
+/**
+ * RF-21 (HU-08-06): el docente marca la sesión como clase, parcial, festivo o actividad
+ * complementaria, también antes de la fecha. Qué tipos hay y qué implica cada uno lo dice el
+ * catálogo del backend; el backend vuelve a validar todo.
+ */
+function TipoDeSesion({
+  detalle,
+  idProyecto,
+  alCambiar,
+}: {
+  detalle: DetalleSesion;
+  idProyecto: number;
+  alCambiar: (nuevo: DetalleSesion) => void;
+}) {
+  const actual = tipoDe(detalle);
+  const [abierto, setAbierto] = useState(false);
+  const [codigo, setCodigo] = useState(detalle.sesion.tipo?.codigo ?? 'clase');
+  const [descripcion, setDescripcion] = useState(detalle.descripcion ?? '');
+  const [confirmando, setConfirmando] = useState<string[] | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [fallo, setFallo] = useState<Fallo | null>(null);
+  const elegido = detalle.tiposSesion.find((tipo) => tipo.codigo === codigo);
+  const sinClase = actual?.hayClase === false;
+  const clase = detalle.tiposSesion.find(
+    (tipo) => tipo.llevaTemas && tipo.hayClase,
+  );
+
+  async function enviar(tipo: TipoSesionOpcion, confirmar: boolean) {
+    setEnviando(true);
+    setFallo(null);
+    try {
+      alCambiar(
+        await cambiarTipoSesion(idProyecto, detalle.sesion.id, {
+          tipo: tipo.codigo,
+          ...(tipo.llevaTemas ? {} : { descripcion }),
+          confirmarQuitarRegistro: confirmar,
+        }),
+      );
+    } catch (error) {
+      setConfirmando(null);
+      setFallo({
+        mensaje: mensajeParaUsuario(error),
+        detalles: error instanceof ErrorApi ? error.detalles : undefined,
+      });
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  function guardar(evento: FormEvent) {
+    evento.preventDefault();
+    if (!elegido) {
+      return;
+    }
+    if (!elegido.llevaTemas && descripcion.trim() === '') {
+      setFallo({ mensaje: MENSAJE_SIN_DESCRIPCION });
+      return;
+    }
+    const seQuita = loQueSeQuita(detalle, elegido);
+    if (seQuita.length > 0) {
+      setConfirmando(seQuita);
+      return;
+    }
+    void enviar(elegido, false);
+  }
+
+  return (
+    <section
+      aria-labelledby="titulo-tipo-sesion"
+      className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="titulo-tipo-sesion" className="text-lg font-semibold">
+          Tipo de sesión:{' '}
+          <span className="font-normal">
+            {detalle.sesion.tipo?.nombre ?? 'Clase'}
+          </span>
+        </h2>
+        {!abierto && (
+          <button
+            type="button"
+            onClick={() => setAbierto(true)}
+            className="min-h-11 rounded-lg border border-marca px-4 font-semibold text-marca hover:bg-marca/5"
+          >
+            Cambiar el tipo
+          </button>
+        )}
+      </div>
+      {!abierto && sinClase && clase && (
+        <div className="space-y-2">
+          <p className="text-sm text-slate-700">
+            Si ese día sí hubo clase, márquela como clase para poder
+            registrarla.
+          </p>
+          <button
+            type="button"
+            onClick={() => void enviar(clase, false)}
+            disabled={enviando}
+            className="min-h-12 w-full rounded-lg bg-marca px-4 font-semibold text-white hover:bg-marca-oscuro disabled:opacity-60 sm:w-auto"
+          >
+            {enviando ? 'Guardando…' : 'Sí hubo clase'}
+          </button>
+        </div>
+      )}
+      {abierto && (
+        <form onSubmit={guardar} className="space-y-4" noValidate>
+          <fieldset className="min-w-0 space-y-2">
+            <legend className="text-sm text-slate-600">
+              Elija qué fue esta sesión. En un parcial o una actividad se toma
+              la asistencia, pero no se marcan temas.
+            </legend>
+            {detalle.tiposSesion.map((tipo) => (
+              <label
+                key={tipo.codigo}
+                className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border p-3 ${codigo === tipo.codigo ? 'border-marca bg-marca/5' : 'border-slate-200 bg-white'}`}
+              >
+                <input
+                  type="radio"
+                  name="tipo-sesion"
+                  value={tipo.codigo}
+                  checked={codigo === tipo.codigo}
+                  onChange={() => {
+                    setCodigo(tipo.codigo);
+                    setConfirmando(null);
+                    setFallo(null);
+                  }}
+                  className="size-5 shrink-0 accent-marca"
+                />
+                <span>
+                  <span className="block font-medium">{tipo.nombre}</span>
+                  <span className="block text-sm text-slate-600">
+                    {!tipo.hayClase
+                      ? 'No hubo clase: no se registra ni genera alertas.'
+                      : tipo.llevaTemas
+                        ? 'Se registran los temas y la asistencia.'
+                        : 'Se registran la asistencia y una descripción.'}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          {elegido && !elegido.llevaTemas && (
+            <CampoDescripcion
+              valor={descripcion}
+              alCambiar={(valor) => {
+                setDescripcion(valor);
+                setFallo(null);
+              }}
+              ayuda="Obligatoria. Qué evaluó el parcial, qué actividad se hizo o por qué no hubo clase."
+            />
+          )}
+          {fallo && (
+            <AvisoError mensaje={fallo.mensaje} detalles={fallo.detalles} />
+          )}
+          {confirmando && elegido && (
+            <Advertencia
+              titulo={`Al marcarla como «${elegido.nombre}» se quita lo registrado: ${confirmando.join(' y ')}`}
+            >
+              <p>¿Confirma el cambio?</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => void enviar(elegido, true)}
+                  disabled={enviando}
+                  className="min-h-11 rounded-lg bg-amber-700 px-4 font-semibold text-white hover:bg-amber-800 disabled:opacity-60"
+                >
+                  Sí, cambiar el tipo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmando(null)}
+                  disabled={enviando}
+                  className="min-h-11 rounded-lg border border-amber-400 bg-white px-4 font-semibold text-amber-950 hover:bg-amber-100 disabled:opacity-60"
+                >
+                  No cambiar
+                </button>
+              </div>
+            </Advertencia>
+          )}
+          {!confirmando && (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="submit"
+                disabled={enviando}
+                className="min-h-12 rounded-lg bg-marca px-4 font-semibold text-white hover:bg-marca-oscuro disabled:opacity-60"
+              >
+                {enviando ? 'Guardando…' : 'Guardar el tipo'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAbierto(false);
+                  setCodigo(detalle.sesion.tipo?.codigo ?? 'clase');
+                  setDescripcion(detalle.descripcion ?? '');
+                  setFallo(null);
+                }}
+                disabled={enviando}
+                className="min-h-12 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </form>
+      )}
+      {!abierto && fallo && (
+        <AvisoError mensaje={fallo.mensaje} detalles={fallo.detalles} />
+      )}
+    </section>
   );
 }
