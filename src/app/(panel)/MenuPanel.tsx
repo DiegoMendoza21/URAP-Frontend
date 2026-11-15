@@ -33,7 +33,7 @@ export function MenuPanel() {
   return (
     <nav
       aria-label="Menú principal"
-      className="border-b border-slate-200 bg-white"
+      className="border-b border-slate-200 bg-white print:hidden"
     >
       <ul className="mx-auto flex w-full max-w-5xl flex-wrap gap-1 px-2 py-1 sm:px-4">
         {enlaces.map((enlace) => {
