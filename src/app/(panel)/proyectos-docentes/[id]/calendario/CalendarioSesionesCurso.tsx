@@ -647,9 +647,14 @@ function TarjetaSesion({
         <div className="mt-1.5">
           <InsigniasSesion sesion={sesion} esHoy={esHoy} />
         </div>
-        {sesion.diligenciada && (
-          <p className="mt-1.5 text-sm text-slate-600">
-            {resumenRegistro(sesion)}
+        {(sesion.descripcion || sesion.diligenciada) && (
+          <p className="mt-1.5 text-sm break-words text-slate-600 first-letter:uppercase">
+            {[
+              sesion.descripcion,
+              sesion.diligenciada && resumenRegistro(sesion),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </p>
         )}
       </Link>
