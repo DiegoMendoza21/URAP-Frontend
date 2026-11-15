@@ -508,6 +508,14 @@ function Resultado({
                 ...filtrosAplicados,
               ].join(' · ')}
             </p>
+            {/* Si se imprime con Ctrl+P sin pulsar «Exportar a PDF», sale solo esta página: el
+                papel lo dice para que no parezca el total. */}
+            {!impresion && totalPaginas > 1 && (
+              <p className="text-sm font-semibold text-slate-900">
+                Página {pagina} de {totalPaginas}: para el PDF completo use
+                «Exportar a PDF».
+              </p>
+            )}
             <p className="text-sm text-slate-700">
               Generado el{' '}
               {formatoGeneracion.format(impresion?.generado ?? new Date())}
