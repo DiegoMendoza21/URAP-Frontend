@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { mensajeParaUsuario } from '@/api/cliente';
 import { guardarArchivo } from '@/api/descargas';
 import {
@@ -24,6 +24,14 @@ import { Evidencias, Secciones, Sesiones } from './Indicadores';
 import { BORDE_COLOR, ETIQUETA_COLOR, Semaforo } from './Semaforo';
 
 const TAMANO_PAGINA = 50;
+/** El tamaño de página más grande que admite el backend: para traer todo al exportar a PDF. */
+const TAMANO_PAGINA_MAXIMO = 100;
+
+const formatoGeneracion = new Intl.DateTimeFormat('es-CO', {
+  dateStyle: 'long',
+  timeStyle: 'short',
+  timeZone: 'America/Bogota',
+});
 
 const VISTAS: { valor: VistaSeguimiento; etiqueta: string }[] = [
   { valor: 'tablero', etiqueta: 'Todos los proyectos' },
@@ -66,7 +74,7 @@ export function TableroSeguimiento() {
       <div className="space-y-1">
         <Link
           href="/"
-          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline"
+          className="relative inline-block after:absolute after:inset-x-0 after:-inset-y-3 text-sm font-medium text-marca hover:underline print:hidden"
         >
           ← Inicio
         </Link>
@@ -87,17 +95,19 @@ export function TableroSeguimiento() {
         />
       )}
       {filtros.estado === 'lista' && (
-        <Filtros
-          opciones={filtros.datos}
-          filtro={consultaFinal}
-          alCambiar={cambiarFiltro}
-        />
+        <div className="print:hidden">
+          <Filtros
+            opciones={filtros.datos}
+            filtro={consultaFinal}
+            alCambiar={cambiarFiltro}
+          />
+        </div>
       )}
 
       <div
         role="group"
         aria-label="Mostrar"
-        className="flex w-full rounded-lg border border-slate-300 text-sm sm:w-auto sm:self-start"
+        className="flex w-full rounded-lg border border-slate-300 text-sm sm:w-auto sm:self-start print:hidden"
       >
         {VISTAS.map((opcion) => (
           <button
@@ -131,6 +141,11 @@ export function TableroSeguimiento() {
           datos={datos.datos}
           vista={vista}
           filtro={consultaFinal}
+          filtrosAplicados={
+            filtros.estado === 'lista'
+              ? filtrosAplicados(filtros.datos, consultaFinal)
+              : []
+          }
           pagina={pagina}
           alCambiarPagina={setPagina}
         />
@@ -298,16 +313,73 @@ function Filtros({
   );
 }
 
+/**
+ * Los filtros puestos, en palabras, para el encabezado del PDF (HU-12-06: la exportación
+ * conserva los filtros aplicados).
+ */
+function filtrosAplicados(
+  opciones: FiltrosSeguimiento,
+  filtro: FiltroSeguimiento,
+): string[] {
+  const nombre = (
+    lista: readonly { id: number; nombre: string }[],
+    id: number | undefined,
+  ) => (id ? lista.find((opcion) => opcion.id === id)?.nombre : undefined);
+  const periodo = opciones.periodos.find(
+    (opcion) => opcion.id === filtro.idPeriodo,
+  );
+  return [
+    periodo ? `Período ${periodo.codigo}` : null,
+    nombre(opciones.programas, filtro.idPrograma)
+      ? `Programa: ${nombre(opciones.programas, filtro.idPrograma)}`
+      : null,
+    nombre(opciones.asignaturas, filtro.idAsignatura)
+      ? `Asignatura: ${nombre(opciones.asignaturas, filtro.idAsignatura)}`
+      : null,
+    nombre(opciones.docentes, filtro.idDocente)
+      ? `Docente: ${nombre(opciones.docentes, filtro.idDocente)}`
+      : null,
+  ].filter((texto): texto is string => texto !== null);
+}
+
+/**
+ * HU-12-06: todos los proyectos de la consulta, no solo la página visible, para el PDF. Con
+ * el tamaño de página máximo del backend, casi siempre es una sola petición.
+ */
+async function todosLosProyectos(
+  vista: VistaSeguimiento,
+  filtro: FiltroSeguimiento,
+  datos: PaginaSeguimiento,
+): Promise<ProyectoSeguimiento[]> {
+  if (datos.total <= datos.elementos.length) {
+    return datos.elementos;
+  }
+  const paginas = Math.ceil(datos.total / TAMANO_PAGINA_MAXIMO);
+  const proyectos: ProyectoSeguimiento[] = [];
+  for (let pagina = 1; pagina <= paginas; pagina++) {
+    const respuesta = await consultarSeguimiento(
+      vista,
+      filtro,
+      pagina,
+      TAMANO_PAGINA_MAXIMO,
+    );
+    proyectos.push(...respuesta.elementos);
+  }
+  return proyectos;
+}
+
 function Resultado({
   datos,
   vista,
   filtro,
+  filtrosAplicados,
   pagina,
   alCambiarPagina,
 }: {
   datos: PaginaSeguimiento;
   vista: VistaSeguimiento;
   filtro: FiltroSeguimiento;
+  filtrosAplicados: readonly string[];
   pagina: number;
   alCambiarPagina: (pagina: number) => void;
 }) {
@@ -318,6 +390,39 @@ function Resultado({
   >({ estado: 'inactiva' });
   const totalPaginas = Math.max(1, Math.ceil(datos.total / datos.tamano));
   const { resumen } = datos;
+
+  // HU-12-06: el PDF es la impresión del navegador («Guardar como PDF»), como en los reportes.
+  // Antes se traen todos los proyectos de la consulta y se arma una tabla solo para imprimir.
+  const [impresion, setImpresion] = useState<{
+    proyectos: ProyectoSeguimiento[];
+    generado: Date;
+  } | null>(null);
+  const [preparandoPdf, setPreparandoPdf] = useState(false);
+
+  useEffect(() => {
+    if (!impresion) {
+      return;
+    }
+    const terminar = () => setImpresion(null);
+    window.addEventListener('afterprint', terminar);
+    window.print();
+    return () => window.removeEventListener('afterprint', terminar);
+  }, [impresion]);
+
+  const exportarPdf = async () => {
+    setPreparandoPdf(true);
+    setDescarga({ estado: 'inactiva' });
+    try {
+      setImpresion({
+        proyectos: await todosLosProyectos(vista, filtro, datos),
+        generado: new Date(),
+      });
+    } catch (error) {
+      setDescarga({ estado: 'fallida', mensaje: mensajeParaUsuario(error) });
+    } finally {
+      setPreparandoPdf(false);
+    }
+  };
 
   const exportar = async () => {
     setDescarga({ estado: 'descargando' });
@@ -364,125 +469,188 @@ function Resultado({
                 ? `${datos.total} con pendientes, del más grave al menos grave.`
                 : `${datos.total} ${datos.total === 1 ? 'proyecto' : 'proyectos'}.`}
             </p>
-            <button
-              type="button"
-              onClick={() => void exportar()}
-              disabled={descarga.estado === 'descargando'}
-              className="rounded-lg border border-marca px-4 py-2 font-semibold text-marca hover:bg-marca/5 disabled:opacity-60"
-            >
-              {descarga.estado === 'descargando'
-                ? 'Preparando el Excel…'
-                : 'Exportar a Excel'}
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row print:hidden">
+              <button
+                type="button"
+                onClick={() => void exportar()}
+                disabled={descarga.estado === 'descargando'}
+                className="min-h-11 rounded-lg border border-marca px-4 py-2 font-semibold text-marca hover:bg-marca/5 disabled:opacity-60"
+              >
+                {descarga.estado === 'descargando'
+                  ? 'Preparando el Excel…'
+                  : 'Exportar a Excel'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void exportarPdf()}
+                disabled={preparandoPdf}
+                className="min-h-11 rounded-lg border border-marca px-4 py-2 font-semibold text-marca hover:bg-marca/5 disabled:opacity-60"
+              >
+                {preparandoPdf ? 'Preparando el PDF…' : 'Exportar a PDF'}
+              </button>
+            </div>
           </div>
+          <p className="text-sm text-slate-600 print:hidden">
+            Para el PDF, elija «Guardar como PDF» en la ventana de impresión.
+            Incluye todos los proyectos de la consulta, no solo esta página.
+          </p>
           {descarga.estado === 'fallida' && (
             <AvisoError mensaje={descarga.mensaje} />
           )}
 
-          {/* Teléfono: una tarjeta por proyecto, con el borde de su color. */}
-          <ul className="space-y-3 md:hidden">
-            {datos.elementos.map((proyecto) => (
-              <li key={proyecto.idProyecto}>
-                <Tarjeta proyecto={proyecto} />
-              </li>
-            ))}
-          </ul>
-
-          {/* Pantalla ancha: una tabla para recorrer muchos proyectos. */}
-          <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
-            <table className="min-w-full text-sm">
-              <caption className="sr-only">
-                Estado de diligenciamiento por proyecto docente
-              </caption>
-              <thead className="bg-slate-50 text-left">
-                <tr>
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Proyecto
-                  </th>
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Color
-                  </th>
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Secciones
-                  </th>
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Sesiones
-                  </th>
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Evidencias por RAP
-                  </th>
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {datos.elementos.map((proyecto) => (
-                  <tr key={proyecto.idProyecto} className="align-top">
-                    <th scope="row" className="px-3 py-2 text-left font-normal">
-                      <Link
-                        href={`/proyectos-docentes/${proyecto.idProyecto}`}
-                        className="font-semibold text-marca hover:underline"
-                      >
-                        {proyecto.asignatura}
-                        {proyecto.grupo ? ` · Grupo ${proyecto.grupo}` : ''}
-                      </Link>
-                      <span className="block text-xs text-slate-600">
-                        {proyecto.docentes.join(', ') || 'Sin docente'}
-                      </span>
-                    </th>
-                    <td className="px-3 py-2">
-                      <Semaforo color={proyecto.color} />
-                      <span className="block text-xs text-slate-600">
-                        {proyecto.motivoColor}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <Secciones proyecto={proyecto} />
-                    </td>
-                    <td className="px-3 py-2">
-                      <Sesiones proyecto={proyecto} />
-                    </td>
-                    <td className="px-3 py-2">
-                      <Evidencias proyecto={proyecto} />
-                    </td>
-                    <td className="px-3 py-2">
-                      {proyecto.estado?.nombre ?? 'Sin estado'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Solo al imprimir: todos los proyectos, con los filtros aplicados (HU-12-06). */}
+          <div className="hidden space-y-2 print:block">
+            <p className="text-sm text-slate-700">
+              {[
+                vista === 'pendientes'
+                  ? 'Con pendientes'
+                  : 'Todos los proyectos',
+                ...filtrosAplicados,
+              ].join(' · ')}
+            </p>
+            <p className="text-sm text-slate-700">
+              Generado el{' '}
+              {formatoGeneracion.format(impresion?.generado ?? new Date())}
+            </p>
+            <TablaProyectos
+              proyectos={impresion?.proyectos ?? datos.elementos}
+              enlaces={false}
+            />
           </div>
 
-          {totalPaginas > 1 && (
-            <nav
-              aria-label="Páginas"
-              className="flex items-center justify-between gap-2"
-            >
-              <button
-                type="button"
-                disabled={pagina <= 1}
-                onClick={() => alCambiarPagina(pagina - 1)}
-                className="rounded-lg border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40"
+          <div className="space-y-4 print:hidden">
+            {/* Teléfono: una tarjeta por proyecto, con el borde de su color. */}
+            <ul className="space-y-3 md:hidden">
+              {datos.elementos.map((proyecto) => (
+                <li key={proyecto.idProyecto}>
+                  <Tarjeta proyecto={proyecto} />
+                </li>
+              ))}
+            </ul>
+
+            {/* Pantalla ancha: una tabla para recorrer muchos proyectos. */}
+            <div className="hidden md:block">
+              <TablaProyectos proyectos={datos.elementos} enlaces />
+            </div>
+
+            {totalPaginas > 1 && (
+              <nav
+                aria-label="Páginas"
+                className="flex items-center justify-between gap-2"
               >
-                Anterior
-              </button>
-              <span className="text-sm text-slate-600">
-                Página {pagina} de {totalPaginas}
-              </span>
-              <button
-                type="button"
-                disabled={pagina >= totalPaginas}
-                onClick={() => alCambiarPagina(pagina + 1)}
-                className="rounded-lg border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40"
-              >
-                Siguiente
-              </button>
-            </nav>
-          )}
+                <button
+                  type="button"
+                  disabled={pagina <= 1}
+                  onClick={() => alCambiarPagina(pagina - 1)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40"
+                >
+                  Anterior
+                </button>
+                <span className="text-sm text-slate-600">
+                  Página {pagina} de {totalPaginas}
+                </span>
+                <button
+                  type="button"
+                  disabled={pagina >= totalPaginas}
+                  onClick={() => alCambiarPagina(pagina + 1)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40"
+                >
+                  Siguiente
+                </button>
+              </nav>
+            )}
+          </div>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Los proyectos en una tabla: en pantalla ancha, con enlace a cada proyecto; al imprimir el
+ * PDF (HU-12-06), todos los de la consulta y sin enlaces.
+ */
+function TablaProyectos({
+  proyectos,
+  enlaces,
+}: {
+  proyectos: readonly ProyectoSeguimiento[];
+  enlaces: boolean;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
+      <table className="min-w-full text-sm">
+        <caption className="sr-only">
+          Estado de diligenciamiento por proyecto docente
+        </caption>
+        <thead className="bg-slate-50 text-left">
+          <tr>
+            <th scope="col" className="px-3 py-2 font-semibold">
+              Proyecto
+            </th>
+            <th scope="col" className="px-3 py-2 font-semibold">
+              Color
+            </th>
+            <th scope="col" className="px-3 py-2 font-semibold">
+              Secciones
+            </th>
+            <th scope="col" className="px-3 py-2 font-semibold">
+              Sesiones
+            </th>
+            <th scope="col" className="px-3 py-2 font-semibold">
+              Evidencias por RAP
+            </th>
+            <th scope="col" className="px-3 py-2 font-semibold">
+              Estado
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {proyectos.map((proyecto) => {
+            const nombre = `${proyecto.asignatura}${proyecto.grupo ? ` · Grupo ${proyecto.grupo}` : ''}`;
+            return (
+              <tr
+                key={proyecto.idProyecto}
+                className="break-inside-avoid align-top"
+              >
+                <th scope="row" className="px-3 py-2 text-left font-normal">
+                  {enlaces ? (
+                    <Link
+                      href={`/proyectos-docentes/${proyecto.idProyecto}`}
+                      className="font-semibold text-marca hover:underline"
+                    >
+                      {nombre}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold">{nombre}</span>
+                  )}
+                  <span className="block text-xs text-slate-600">
+                    {proyecto.docentes.join(', ') || 'Sin docente'}
+                  </span>
+                </th>
+                <td className="px-3 py-2">
+                  <Semaforo color={proyecto.color} />
+                  <span className="block text-xs text-slate-600">
+                    {proyecto.motivoColor}
+                  </span>
+                </td>
+                <td className="px-3 py-2">
+                  <Secciones proyecto={proyecto} />
+                </td>
+                <td className="px-3 py-2">
+                  <Sesiones proyecto={proyecto} />
+                </td>
+                <td className="px-3 py-2">
+                  <Evidencias proyecto={proyecto} />
+                </td>
+                <td className="px-3 py-2">
+                  {proyecto.estado?.nombre ?? 'Sin estado'}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
