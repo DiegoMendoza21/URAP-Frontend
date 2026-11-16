@@ -1508,7 +1508,7 @@ export interface paths {
         };
         /**
          * Reporte de logro de los RAP del programa (RF-32, HU-11-08)
-         * @description Por cada RAP: las asignaturas que lo evaluaron con medición cerrada en el período, su porcentaje en los niveles de cumplimiento frente al esperado y la comparación con períodos anteriores. Un RAP sin mediciones cerradas aparece como no evaluado.
+         * @description Por cada RAP: las asignaturas que lo evaluaron con medición cerrada en el período, su porcentaje en los niveles de cumplimiento frente al esperado y la comparación con períodos anteriores. Un RAP sin mediciones cerradas aparece como no evaluado. Cada generación queda en reporte_academico con el usuario, la fecha y los filtros (HU-12-06).
          */
         get: operations["ReportesController_logroRap"];
         put?: never;
@@ -10560,6 +10560,15 @@ export interface operations {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
                 };
             };
+            /** @description Supera el máximo de filas exportables: hay que restringir los filtros */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
         };
     };
     ReportesAcademicosController_cumplimiento: {
@@ -10943,6 +10952,15 @@ export interface operations {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
                 };
             };
+            /** @description Supera el máximo de filas exportables: hay que restringir los filtros */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
         };
     };
     SeguimientoController_filtros: {
@@ -10992,6 +11010,8 @@ export interface operations {
                 idDocente?: number;
                 pagina?: number;
                 tamano?: number;
+                /** @description HU-12-06: la pide la pantalla antes de imprimir el PDF. Aplica el máximo de filas exportables (422 si lo supera) y registra la generación en reporte_academico. */
+                exportar?: "pdf";
             };
             header?: never;
             path?: never;
@@ -11036,6 +11056,15 @@ export interface operations {
             };
             /** @description El período no existe */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Con exportar=pdf: supera el máximo de filas exportables y hay que restringir los filtros */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11126,6 +11155,8 @@ export interface operations {
                 idDocente?: number;
                 pagina?: number;
                 tamano?: number;
+                /** @description HU-12-06: la pide la pantalla antes de imprimir el PDF. Aplica el máximo de filas exportables (422 si lo supera) y registra la generación en reporte_academico. */
+                exportar?: "pdf";
             };
             header?: never;
             path?: never;
@@ -11170,6 +11201,15 @@ export interface operations {
             };
             /** @description El período no existe */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaErrorDto"];
+                };
+            };
+            /** @description Con exportar=pdf: supera el máximo de filas exportables y hay que restringir los filtros */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

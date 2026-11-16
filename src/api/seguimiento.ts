@@ -40,16 +40,23 @@ export function consultarFiltrosSeguimiento(senal?: AbortSignal) {
   return obtener<FiltrosSeguimiento>('/seguimiento/filtros', { senal });
 }
 
+/**
+ * La consulta paginada. Con `exportar: 'pdf'` (HU-12-06), el backend aplica el máximo de filas
+ * exportables (422 si lo supera) y registra la generación: se pide así una sola vez, antes de
+ * imprimir.
+ */
 export function consultarSeguimiento(
   vista: VistaSeguimiento,
   filtro: FiltroSeguimiento,
   pagina: number,
   tamano: number,
   senal?: AbortSignal,
+  exportar?: 'pdf',
 ) {
   const consulta = parametros(filtro, {
     pagina: String(pagina),
     tamano: String(tamano),
+    ...(exportar ? { exportar } : {}),
   });
   return obtener<PaginaSeguimiento>(`/seguimiento/${vista}?${consulta}`, {
     senal,
