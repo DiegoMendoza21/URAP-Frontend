@@ -344,19 +344,25 @@ function filtrosAplicados(
 
 /**
  * HU-12-06: todos los proyectos de la consulta, no solo la página visible, para el PDF. Con
- * el tamaño de página máximo del backend, casi siempre es una sola petición.
+ * el tamaño de página máximo del backend, casi siempre es una sola petición. La primera va con
+ * `exportar: 'pdf'`: el backend aplica el máximo de filas exportables, como al Excel, y
+ * registra la generación. Si lo supera, responde 422 y no se imprime nada.
  */
 async function todosLosProyectos(
   vista: VistaSeguimiento,
   filtro: FiltroSeguimiento,
-  datos: PaginaSeguimiento,
 ): Promise<ProyectoSeguimiento[]> {
-  if (datos.total <= datos.elementos.length) {
-    return datos.elementos;
-  }
-  const paginas = Math.ceil(datos.total / TAMANO_PAGINA_MAXIMO);
-  const proyectos: ProyectoSeguimiento[] = [];
-  for (let pagina = 1; pagina <= paginas; pagina++) {
+  const primera = await consultarSeguimiento(
+    vista,
+    filtro,
+    1,
+    TAMANO_PAGINA_MAXIMO,
+    undefined,
+    'pdf',
+  );
+  const proyectos = [...primera.elementos];
+  const paginas = Math.ceil(primera.total / TAMANO_PAGINA_MAXIMO);
+  for (let pagina = 2; pagina <= paginas; pagina++) {
     const respuesta = await consultarSeguimiento(
       vista,
       filtro,
@@ -414,7 +420,7 @@ function Resultado({
     setDescarga({ estado: 'inactiva' });
     try {
       setImpresion({
-        proyectos: await todosLosProyectos(vista, filtro, datos),
+        proyectos: await todosLosProyectos(vista, filtro),
         generado: new Date(),
       });
     } catch (error) {

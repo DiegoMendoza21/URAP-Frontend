@@ -22,6 +22,7 @@ import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
 import { Evidencias, Secciones, Sesiones } from '../../seguimiento/Indicadores';
 import { Semaforo } from '../../seguimiento/Semaforo';
 import { Exportar } from '../_componentes/Exportar';
+import { FiltrosAplicados, nombreDe } from '../_componentes/FiltrosAplicados';
 
 const formatoFecha = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'long',
@@ -68,6 +69,41 @@ export function ReporteCumplimiento() {
             el {formatoFecha.format(new Date(reporte.datos.generado))}
           </p>
         )}
+        {reporte.estado === 'lista' &&
+          solicitud &&
+          filtros.estado === 'lista' && (
+            <FiltrosAplicados
+              partes={[
+                [
+                  'Programa',
+                  nombreDe(
+                    filtros.datos.programas,
+                    solicitud.consulta.idPrograma,
+                  ),
+                ],
+                [
+                  'Asignatura',
+                  nombreDe(
+                    filtros.datos.asignaturas,
+                    solicitud.consulta.idAsignatura,
+                  ),
+                ],
+                [
+                  'Docente',
+                  nombreDe(
+                    filtros.datos.docentes,
+                    solicitud.consulta.idDocente,
+                  ),
+                ],
+                [
+                  'Estado',
+                  filtros.datos.estados.find(
+                    (estado) => estado.codigo === solicitud.consulta.estado,
+                  )?.nombre,
+                ],
+              ]}
+            />
+          )}
       </div>
 
       {filtros.estado === 'cargando' && <Cargando />}

@@ -27,6 +27,7 @@ import {
 } from '../../proyectos-docentes/_componentes/Estados';
 import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
 import { Exportar } from '../_componentes/Exportar';
+import { FiltrosAplicados, rapDe } from '../_componentes/FiltrosAplicados';
 
 const formatoFecha = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'long',
@@ -73,6 +74,14 @@ export function ReporteLogroRap() {
             {formatoFecha.format(new Date(reporte.datos.generado))}
           </p>
         )}
+        {/* El programa ya va en la línea de arriba. */}
+        {reporte.estado === 'lista' &&
+          consulta &&
+          filtros.estado === 'lista' && (
+            <FiltrosAplicados
+              partes={[['RAP', rapDe(filtros.datos.programas, consulta.idRap)]]}
+            />
+          )}
       </div>
 
       {filtros.estado === 'cargando' && <Cargando />}

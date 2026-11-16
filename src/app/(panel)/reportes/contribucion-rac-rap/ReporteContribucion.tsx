@@ -19,6 +19,7 @@ import {
 } from '../../proyectos-docentes/_componentes/Estados';
 import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
 import { Exportar } from '../_componentes/Exportar';
+import { FiltrosAplicados, rapDe } from '../_componentes/FiltrosAplicados';
 
 const formatoFecha = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'long',
@@ -66,6 +67,18 @@ export function ReporteContribucion() {
             el {formatoFecha.format(new Date(reporte.datos.generado))}
           </p>
         )}
+        {reporte.estado === 'lista' &&
+          solicitud &&
+          filtros.estado === 'lista' && (
+            <FiltrosAplicados
+              partes={[
+                [
+                  'RAP',
+                  rapDe(filtros.datos.programas, solicitud.consulta.idRap),
+                ],
+              ]}
+            />
+          )}
       </div>
 
       {filtros.estado === 'cargando' && <Cargando />}

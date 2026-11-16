@@ -23,6 +23,7 @@ import {
 import { fechaCorta } from '../../proyectos-docentes/_componentes/fechas';
 import { useConsulta } from '../../proyectos-docentes/_componentes/useConsulta';
 import { Exportar } from '../_componentes/Exportar';
+import { FiltrosAplicados, nombreDe } from '../_componentes/FiltrosAplicados';
 
 const formatoFecha = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'long',
@@ -77,6 +78,28 @@ export function ReporteEjecucion() {
             ? `Período ${reporte.datos.periodo?.codigo ?? 'sin definir'} · Generado el ${formatoFecha.format(new Date(reporte.datos.generado))}`
             : 'Compare, por curso, los temas planeados en el punto 6 del proyecto docente con los que se dictaron en las clases registradas.'}
         </p>
+        {reporte.estado === 'lista' &&
+          solicitud &&
+          filtros.estado === 'lista' && (
+            <FiltrosAplicados
+              partes={[
+                [
+                  'Programa',
+                  nombreDe(
+                    filtros.datos.programas,
+                    solicitud.consulta.idPrograma,
+                  ),
+                ],
+                [
+                  'Asignatura',
+                  nombreDe(
+                    filtros.datos.asignaturas,
+                    solicitud.consulta.idAsignatura,
+                  ),
+                ],
+              ]}
+            />
+          )}
       </div>
 
       {filtros.estado === 'cargando' && <Cargando />}
