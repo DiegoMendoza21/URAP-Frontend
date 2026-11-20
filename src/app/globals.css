@@ -24,6 +24,23 @@
   --color-estado: #1e3a8a;
   /* Datos informativos sin alerta: festivos, receso, temas no planeados. */
   --color-informativo: #0c4a6e;
+
+  /* Sombras de tarjetas y campos más suaves, en el negro de la paleta. */
+  --shadow-sm:
+    0 1px 2px 0 rgb(26 26 26 / 0.05), 0 1px 3px 0 rgb(26 26 26 / 0.07);
+}
+
+@layer base {
+  /* Títulos más firmes, sin tocar su tamaño. */
+  h1 {
+    letter-spacing: -0.015em;
+  }
+
+  /* Texto seleccionado sobre mostaza claro: negro, 13:1. */
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-acento) 35%, white);
+    color: var(--color-negro);
+  }
 }
 
 :root {
