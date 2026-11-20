@@ -499,7 +499,7 @@ function AvisoReceso({ receso }: { receso: SemanaReceso }) {
   return (
     <p
       role="note"
-      className="rounded-xl border border-dashed border-sky-300 bg-sky-50 px-3 py-2 text-sm text-sky-900"
+      className="rounded-xl border border-dashed border-informativo/30 bg-informativo/5 px-3 py-2 text-sm text-informativo"
     >
       <span className="font-semibold">Receso institucional</span> ·{' '}
       {fechaCorta(receso.desde)} – {fechaCorta(receso.hasta)}. Sin clases; no
@@ -613,7 +613,7 @@ function estiloTarjeta(sesion: SesionCalendario, esHoy: boolean): string {
     return 'border-amber-300 bg-amber-50';
   }
   if (sesion.tipo?.codigo === 'festivo') {
-    return 'border-sky-200 bg-sky-50';
+    return 'border-informativo/20 bg-informativo/5';
   }
   return esHoy ? 'border-marca bg-marca/5' : 'border-slate-200 bg-white';
 }

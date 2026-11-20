@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { EstadoServidor } from '@/componentes/EstadoServidor';
+import { LogoUniversidad } from '@/componentes/LogoUniversidad';
 import { NOMBRE_APLICACION } from '../identidad';
 import { FormularioInicioSesion } from './FormularioInicioSesion';
 
@@ -8,6 +9,7 @@ export const metadata: Metadata = { title: 'Iniciar sesión' };
 export default function PaginaInicioSesion() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-10">
+      <LogoUniversidad alto={72} className="mx-auto" />
       <header className="space-y-2">
         <p className="text-sm font-semibold tracking-wide text-marca uppercase">
           Universidad de Cartagena

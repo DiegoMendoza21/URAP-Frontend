@@ -60,7 +60,7 @@ export function PanelInicial() {
           {roles.map((rol) => (
             <li
               key={rol}
-              className="rounded-full bg-marca/10 px-3 py-1 text-sm font-medium text-marca"
+              className="rounded-full bg-marca/10 px-3 py-1 text-sm font-medium text-marca-oscuro"
             >
               {rol}
             </li>

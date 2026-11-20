@@ -56,7 +56,7 @@ export function CampanaNotificaciones() {
       href="/notificaciones"
       aria-label={etiqueta}
       aria-current={ruta === '/notificaciones' ? 'page' : undefined}
-      className="relative inline-flex size-11 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+      className="relative inline-flex size-11 items-center justify-center rounded-lg text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
     >
       <svg
         aria-hidden="true"

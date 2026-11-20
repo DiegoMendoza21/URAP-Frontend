@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
+import { ProveedorLogo } from '@/componentes/LogoUniversidad';
+import { rutaLogoUniversidad } from '@/servidor/logo-universidad';
 import { ProveedorSesion } from '@/sesion/ProveedorSesion';
 import {
-  COLOR_MARCA,
+  COLOR_NEGRO,
   DESCRIPCION_APLICACION,
   NOMBRE_APLICACION,
 } from './identidad';
@@ -17,14 +19,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: COLOR_MARCA,
+  themeColor: COLOR_NEGRO,
 };
 
 export default function DisenoRaiz({ children }: LayoutProps<'/'>) {
   return (
     <html lang="es-CO">
       <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
-        <ProveedorSesion>{children}</ProveedorSesion>
+        <ProveedorLogo ruta={rutaLogoUniversidad()}>
+          <ProveedorSesion>{children}</ProveedorSesion>
+        </ProveedorLogo>
       </body>
     </html>
   );

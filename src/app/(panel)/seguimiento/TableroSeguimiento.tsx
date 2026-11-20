@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useId, useState } from 'react';
 import { mensajeParaUsuario } from '@/api/cliente';
 import { guardarArchivo } from '@/api/descargas';
+import { LogoUniversidad } from '@/componentes/LogoUniversidad';
 import {
   consultarFiltrosSeguimiento,
   consultarSeguimiento,
@@ -506,6 +507,7 @@ function Resultado({
 
           {/* Solo al imprimir: todos los proyectos, con los filtros aplicados (HU-12-06). */}
           <div className="hidden space-y-2 print:block">
+            <LogoUniversidad alto={48} />
             <p className="text-sm text-slate-700">
               {[
                 vista === 'pendientes'

@@ -1,3 +1,5 @@
+import { LogoUniversidad } from '@/componentes/LogoUniversidad';
+
 /**
  * HU-12-06: los filtros con que se generó el reporte, en palabras. Solo se ven al imprimir:
  * en pantalla están los selectores, pero en el PDF se ocultan, y sin esta línea un reporte
@@ -11,14 +13,17 @@ export function FiltrosAplicados({
 }) {
   const usados = partes.filter(([, valor]) => valor);
   return (
-    <p className="hidden text-sm text-slate-700 print:block">
-      Filtros:{' '}
-      {usados.length === 0
-        ? 'ninguno (todo el período)'
-        : usados
-            .map(([etiqueta, valor]) => `${etiqueta}: ${valor}`)
-            .join(' · ')}
-    </p>
+    <div className="hidden space-y-2 print:block">
+      <LogoUniversidad alto={48} />
+      <p className="text-sm text-slate-700">
+        Filtros:{' '}
+        {usados.length === 0
+          ? 'ninguno (todo el período)'
+          : usados
+              .map(([etiqueta, valor]) => `${etiqueta}: ${valor}`)
+              .join(' · ')}
+      </p>
+    </div>
   );
 }
 

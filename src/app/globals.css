@@ -1,9 +1,29 @@
 @import 'tailwindcss';
 
-/* Color de marca provisional: el mismo de src/app/identidad.ts (NFR-018). */
+/*
+ * Colores de la Universidad de Cartagena (NFR-018), tomados de su sitio
+ * (https://unicartagena.edu.co/): naranja, amarillo mostaza, negro y blanco. Los mismos de
+ * src/app/identidad.ts. Contraste (WCAG 2.2):
+ * - `marca` con texto blanco, 5,0:1; `marca-oscuro` con texto blanco, 7,1:1.
+ * - `negro` con texto blanco, 17,4:1; `acento` sobre `negro`, 8,0:1.
+ * - `acento` sobre blanco da 2,2:1: nunca como color de texto ni de borde de un control.
+ */
 @theme {
-  --color-marca: #1e3a8a;
-  --color-marca-oscuro: #172554;
+  /* Acción principal: botones, enlaces, foco del teclado y opción activa. */
+  --color-marca: #b45309;
+  /* Pasar el puntero y estados activos de la acción principal. */
+  --color-marca-oscuro: #92400e;
+  /* Encabezado del panel. */
+  --color-negro: #1a1a1a;
+  /* Amarillo mostaza de la Universidad: solo franjas y subrayados, sobre negro o como fondo. */
+  --color-acento: #e8a21f;
+  /*
+   * Estados de los proyectos y resultados (aprobado, alcanzado, activo…): conservan el azul
+   * de antes para que su significado no cambie con la identidad.
+   */
+  --color-estado: #1e3a8a;
+  /* Datos informativos sin alerta: festivos, receso, temas no planeados. */
+  --color-informativo: #0c4a6e;
 }
 
 :root {

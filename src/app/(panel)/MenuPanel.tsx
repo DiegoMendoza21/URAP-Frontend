@@ -48,7 +48,7 @@ export function MenuPanel() {
               <Link
                 href={enlace.ruta}
                 aria-current={actual ? 'page' : undefined}
-                className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-marca aria-[current=page]:bg-marca/10 aria-[current=page]:text-marca"
+                className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-marca aria-[current=page]:bg-acento/20 aria-[current=page]:text-negro aria-[current=page]:shadow-[inset_0_-3px_0_var(--color-acento)]"
               >
                 {enlace.etiqueta}
               </Link>
