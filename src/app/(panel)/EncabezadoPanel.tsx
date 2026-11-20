@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { NOMBRE_APLICACION } from '@/app/identidad';
@@ -27,15 +28,21 @@ export function EncabezadoPanel() {
 
   return (
     <header className="border-b-4 border-acento bg-negro text-white print:hidden">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <span className="flex min-w-0 items-center gap-2">
-          {/* Fondo blanco: el logo institucional no se pierde sobre el negro. */}
-          <span className="flex shrink-0 rounded bg-white p-0.5 empty:hidden">
-            <LogoUniversidad alto={28} />
-          </span>
-          <span className="text-lg font-bold">{NOMBRE_APLICACION}</span>
-        </span>
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+        <Image
+          src="/marca/urap-logo-oscuro.svg"
+          alt={NOMBRE_APLICACION}
+          width={101}
+          height={32}
+          unoptimized
+          className="h-8 w-auto shrink-0"
+        />
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* El escudo de la Universidad, aparte y sobre blanco: su texto es negro. En el
+              teléfono no cabe junto a la campana y «Cerrar sesión»; queda en el inicio de sesión. */}
+          <span className="mr-1 hidden shrink-0 rounded-md bg-white px-1.5 py-0.5 empty:hidden sm:flex">
+            <LogoUniversidad alto={30} />
+          </span>
           <CampanaNotificaciones />
           {nombreCompleto && (
             <span className="hidden text-sm text-slate-200 sm:inline">
