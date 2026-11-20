@@ -505,7 +505,7 @@ function Filtros({
         <div className="flex flex-wrap items-end gap-2">
           <button
             type="submit"
-            className="min-h-11 flex-1 rounded-lg bg-marca px-4 py-2 font-semibold text-white hover:bg-marca/90"
+            className="min-h-11 flex-1 rounded-lg bg-marca px-4 py-2 font-semibold text-white hover:bg-marca-oscuro"
           >
             Aplicar filtros
           </button>

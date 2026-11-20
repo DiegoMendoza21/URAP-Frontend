@@ -587,7 +587,7 @@ function FormularioRegistro({
                 {adicionales.map((tema) => (
                   <li
                     key={tema}
-                    className="flex min-h-12 items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2"
+                    className="flex min-h-12 items-center gap-3 rounded-xl border border-informativo/20 bg-informativo/5 px-3 py-2"
                   >
                     <span className="min-w-0 flex-1 break-words">{tema}</span>
                     <button

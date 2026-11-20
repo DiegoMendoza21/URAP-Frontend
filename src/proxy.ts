@@ -24,8 +24,9 @@ export function proxy(peticion: NextRequest) {
 }
 
 export const config = {
-  // Solo páginas: quedan fuera la API, los archivos de Next, el manifiesto y los íconos.
+  // Solo páginas: quedan fuera la API, los archivos de Next, el manifiesto, los íconos y el logo
+  // de la Universidad (`marca/`), que el inicio de sesión muestra antes de entrar.
   matcher: [
-    '/((?!api/|_next/|manifest.webmanifest|icon.svg|apple-icon.png|iconos/|favicon.ico).*)',
+    '/((?!api/|_next/|manifest.webmanifest|icon.svg|apple-icon.png|iconos/|marca/|favicon.ico).*)',
   ],
 };

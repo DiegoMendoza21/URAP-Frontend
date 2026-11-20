@@ -1,14 +1,15 @@
 import type { MetadataRoute } from 'next';
 import {
   COLOR_FONDO,
-  COLOR_MARCA,
+  COLOR_NEGRO,
   DESCRIPCION_APLICACION,
   NOMBRE_APLICACION,
 } from './identidad';
 
 /**
  * Manifiesto de la aplicación web (NFR-014): permite instalar URAP en el teléfono o en el
- * computador. Los íconos son provisionales hasta que exista la identidad gráfica (NFR-018).
+ * computador. Los colores son los de la Universidad (NFR-018); los íconos siguen siendo
+ * provisionales hasta que exista un logo propio de URAP.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -21,7 +22,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     background_color: COLOR_FONDO,
-    theme_color: COLOR_MARCA,
+    theme_color: COLOR_NEGRO,
     icons: [
       { src: '/iconos/icono-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/iconos/icono-512.png', sizes: '512x512', type: 'image/png' },

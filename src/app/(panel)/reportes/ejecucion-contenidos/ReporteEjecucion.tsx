@@ -405,7 +405,7 @@ function Curso({ curso }: { curso: CursoEjecucion }) {
           {sinClases ? (
             // Sin clases registradas, el reporte no puede saber qué se dictó: se dice así, y
             // no como un curso donde no se dictó nada.
-            <p className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-950">
+            <p className="rounded-lg bg-informativo/5 px-3 py-2 text-sm text-informativo">
               <span className="font-semibold">
                 {curso.sesiones === 0
                   ? 'Todavía no tiene calendario de clases.'

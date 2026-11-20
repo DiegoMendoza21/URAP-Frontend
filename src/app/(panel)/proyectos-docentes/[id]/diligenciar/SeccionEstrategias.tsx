@@ -169,7 +169,7 @@ function SugerenciasEstrategias({
                     <button
                       type="button"
                       onClick={() => agregar([texto])}
-                      className="rounded-full border border-marca/40 bg-marca/5 px-3 py-2 text-left text-sm font-medium text-marca hover:bg-marca/10"
+                      className="rounded-full border border-marca/40 bg-marca/5 px-3 py-2 text-left text-sm font-medium text-marca-oscuro hover:bg-marca/10"
                     >
                       + {texto}
                     </button>
